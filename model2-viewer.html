@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Building Viewer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #9ec5e8;
+      font: 14px/1.4 system-ui, -apple-system, sans-serif;
+    }
+
+    #loading {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #9ec5e8;
+      color: #1a2a3a;
+      font-size: 15px;
+      z-index: 2;
+      transition: opacity 0.4s;
+    }
+
+    #loading.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #hint {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.88);
+      color: #2a3a4a;
+      font-size: 12px;
+      pointer-events: none;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    }
+  </style>
+</head>
+<body>
+  <div id="loading">Loading building…</div>
+  <div id="hint">Drag to rotate · Scroll to zoom · Right-drag to pan</div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+    const loadingEl = document.getElementById('loading');
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
+    document.body.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x9ec5e8);
+
+    const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.01, 500);
+    camera.position.set(2.4, 1.4, 2.4);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.maxPolarAngle = Math.PI * 0.49;
+
+    scene.add(new THREE.HemisphereLight(0xe8f2ff, 0x8a9a78, 0.55));
+    const sun = new THREE.DirectionalLight(0xfff8ee, 1.55);
+    sun.position.set(4, 8, 3);
+    scene.add(sun);
+    const fill = new THREE.DirectionalLight(0xc8dcff, 0.35);
+    fill.position.set(-3, 2, -4);
+    scene.add(fill);
+
+    const PALETTE = {
+      base: new THREE.Color(0x2f3438),
+      facade: new THREE.Color(0xede9e2),
+      top: new THREE.Color(0xe53935),
+      glass: new THREE.Color(0x1f4a66),
+      frame: new THREE.Color(0x3a3f44),
+      grass: new THREE.Color(0x4f8f45),
+      road: new THREE.Color(0x2f3134),
+      site: new THREE.Color(0x9a9590),
+    };
+
+    function colorKey(materialName) {
+      const name = (materialName || '').toLowerCase();
+      if (name.includes('grass')) return 'grass';
+      if (name.includes('road')) return 'road';
+      if (name.includes('site')) return 'site';
+      if (name.includes('glass')) return 'glass';
+      return null;
+    }
+
+    function createNamedMaterial(key) {
+      const color = PALETTE[key];
+      const isGlass = key === 'glass';
+      return new THREE.MeshStandardMaterial({
+        color,
+        metalness: isGlass ? 0.85 : 0.06,
+        roughness: isGlass ? 0.12 : 0.62,
+        transparent: isGlass,
+        opacity: isGlass ? 0.62 : 1,
+      });
+    }
+
+    function paintRawBuildingMesh(mesh) {
+      const geometry = mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry.clone();
+      geometry.computeVertexNormals();
+
+      const position = geometry.attributes.position;
+      const normal = geometry.attributes.normal;
+      const colors = new Float32Array(position.count * 3);
+
+      geometry.computeBoundingBox();
+      const box = geometry.boundingBox;
+      const yMin = box.min.y;
+      const yMax = box.max.y;
+      const yRange = Math.max(yMax - yMin, 1e-6);
+      const cx = (box.min.x + box.max.x) * 0.5;
+      const cz = (box.min.z + box.max.z) * 0.5;
+
+      const baseCut = yMin + yRange * 0.14;
+      const topCut = yMax - yRange * 0.09;
+      const tmp = new THREE.Vector3();
+      const radial = new THREE.Vector3();
+      const faceColor = new THREE.Color();
+
+      for (let i = 0; i < position.count; i += 3) {
+        let avgY = 0;
+        let avgDot = 0;
+        let avgAbsNy = 0;
+
+        for (let j = 0; j < 3; j++) {
+          const idx = i + j;
+          tmp.fromBufferAttribute(position, idx);
+          avgY += tmp.y;
+
+          const nx = normal.getX(idx);
+          const ny = normal.getY(idx);
+          const nz = normal.getZ(idx);
+          avgAbsNy += Math.abs(ny);
+
+          radial.set(tmp.x - cx, 0, tmp.z - cz);
+          if (radial.lengthSq() > 1e-8) {
+            radial.normalize();
+            avgDot += nx * radial.x + nz * radial.z;
+          }
+        }
+
+        avgY /= 3;
+        avgDot /= 3;
+        avgAbsNy /= 3;
+
+        if (avgY <= baseCut) {
+          faceColor.copy(PALETTE.base);
+        } else if (avgY >= topCut) {
+          faceColor.copy(PALETTE.top);
+        } else if (avgDot < 0.12 && avgAbsNy < 0.82) {
+          faceColor.copy(PALETTE.glass);
+        } else if (avgDot < 0.28 && avgAbsNy < 0.55) {
+          faceColor.copy(PALETTE.frame);
+        } else {
+          faceColor.copy(PALETTE.facade);
+        }
+
+        for (let j = 0; j < 3; j++) {
+          const idx = i + j;
+          colors[idx * 3] = faceColor.r;
+          colors[idx * 3 + 1] = faceColor.g;
+          colors[idx * 3 + 2] = faceColor.b;
+        }
+      }
+
+      geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+      mesh.geometry = geometry;
+      mesh.material = new THREE.MeshStandardMaterial({
+        vertexColors: true,
+        metalness: 0.08,
+        roughness: 0.58,
+        side: THREE.DoubleSide,
+      });
+    }
+
+    function applyBuildingColors(root) {
+      root.traverse((child) => {
+        if (!child.isMesh) return;
+
+        const sourceMats = Array.isArray(child.material) ? child.material : [child.material];
+        const namedKey = sourceMats.map((mat) => colorKey(mat?.name)).find(Boolean);
+
+        if (namedKey) {
+          child.material = createNamedMaterial(namedKey);
+          return;
+        }
+
+        paintRawBuildingMesh(child);
+      });
+    }
+
+    function frameModel(object) {
+      const box = new THREE.Box3().setFromObject(object);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const distance = maxDim / (2 * Math.tan((camera.fov * Math.PI) / 360)) * 1.45;
+
+      scene.fog = new THREE.Fog(0x9ec5e8, maxDim * 4, maxDim * 14);
+      controls.target.copy(center);
+      camera.position.copy(center).add(new THREE.Vector3(distance * 0.85, distance * 0.42, distance * 0.85));
+      camera.near = maxDim / 200;
+      camera.far = maxDim * 20;
+      camera.updateProjectionMatrix();
+      controls.update();
+    }
+
+    const loader = new GLTFLoader();
+    loader.load(
+      'model/model2.glb',
+      (gltf) => {
+        applyBuildingColors(gltf.scene);
+        scene.add(gltf.scene);
+        frameModel(gltf.scene);
+        loadingEl.classList.add('hidden');
+      },
+      undefined,
+      (error) => {
+        loadingEl.textContent = 'Failed to load model/model2.glb';
+        console.error(error);
+      }
+    );
+
+    function onResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    window.addEventListener('resize', onResize);
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
