@@ -458,6 +458,7 @@
       fill: none;
       stroke-width: 2;
       stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     /* Unit detail panel */
@@ -787,6 +788,12 @@
             <line x1="16.5" y1="16.5" x2="21" y2="21"/>
           </svg>
         </button>
+        <button type="button" id="zoom-reset" aria-label="Reset view">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 12a9 9 0 1 0 3-6.7"/>
+            <polyline points="3 4 3 9 8 9"/>
+          </svg>
+        </button>
       </div>
 
       <div id="unit-panel">
@@ -863,7 +870,6 @@
     let highlightMats = [];
     const floorHighlight = { floorId: null, blend: 0, targetBlend: 0 };
     let buildingBox = null;
-    let towerCoreFootprint = null;
     const _footprintV = new THREE.Vector3();
 
     const cameraAnim = {
@@ -874,6 +880,11 @@
       toTarget: new THREE.Vector3(),
       fromPos: new THREE.Vector3(),
       toPos: new THREE.Vector3(),
+    };
+    const homeView = {
+      saved: false,
+      position: new THREE.Vector3(),
+      target: new THREE.Vector3(),
     };
 
     // ── DOM refs ──
@@ -950,7 +961,7 @@
 
     // ── Data loading ──
     async function loadData() {
-      const res = await fetch('building-data.json?v=2');
+      const res = await fetch('building-data.json?v=4');
       buildingData = await res.json();
       const name = buildingData.building.name;
       document.getElementById('building-name').textContent = name;
@@ -1079,7 +1090,7 @@
       originalMaterials.set(mesh.uuid, mats.map((m) => m.clone()));
     }
 
-    function computeSliceFootprint(yMin, yMax, zone = 'all') {
+    function computeSliceFootprint(yMin, yMax) {
       const box = new THREE.Box3();
       let has = false;
 
@@ -1092,88 +1103,14 @@
         const step = pos.count > 10000 ? Math.ceil(pos.count / 10000) : 1;
         for (let i = 0; i < pos.count; i += step) {
           _footprintV.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld);
-          if (_footprintV.y < yMin || _footprintV.y > yMax) continue;
-
-          if (zone === 'tower' && towerCoreFootprint) {
-            if (
-              _footprintV.x < towerCoreFootprint.min.x ||
-              _footprintV.x > towerCoreFootprint.max.x ||
-              _footprintV.z < towerCoreFootprint.min.z ||
-              _footprintV.z > towerCoreFootprint.max.z
-            ) continue;
+          if (_footprintV.y >= yMin && _footprintV.y <= yMax) {
+            box.expandByPoint(_footprintV);
+            has = true;
           }
-
-          box.expandByPoint(_footprintV);
-          has = true;
         }
       });
 
       return has && !box.isEmpty() ? box : null;
-    }
-
-    function detectTowerCoreFootprint(box) {
-      const midY = box.min.y + (box.max.y - box.min.y) * 0.62;
-      const band = (box.max.y - box.min.y) * 0.04;
-      const raw = computeSliceFootprint(midY - band, midY + band, 'all');
-      if (!raw) return null;
-
-      const size = raw.getSize(new THREE.Vector3());
-      const center = raw.getCenter(new THREE.Vector3());
-      const shrink = 0.18;
-      return new THREE.Box3(
-        new THREE.Vector3(
-          center.x - size.x * (0.5 - shrink),
-          raw.min.y,
-          center.z - size.z * (0.5 - shrink)
-        ),
-        new THREE.Vector3(
-          center.x + size.x * (0.5 - shrink),
-          raw.max.y,
-          center.z + size.z * (0.5 - shrink)
-        )
-      );
-    }
-
-    function detectPodiumTopY(box) {
-      const totalH = box.max.y - box.min.y;
-      const samples = 36;
-      const band = totalH / samples;
-      let maxWidth = 0;
-      const widths = [];
-
-      for (let i = 0; i < samples; i++) {
-        const yMin = box.min.y + band * i;
-        const yMax = yMin + band;
-        const fp = computeSliceFootprint(yMin, yMax);
-        if (!fp) {
-          widths.push({ y: (yMin + yMax) / 2, w: 0 });
-          continue;
-        }
-        const size = fp.getSize(new THREE.Vector3());
-        const w = Math.max(size.x, size.z);
-        widths.push({ y: (yMin + yMax) / 2, w });
-        maxWidth = Math.max(maxWidth, w);
-      }
-
-      if (maxWidth <= 0) {
-        const podiumWeight = (buildingData.floors[0]?.heightWeight ?? 1)
-          + (buildingData.floors[1]?.heightWeight ?? 4);
-        const totalWeight = buildingData.floors.reduce((s, f) => s + (f.heightWeight ?? 1), 0);
-        return box.min.y + totalH * podiumWeight / totalWeight;
-      }
-
-      // Tower shaft is narrower — find where width drops below ~72% of podium max
-      for (let i = 1; i < widths.length; i++) {
-        const { y, w } = widths[i];
-        if (w > 0 && w < maxWidth * 0.72) {
-          return y - band * 0.5;
-        }
-      }
-
-      const podiumWeight = (buildingData.floors[0]?.heightWeight ?? 1)
-        + (buildingData.floors[1]?.heightWeight ?? 4);
-      const totalWeight = buildingData.floors.reduce((s, f) => s + (f.heightWeight ?? 1), 0);
-      return box.min.y + totalH * podiumWeight / totalWeight;
     }
 
     function pushFloorSlice(floor, yMin, h, box) {
@@ -1181,7 +1118,6 @@
         id: floor.id,
         yMin,
         yMax: yMin + h,
-        zone: floor.id <= 2 ? 'podium' : 'tower',
         center: new THREE.Vector3(
           (box.min.x + box.max.x) / 2,
           yMin + h / 2,
@@ -1196,7 +1132,7 @@
 
     function cacheFloorFootprints() {
       floorSlices.forEach((slice) => {
-        slice.footprint = computeSliceFootprint(slice.yMin, slice.yMax, slice.zone);
+        slice.footprint = computeSliceFootprint(slice.yMin, slice.yMax);
         if (slice.footprint) {
           slice.footprintCenter = slice.footprint.getCenter(new THREE.Vector3());
           slice.footprintSize = slice.footprint.getSize(new THREE.Vector3());
@@ -1210,26 +1146,13 @@
       if (!model) return;
       buildingBox = new THREE.Box3().setFromObject(model);
       const box = buildingBox;
-      towerCoreFootprint = detectTowerCoreFootprint(box);
-      const podiumTopY = detectPodiumTopY(box);
-      const podiumFloors = buildingData.floors.filter((f) => f.id <= 2);
-      const towerFloors = buildingData.floors.filter((f) => f.id >= 3);
-      const podiumH = podiumTopY - box.min.y;
-      const towerH = box.max.y - podiumTopY;
-      const podiumWeight = podiumFloors.reduce((s, f) => s + (f.heightWeight ?? 1), 0);
-      const towerWeight = towerFloors.reduce((s, f) => s + (f.heightWeight ?? 1), 0);
-
+      const totalH = box.max.y - box.min.y;
+      const totalWeight = buildingData.floors.reduce((s, f) => s + (f.heightWeight ?? 1), 0);
       floorSlices.length = 0;
       let y = box.min.y;
 
-      podiumFloors.forEach((floor) => {
-        const h = podiumH * (floor.heightWeight ?? 1) / podiumWeight;
-        pushFloorSlice(floor, y, h, box);
-        y += h;
-      });
-
-      towerFloors.forEach((floor) => {
-        const h = towerH * (floor.heightWeight ?? 1) / towerWeight;
+      buildingData.floors.forEach((floor) => {
+        const h = totalH * (floor.heightWeight ?? 1) / totalWeight;
         pushFloorSlice(floor, y, h, box);
         y += h;
       });
@@ -1240,19 +1163,10 @@
     function meshIntersectsSlice(mesh, slice) {
       const meshBox = new THREE.Box3().setFromObject(mesh);
       if (meshBox.max.y < slice.yMin - 0.05 || meshBox.min.y > slice.yMax + 0.05) return false;
-
-      if (slice.zone === 'tower' && towerCoreFootprint) {
-        const center = meshBox.getCenter(new THREE.Vector3());
-        return towerCoreFootprint.containsPoint(center);
-      }
-
-      if (slice.zone === 'podium' && slice.footprint) {
-        const overlap = meshBox.clone().intersect(slice.footprint);
-        const overlapSize = overlap.getSize(new THREE.Vector3());
-        return overlapSize.x * overlapSize.z > 0.5;
-      }
-
-      return true;
+      if (!slice.footprint) return true;
+      const overlap = meshBox.clone().intersect(slice.footprint);
+      const overlapSize = overlap.getSize(new THREE.Vector3());
+      return overlapSize.x * overlapSize.y > 0.05;
     }
 
     function addHighlightClone(mesh, mat) {
@@ -1267,6 +1181,18 @@
       highlightGroup.add(hl);
     }
 
+    function getHighlightBounds(slice) {
+      let yMin = slice.yMin;
+      let yMax = slice.yMax;
+      if (slice.id >= 2) {
+        const h = yMax - yMin;
+        const inset = h * 0.05;
+        yMin += inset;
+        yMax -= inset;
+      }
+      return { yMin, yMax };
+    }
+
     function rebuildHighlightMeshes(floorId) {
       highlightGroup.clear();
       highlightMats = [];
@@ -1275,8 +1201,9 @@
       const slice = floorSlices.find((s) => s.id === floorId);
       if (!slice) return;
 
-      clipPlanes[0].set(new THREE.Vector3(0, 1, 0), -slice.yMin);
-      clipPlanes[1].set(new THREE.Vector3(0, -1, 0), slice.yMax);
+      const { yMin, yMax } = getHighlightBounds(slice);
+      clipPlanes[0].set(new THREE.Vector3(0, 1, 0), -yMin);
+      clipPlanes[1].set(new THREE.Vector3(0, -1, 0), yMax);
 
       allMeshes.forEach((mesh) => {
         if (!meshIntersectsSlice(mesh, slice)) return;
@@ -1441,6 +1368,9 @@
       camera.far = maxDim * 20;
       camera.updateProjectionMatrix();
       controls.update();
+      homeView.target.copy(controls.target);
+      homeView.position.copy(camera.position);
+      homeView.saved = true;
     }
 
     function setupModel(gltf) {
@@ -1536,8 +1466,25 @@
       controls.update();
     }
 
+    function resetView() {
+      if (!homeView.saved) return;
+      selectedFloorId = null;
+      selectedUnitId = null;
+      unitPanel.classList.remove('visible');
+      setHeroVisible(true);
+      updateSidebarUI();
+      setHighlightTargets(null);
+      cameraAnim.fromTarget.copy(controls.target);
+      cameraAnim.fromPos.copy(camera.position);
+      cameraAnim.toTarget.copy(homeView.target);
+      cameraAnim.toPos.copy(homeView.position);
+      cameraAnim.startTime = performance.now();
+      cameraAnim.active = true;
+    }
+
     document.getElementById('zoom-in').addEventListener('click', () => adjustZoom(0.82));
     document.getElementById('zoom-out').addEventListener('click', () => adjustZoom(1.22));
+    document.getElementById('zoom-reset').addEventListener('click', resetView);
 
     document.getElementById('nav-units').addEventListener('click', (e) => {
       e.preventDefault();
@@ -1565,7 +1512,7 @@
     async function init() {
       await loadData();
       const loader = new GLTFLoader();
-      loader.load('model/scene.gltf', setupModel, undefined, (err) => {
+      loader.load('model/torre_garten_tamano_real.glb', setupModel, undefined, (err) => {
         loadingEl.textContent = 'Failed to load model.';
         console.error(err);
       });
