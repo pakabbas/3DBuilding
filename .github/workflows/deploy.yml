@@ -3,6 +3,7 @@ name: Deploy to Hostinger
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -11,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Deploy via SSH/rsync
-        uses: easingthemes/ssh-deploy@v5
+        uses: easingthemes/ssh-deploy@v6.0.3
         with:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
@@ -19,4 +20,12 @@ jobs:
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
           TARGET: ${{ secrets.REMOTE_TARGET }}
           SOURCE: "./"
-          EXCLUDE: ".git/, .github/, deploy_explore.py, deploy_upload.py, .gitignore"
+          ARGS: "-rlgoDzvc -i --delete"
+          EXCLUDE: "/.git/, /.github/, /deploy_explore.py, /deploy_upload.py, /setup_key.py, /.gitignore, /deploy_key, /deploy_key.pub"
+
+      - name: Verify deployment
+        run: |
+          sleep 5
+          curl -fsSL -o /dev/null -w "HTTP %{http_code}\n" https://3dbuilding.btkdeals.com/
+          curl -fsSL -o /dev/null -w "index.html HTTP %{http_code}\n" https://3dbuilding.btkdeals.com/index.html
+          curl -fsSL -o /dev/null -w "building-data.json HTTP %{http_code}\n" https://3dbuilding.btkdeals.com/building-data.json
