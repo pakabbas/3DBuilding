@@ -3,3 +3,7 @@ deploy_upload.py
 setup_key.py
 deploy_key
 deploy_key.pub
+gen_tower_data.py
+inspect_glb.py
+inspect_glb_world.py
+inspect_scene_gltf.py

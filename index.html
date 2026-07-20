@@ -3,21 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Skyline Tower — 3D Showcase</title>
+  <title>Skyline Tower — Luxury Living</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0f1117;
-      --panel: #161b26;
-      --panel2: #1c2230;
-      --border: #2a3142;
-      --text: #e8ecf4;
-      --muted: #8b93a7;
-      --accent: #4f8cff;
-      --accent-dim: rgba(79, 140, 255, 0.15);
-      --success: #3ecf8e;
-      --warn: #f5a623;
-      --danger: #ef5b5b;
-      --sidebar-w: 320px;
+      --cream: #fcf5eb;
+      --cream-dark: #f3e8d8;
+      --gold: #b5935b;
+      --gold-light: #d4b483;
+      --gold-dim: rgba(181, 147, 91, 0.14);
+      --charcoal: #1c1c1c;
+      --text: #2a2520;
+      --muted: #7a6f63;
+      --panel: #fffcf7;
+      --panel2: #f8f0e4;
+      --border: #e8ddd0;
+      --accent: var(--gold);
+      --accent-dim: var(--gold-dim);
+      --success: #5a7a52;
+      --warn: #a67c3a;
+      --danger: #9a4a4a;
+      --sidebar-w: 340px;
+      --header-h: 72px;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -26,15 +35,120 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: var(--bg);
+      background: var(--cream);
       color: var(--text);
-      font: 14px/1.45 system-ui, -apple-system, sans-serif;
+      font: 14px/1.55 'Montserrat', system-ui, sans-serif;
+      font-weight: 400;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Site header ── */
+    #site-header {
+      height: var(--header-h);
+      background: var(--cream);
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      z-index: 20;
+      flex-shrink: 0;
+    }
+
+    .header-inner {
+      max-width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      padding: 0 28px;
+      gap: 16px;
+    }
+
+    .header-nav {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+    }
+
+    .header-nav--left { justify-content: flex-start; }
+    .header-nav--right { justify-content: flex-end; }
+
+    .header-nav a {
+      color: var(--charcoal);
+      text-decoration: none;
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      transition: color 0.2s;
+    }
+
+    .header-nav a:hover { color: var(--gold); }
+
+    .brand {
+      text-align: center;
+    }
+
+    .brand-name {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 26px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+
+    .header-phone {
+      font-family: 'Montserrat', sans-serif !important;
+      font-size: 12px !important;
+      letter-spacing: 0.04em;
+      color: var(--muted) !important;
+    }
+
+    .btn-enquire,
+    .btn-gold,
+    .btn-dark {
+      border: none;
+      cursor: pointer;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 11px 22px;
+      transition: background 0.2s, transform 0.15s;
+    }
+
+    .btn-enquire,
+    .btn-gold {
+      background: var(--gold);
+      color: #fff;
+    }
+
+    .btn-enquire:hover,
+    .btn-gold:hover {
+      background: var(--gold-light);
+    }
+
+    .btn-dark {
+      background: var(--charcoal);
+      color: #fff;
+    }
+
+    .btn-dark:hover { background: #333; }
+
+    .btn-enquire:active,
+    .btn-gold:active,
+    .btn-dark:active { transform: scale(0.98); }
+
+    body {
+      display: flex;
+      flex-direction: column;
     }
 
     #app {
       display: flex;
+      flex: 1;
+      min-height: 0;
       width: 100%;
-      height: 100%;
       position: relative;
     }
 
@@ -44,7 +158,7 @@
       min-width: var(--sidebar-w);
       height: 100%;
       background: var(--panel);
-      border-right: 1px solid var(--border);
+      border-left: 1px solid var(--border);
       display: flex;
       flex-direction: column;
       z-index: 10;
@@ -52,32 +166,53 @@
     }
 
     #sidebar-header {
-      padding: 18px 16px 14px;
+      padding: 22px 20px 18px;
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
+      background: linear-gradient(180deg, var(--panel) 0%, var(--cream-dark) 100%);
     }
 
     #sidebar-header h1 {
-      font-size: 17px;
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 22px;
       font-weight: 600;
-      margin-bottom: 4px;
+      letter-spacing: 0.06em;
+      color: var(--charcoal);
+      margin-bottom: 6px;
     }
 
     #sidebar-header p {
-      font-size: 12px;
+      font-size: 11px;
       color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .sidebar-label {
+      padding: 14px 20px 6px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gold);
     }
 
     #floor-list {
       flex: 1;
       overflow-y: auto;
-      padding: 8px;
+      padding: 4px 12px 16px;
+    }
+
+    #floor-list::-webkit-scrollbar { width: 5px; }
+    #floor-list::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
     }
 
     .floor-item {
       border: 1px solid transparent;
-      border-radius: 8px;
-      margin-bottom: 4px;
+      border-radius: 2px;
+      margin-bottom: 2px;
       overflow: hidden;
     }
 
@@ -86,35 +221,43 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 12px;
+      padding: 11px 14px;
       background: transparent;
       border: none;
       color: var(--text);
       font: inherit;
       cursor: pointer;
       text-align: left;
-      border-radius: 8px;
-      transition: background 0.15s;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .floor-btn span:first-child {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 16px;
+      font-weight: 500;
     }
 
     .floor-btn:hover { background: var(--panel2); }
 
     .floor-item.active .floor-btn {
-      background: var(--accent-dim);
-      color: var(--accent);
+      background: var(--gold-dim);
+      color: var(--charcoal);
     }
 
     .floor-btn .badge {
-      font-size: 11px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
       color: var(--muted);
       background: var(--panel2);
-      padding: 2px 7px;
-      border-radius: 10px;
+      padding: 3px 8px;
+      border-radius: 2px;
     }
 
     .floor-item.active .floor-btn .badge {
-      background: rgba(79, 140, 255, 0.2);
-      color: var(--accent);
+      background: rgba(181, 147, 91, 0.2);
+      color: var(--gold);
     }
 
     .unit-list {
@@ -129,23 +272,27 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 8px 10px;
-      margin-top: 4px;
-      background: var(--panel2);
+      padding: 9px 12px;
+      margin-top: 3px;
+      background: var(--cream);
       border: 1px solid var(--border);
-      border-radius: 6px;
+      border-radius: 2px;
       color: var(--text);
       font: inherit;
+      font-size: 13px;
       cursor: pointer;
       text-align: left;
       transition: border-color 0.15s, background 0.15s;
     }
 
-    .unit-btn:hover { border-color: var(--accent); }
+    .unit-btn:hover {
+      border-color: var(--gold);
+      background: var(--panel2);
+    }
 
     .unit-btn.selected {
-      border-color: var(--accent);
-      background: var(--accent-dim);
+      border-color: var(--gold);
+      background: var(--gold-dim);
     }
 
     .status-dot {
@@ -165,6 +312,7 @@
       flex: 1;
       position: relative;
       min-width: 0;
+      background: #dce8f0;
     }
 
     #canvas-container {
@@ -172,51 +320,165 @@
       height: 100%;
     }
 
+    /* Hero overlay on 3D viewer */
+    #hero-copy {
+      position: absolute;
+      left: 40px;
+      bottom: 80px;
+      max-width: 420px;
+      z-index: 6;
+      pointer-events: none;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      padding: 28px 32px 32px;
+      background: linear-gradient(135deg, rgba(28, 28, 28, 0.55) 0%, rgba(28, 28, 28, 0.2) 100%);
+      backdrop-filter: blur(6px);
+    }
+
+    #hero-copy.hidden {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+
+    #hero-copy .hero-eyebrow {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 10px;
+    }
+
+    #hero-copy .hero-title {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(36px, 5vw, 52px);
+      font-weight: 400;
+      line-height: 1.1;
+      color: #fff;
+      text-shadow: 0 2px 24px rgba(0, 0, 0, 0.35);
+      margin-bottom: 22px;
+    }
+
+    #hero-copy .hero-actions {
+      display: flex;
+      gap: 12px;
+      pointer-events: auto;
+    }
+
     #loading {
       position: absolute;
       inset: 0;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: var(--bg);
+      gap: 14px;
+      background: var(--cream);
       color: var(--muted);
       z-index: 5;
       transition: opacity 0.4s;
       pointer-events: none;
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
     }
+
+    #loading::after {
+      content: '';
+      width: 32px;
+      height: 32px;
+      border: 2px solid var(--border);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     #loading.hidden { opacity: 0; }
 
     #hint {
       position: absolute;
-      bottom: 16px;
+      bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
-      color: var(--muted);
-      font-size: 12px;
+      color: rgba(255, 255, 255, 0.75);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
       pointer-events: none;
       user-select: none;
       white-space: nowrap;
+      text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
+      background: rgba(28, 28, 28, 0.35);
+      padding: 6px 14px;
+      backdrop-filter: blur(4px);
+    }
+
+    /* Zoom controls */
+    #zoom-controls {
+      position: absolute;
+      bottom: 24px;
+      right: 24px;
+      z-index: 7;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #zoom-controls button {
+      width: 42px;
+      height: 42px;
+      border: 1px solid var(--border);
+      background: rgba(255, 252, 247, 0.94);
+      backdrop-filter: blur(8px);
+      color: var(--charcoal);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 2px;
+      box-shadow: 0 2px 14px rgba(42, 37, 32, 0.14);
+      transition: border-color 0.15s, color 0.15s, transform 0.15s, background 0.15s;
+    }
+
+    #zoom-controls button:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+      background: #fff;
+    }
+
+    #zoom-controls button:active {
+      transform: scale(0.94);
+    }
+
+    #zoom-controls button svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
     }
 
     /* Unit detail panel */
     #unit-panel {
       position: absolute;
-      top: 16px;
-      right: 16px;
-      width: 300px;
-      max-width: calc(100% - 32px);
+      top: 20px;
+      left: 20px;
+      width: 320px;
+      max-width: calc(100% - 40px);
       background: var(--panel);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px;
+      border-radius: 2px;
+      padding: 24px;
       z-index: 8;
-      transform: translateX(calc(100% + 32px));
+      transform: translateX(calc(-100% - 40px));
       opacity: 0;
-      transition: transform 0.3s ease, opacity 0.3s ease;
+      transition: transform 0.35s ease, opacity 0.35s ease;
       pointer-events: none;
-      max-height: calc(100% - 32px);
+      max-height: calc(100% - 40px);
       overflow-y: auto;
+      box-shadow: 0 8px 40px rgba(42, 37, 32, 0.12);
     }
 
     #unit-panel.visible {
@@ -227,104 +489,123 @@
 
     #unit-panel .close-btn {
       position: absolute;
-      top: 12px;
-      right: 12px;
-      background: var(--panel2);
+      top: 14px;
+      right: 14px;
+      background: transparent;
       border: 1px solid var(--border);
       color: var(--muted);
-      width: 28px;
-      height: 28px;
-      border-radius: 6px;
+      width: 30px;
+      height: 30px;
+      border-radius: 2px;
       cursor: pointer;
-      font-size: 16px;
+      font-size: 18px;
       line-height: 1;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: border-color 0.15s, color 0.15s;
     }
 
-    #unit-panel .close-btn:hover { color: var(--text); }
+    #unit-panel .close-btn:hover {
+      color: var(--charcoal);
+      border-color: var(--gold);
+    }
 
     #unit-panel h2 {
-      font-size: 18px;
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 26px;
+      font-weight: 600;
+      color: var(--charcoal);
       margin-bottom: 4px;
-      padding-right: 32px;
+      padding-right: 36px;
     }
 
     #unit-panel .floor-label {
-      font-size: 12px;
-      color: var(--muted);
-      margin-bottom: 14px;
+      font-size: 11px;
+      color: var(--gold);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
     }
 
     #unit-panel .price {
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--accent);
-      margin-bottom: 14px;
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--gold);
+      margin-bottom: 18px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
     }
 
     .detail-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
-      margin-bottom: 16px;
+      margin-bottom: 18px;
     }
 
     .detail-item {
-      background: var(--panel2);
-      border-radius: 8px;
-      padding: 10px;
+      background: var(--cream);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 12px;
     }
 
     .detail-item .label {
-      font-size: 11px;
+      font-size: 9px;
       color: var(--muted);
       text-transform: uppercase;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.12em;
+      font-weight: 600;
     }
 
     .detail-item .value {
-      font-size: 15px;
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 18px;
       font-weight: 600;
-      margin-top: 2px;
+      margin-top: 4px;
+      color: var(--charcoal);
     }
 
     #unit-panel h3 {
-      font-size: 12px;
+      font-size: 10px;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: var(--muted);
-      margin-bottom: 8px;
+      letter-spacing: 0.14em;
+      color: var(--gold);
+      font-weight: 600;
+      margin-bottom: 10px;
     }
 
     .tag-list {
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
-      margin-bottom: 14px;
+      margin-bottom: 16px;
     }
 
     .tag {
-      background: var(--panel2);
+      background: var(--cream);
       border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 4px 10px;
-      font-size: 12px;
+      border-radius: 2px;
+      padding: 5px 12px;
+      font-size: 11px;
+      letter-spacing: 0.04em;
     }
 
     .status-pill {
       display: inline-block;
       padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 12px;
+      border-radius: 2px;
+      font-size: 11px;
       font-weight: 600;
-      text-transform: capitalize;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
     }
 
-    .status-pill.available { background: rgba(62, 207, 142, 0.15); color: var(--success); }
-    .status-pill.reserved { background: rgba(245, 166, 35, 0.15); color: var(--warn); }
-    .status-pill.sold { background: rgba(239, 91, 91, 0.15); color: var(--danger); }
+    .status-pill.available { background: rgba(90, 122, 82, 0.12); color: var(--success); }
+    .status-pill.reserved { background: rgba(166, 124, 58, 0.12); color: var(--warn); }
+    .status-pill.sold { background: rgba(154, 74, 74, 0.12); color: var(--danger); }
 
     .feature-list {
       list-style: none;
@@ -332,93 +613,181 @@
     }
 
     .feature-list li {
-      padding: 4px 0;
+      padding: 5px 0;
       font-size: 13px;
       color: var(--muted);
+      border-bottom: 1px solid var(--border);
     }
+
+    .feature-list li:last-child { border-bottom: none; }
 
     .feature-list li::before {
-      content: '✓ ';
-      color: var(--accent);
+      content: '— ';
+      color: var(--gold);
     }
 
-    /* Mobile toggle */
+    .unit-panel-cta {
+      margin-top: 8px;
+      width: 100%;
+    }
+
+    /* Mobile floating toggle */
     #sidebar-toggle {
       display: none;
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      z-index: 12;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      color: var(--text);
-      width: 40px;
-      height: 40px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 20px;
-      align-items: center;
-      justify-content: center;
     }
 
     #overlay {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.5);
+      top: var(--header-h);
+      background: rgba(28, 28, 28, 0.4);
       z-index: 9;
     }
 
     @media (max-width: 768px) {
-      :root { --sidebar-w: 100%; }
+      :root { --sidebar-w: 100%; --header-h: 60px; }
+
+      .header-inner {
+        grid-template-columns: 1fr auto;
+        padding: 0 16px;
+      }
+
+      .header-nav--left { display: none; }
+      .header-phone { display: none; }
+
+      .brand-name { font-size: 18px; letter-spacing: 0.08em; }
+
+      .btn-enquire {
+        padding: 9px 14px;
+        font-size: 10px;
+      }
+
+      #hero-copy {
+        left: 20px;
+        bottom: 90px;
+        max-width: calc(100% - 40px);
+      }
+
+      #hero-copy .hero-title { font-size: 32px; }
+
+      #hero-copy .hero-actions { flex-direction: column; }
 
       #sidebar {
         position: fixed;
-        left: 0;
-        top: 0;
-        transform: translateX(-100%);
-        width: 85%;
-        max-width: 340px;
+        right: 0;
+        left: auto;
+        top: var(--header-h);
+        height: calc(100% - var(--header-h));
+        transform: translateX(100%);
+        width: 88%;
+        max-width: 360px;
+        box-shadow: -4px 0 32px rgba(42, 37, 32, 0.15);
       }
 
       #sidebar.open { transform: translateX(0); }
 
-      #sidebar-toggle { display: flex; }
+      #sidebar-toggle {
+        display: flex;
+        position: fixed;
+        bottom: 22px;
+        right: 22px;
+        z-index: 12;
+        background: var(--gold);
+        border: none;
+        color: #fff;
+        width: 54px;
+        height: 54px;
+        border-radius: 2px;
+        cursor: pointer;
+        font-size: 20px;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 20px rgba(181, 147, 91, 0.45);
+        transition: transform 0.2s, background 0.2s;
+      }
+
+      #sidebar-toggle:active { transform: scale(0.95); }
 
       #overlay.visible { display: block; }
 
       #unit-panel {
         top: auto;
         bottom: 0;
-        right: 0;
         left: 0;
+        right: 0;
         width: 100%;
         max-width: 100%;
-        border-radius: 16px 16px 0 0;
+        border-radius: 0;
         transform: translateY(100%);
       }
 
       #unit-panel.visible { transform: translateY(0); }
 
       #hint { display: none; }
+
+      #zoom-controls {
+        bottom: 88px;
+        right: 22px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .header-nav--right .btn-enquire { display: none; }
     }
   </style>
 </head>
 <body>
-  <div id="app">
-    <aside id="sidebar">
-      <div id="sidebar-header">
-        <h1 id="building-name">Skyline Tower</h1>
-        <p id="building-tagline">Loading…</p>
+  <header id="site-header">
+    <div class="header-inner">
+      <nav class="header-nav header-nav--left">
+        <a href="#viewer-wrap">Exteriors</a>
+        <a href="#" id="nav-units">Units</a>
+        <a href="#" id="nav-amenities">Amenities</a>
+      </nav>
+      <div class="brand">
+        <span class="brand-name" id="header-building-name">Skyline Tower</span>
       </div>
-      <div id="floor-list"></div>
-    </aside>
+      <div class="header-nav header-nav--right">
+        <a class="header-phone" href="tel:+1234567890">+1 234 567 890</a>
+        <button type="button" class="btn-enquire" id="btn-enquire-header">Enquire Now</button>
+      </div>
+    </div>
+  </header>
 
+  <div id="app">
     <div id="viewer-wrap">
-      <button id="sidebar-toggle" aria-label="Toggle menu">☰</button>
       <div id="canvas-container"></div>
-      <div id="loading">Loading building…</div>
-      <div id="hint">Click a floor on the model · Drag to rotate · Scroll to zoom</div>
+      <div id="loading">Loading building</div>
+
+      <div id="hero-copy">
+        <p class="hero-eyebrow">Luxury Living Redefined</p>
+        <h2 class="hero-title" id="hero-title">Skyline Tower</h2>
+        <div class="hero-actions">
+          <button type="button" class="btn-gold" id="btn-explore">Explore Units</button>
+          <button type="button" class="btn-dark btn-enquire" id="btn-enquire-hero">Enquire Now</button>
+        </div>
+      </div>
+
+      <div id="hint">Double-click a floor · Drag to rotate · Scroll to zoom</div>
+
+      <div id="zoom-controls">
+        <button type="button" id="zoom-in" aria-label="Zoom in">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"/>
+            <line x1="11" y1="8" x2="11" y2="14"/>
+            <line x1="8" y1="11" x2="14" y2="11"/>
+            <line x1="16.5" y1="16.5" x2="21" y2="21"/>
+          </svg>
+        </button>
+        <button type="button" id="zoom-out" aria-label="Zoom out">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"/>
+            <line x1="8" y1="11" x2="14" y2="11"/>
+            <line x1="16.5" y1="16.5" x2="21" y2="21"/>
+          </svg>
+        </button>
+      </div>
 
       <div id="unit-panel">
         <button class="close-btn" id="close-unit" aria-label="Close">×</button>
@@ -447,10 +816,21 @@
         <div class="tag-list" id="unit-amenities"></div>
         <h3>Features</h3>
         <ul class="feature-list" id="unit-features"></ul>
+        <button type="button" class="btn-enquire unit-panel-cta" id="btn-enquire-unit">Enquire Now</button>
       </div>
     </div>
+
+    <aside id="sidebar">
+      <div id="sidebar-header">
+        <h1 id="building-name">Skyline Tower</h1>
+        <p id="building-tagline">Loading…</p>
+      </div>
+      <div class="sidebar-label">Select a Floor</div>
+      <div id="floor-list"></div>
+    </aside>
   </div>
 
+  <button id="sidebar-toggle" aria-label="Toggle menu">☰</button>
   <div id="overlay"></div>
 
   <script type="importmap">
@@ -472,11 +852,29 @@
     let selectedFloorId = null;
     let selectedUnitId = null;
     let model = null;
-    const meshMap = new Map();       // meshName -> THREE.Mesh[]
+    const allMeshes = [];
     const originalMaterials = new Map();
+    const floorSlices = [];
+    const highlightGroup = new THREE.Group();
+    const clipPlanes = [
+      new THREE.Plane(new THREE.Vector3(0, 1, 0), 0),
+      new THREE.Plane(new THREE.Vector3(0, -1, 0), 0),
+    ];
+    let highlightMats = [];
+    const floorHighlight = { floorId: null, blend: 0, targetBlend: 0 };
+    let buildingBox = null;
+    let towerCoreFootprint = null;
+    const _footprintV = new THREE.Vector3();
 
-    const HIGHLIGHT = new THREE.Color(0x4f8cff);
-    const DIM = new THREE.Color(0x333333);
+    const cameraAnim = {
+      active: false,
+      startTime: 0,
+      duration: 1400,
+      fromTarget: new THREE.Vector3(),
+      toTarget: new THREE.Vector3(),
+      fromPos: new THREE.Vector3(),
+      toPos: new THREE.Vector3(),
+    };
 
     // ── DOM refs ──
     const container = document.getElementById('canvas-container');
@@ -486,6 +884,7 @@
     const sidebar = document.getElementById('sidebar');
     const sidebarToggle = document.getElementById('sidebar-toggle');
     const overlay = document.getElementById('overlay');
+    const heroCopy = document.getElementById('hero-copy');
 
     // ── Three.js setup ──
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -493,11 +892,31 @@
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.1;
+    renderer.toneMappingExposure = 1.35;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.localClippingEnabled = true;
     container.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0f1117);
+
+    // Sky gradient
+    (function createSky() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 2;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      const grad = ctx.createLinearGradient(0, 0, 0, 512);
+      grad.addColorStop(0, '#5a8fc4');
+      grad.addColorStop(0.35, '#8eb8e0');
+      grad.addColorStop(0.65, '#c5dce8');
+      grad.addColorStop(1, '#e8eef2');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 2, 512);
+      const skyTex = new THREE.CanvasTexture(canvas);
+      skyTex.colorSpace = THREE.SRGBColorSpace;
+      scene.background = skyTex;
+    })();
 
     const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 2000);
     camera.position.set(80, 50, 80);
@@ -505,28 +924,45 @@
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
+    controls.maxPolarAngle = Math.PI / 2.05;
     controls.target.set(0, 20, 0);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-    const sun = new THREE.DirectionalLight(0xffffff, 1.4);
-    sun.position.set(60, 120, 40);
+    scene.add(new THREE.HemisphereLight(0x87ceeb, 0x5a8f3c, 0.6));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+    const sun = new THREE.DirectionalLight(0xfff4e0, 2.2);
+    sun.position.set(80, 150, 60);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.camera.near = 1;
+    sun.shadow.camera.far = 400;
+    sun.shadow.camera.left = -120;
+    sun.shadow.camera.right = 120;
+    sun.shadow.camera.top = 120;
+    sun.shadow.camera.bottom = -120;
+    sun.shadow.bias = -0.0005;
     scene.add(sun);
-    const fill = new THREE.DirectionalLight(0xb8c8ff, 0.35);
-    fill.position.set(-50, 30, -60);
+    const fill = new THREE.DirectionalLight(0xd4e8ff, 0.45);
+    fill.position.set(-50, 40, -70);
     scene.add(fill);
 
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
-    const clickableMeshes = [];
 
     // ── Data loading ──
     async function loadData() {
-      const res = await fetch('building-data.json');
+      const res = await fetch('building-data.json?v=2');
       buildingData = await res.json();
-      document.getElementById('building-name').textContent = buildingData.building.name;
+      const name = buildingData.building.name;
+      document.getElementById('building-name').textContent = name;
+      document.getElementById('header-building-name').textContent = name;
+      document.getElementById('hero-title').textContent = name;
       document.getElementById('building-tagline').textContent =
         `${buildingData.building.totalFloors} floors · ${buildingData.building.totalUnits} units · ${buildingData.building.tagline}`;
       renderFloorList();
+    }
+
+    function setHeroVisible(visible) {
+      heroCopy.classList.toggle('hidden', !visible);
     }
 
     // ── Sidebar: floor list ──
@@ -582,20 +1018,26 @@
     }
 
     // ── Selection logic ──
-    function selectFloor(floorId) {
+    function selectFloor(floorId, options = {}) {
+      if (selectedFloorId === floorId && !options.force) return;
       selectedFloorId = floorId;
       selectedUnitId = null;
       unitPanel.classList.remove('visible');
+      setHeroVisible(!floorId);
       updateSidebarUI();
-      highlightMeshesForFloor(floorId);
+      setHighlightTargets(floorId);
+      zoomToFloor(floorId);
       scrollFloorIntoView(floorId);
+      if (options.from3D && window.innerWidth <= 768) openSidebar();
     }
 
     function selectUnit(floorId, unitId) {
       selectedFloorId = floorId;
       selectedUnitId = unitId;
+      setHeroVisible(false);
       updateSidebarUI();
-      highlightMeshesForFloor(floorId);
+      setHighlightTargets(floorId);
+      zoomToFloor(floorId);
       showUnitDetail(floorId, unitId);
       if (window.innerWidth <= 768) closeSidebar();
     }
@@ -630,87 +1072,360 @@
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
-    // ── 3D highlight / dim ──
+    // ── Floor slices & per-floor highlight ──
     function storeOriginalMaterial(mesh) {
       if (originalMaterials.has(mesh.uuid)) return;
       const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
       originalMaterials.set(mesh.uuid, mats.map((m) => m.clone()));
     }
 
-    function highlightMeshesForFloor(floorId) {
-      const floor = buildingData.floors.find((f) => f.id === floorId);
-      if (!floor) return;
-      const activeMesh = floor.meshName;
+    function computeSliceFootprint(yMin, yMax, zone = 'all') {
+      const box = new THREE.Box3();
+      let has = false;
 
-      clickableMeshes.forEach((mesh) => {
-        storeOriginalMaterial(mesh);
-        const origMats = originalMaterials.get(mesh.uuid);
-        const isActive = mesh.name === activeMesh;
-        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      allMeshes.forEach((mesh) => {
+        const geo = mesh.geometry;
+        const pos = geo?.attributes?.position;
+        if (!pos) return;
 
-        mats.forEach((mat, i) => {
-          const orig = origMats[i];
-          if (isActive) {
-            mat.emissive.copy(HIGHLIGHT);
-            mat.emissiveIntensity = 0.35;
-            mat.opacity = 1;
-          } else {
-            mat.emissive.set(0x000000);
-            mat.emissiveIntensity = 0;
-            mat.color.copy(orig.color).lerp(DIM, 0.55);
-            mat.opacity = 0.45;
+        mesh.updateWorldMatrix(true, false);
+        const step = pos.count > 10000 ? Math.ceil(pos.count / 10000) : 1;
+        for (let i = 0; i < pos.count; i += step) {
+          _footprintV.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld);
+          if (_footprintV.y < yMin || _footprintV.y > yMax) continue;
+
+          if (zone === 'tower' && towerCoreFootprint) {
+            if (
+              _footprintV.x < towerCoreFootprint.min.x ||
+              _footprintV.x > towerCoreFootprint.max.x ||
+              _footprintV.z < towerCoreFootprint.min.z ||
+              _footprintV.z > towerCoreFootprint.max.z
+            ) continue;
           }
-          mat.transparent = !isActive;
-          mat.needsUpdate = true;
-        });
-      });
-    }
 
-    function resetHighlights() {
-      clickableMeshes.forEach((mesh) => {
-        const origMats = originalMaterials.get(mesh.uuid);
-        if (!origMats) return;
-        if (Array.isArray(mesh.material)) {
-          mesh.material = origMats.map((m) => m.clone());
-        } else {
-          mesh.material = origMats[0].clone();
+          box.expandByPoint(_footprintV);
+          has = true;
         }
       });
-      selectedFloorId = null;
-      selectedUnitId = null;
-      unitPanel.classList.remove('visible');
-      updateSidebarUI();
+
+      return has && !box.isEmpty() ? box : null;
     }
 
-    // ── Raycaster click ──
-    function onPointerDown(event) {
+    function detectTowerCoreFootprint(box) {
+      const midY = box.min.y + (box.max.y - box.min.y) * 0.62;
+      const band = (box.max.y - box.min.y) * 0.04;
+      const raw = computeSliceFootprint(midY - band, midY + band, 'all');
+      if (!raw) return null;
+
+      const size = raw.getSize(new THREE.Vector3());
+      const center = raw.getCenter(new THREE.Vector3());
+      const shrink = 0.18;
+      return new THREE.Box3(
+        new THREE.Vector3(
+          center.x - size.x * (0.5 - shrink),
+          raw.min.y,
+          center.z - size.z * (0.5 - shrink)
+        ),
+        new THREE.Vector3(
+          center.x + size.x * (0.5 - shrink),
+          raw.max.y,
+          center.z + size.z * (0.5 - shrink)
+        )
+      );
+    }
+
+    function detectPodiumTopY(box) {
+      const totalH = box.max.y - box.min.y;
+      const samples = 36;
+      const band = totalH / samples;
+      let maxWidth = 0;
+      const widths = [];
+
+      for (let i = 0; i < samples; i++) {
+        const yMin = box.min.y + band * i;
+        const yMax = yMin + band;
+        const fp = computeSliceFootprint(yMin, yMax);
+        if (!fp) {
+          widths.push({ y: (yMin + yMax) / 2, w: 0 });
+          continue;
+        }
+        const size = fp.getSize(new THREE.Vector3());
+        const w = Math.max(size.x, size.z);
+        widths.push({ y: (yMin + yMax) / 2, w });
+        maxWidth = Math.max(maxWidth, w);
+      }
+
+      if (maxWidth <= 0) {
+        const podiumWeight = (buildingData.floors[0]?.heightWeight ?? 1)
+          + (buildingData.floors[1]?.heightWeight ?? 4);
+        const totalWeight = buildingData.floors.reduce((s, f) => s + (f.heightWeight ?? 1), 0);
+        return box.min.y + totalH * podiumWeight / totalWeight;
+      }
+
+      // Tower shaft is narrower — find where width drops below ~72% of podium max
+      for (let i = 1; i < widths.length; i++) {
+        const { y, w } = widths[i];
+        if (w > 0 && w < maxWidth * 0.72) {
+          return y - band * 0.5;
+        }
+      }
+
+      const podiumWeight = (buildingData.floors[0]?.heightWeight ?? 1)
+        + (buildingData.floors[1]?.heightWeight ?? 4);
+      const totalWeight = buildingData.floors.reduce((s, f) => s + (f.heightWeight ?? 1), 0);
+      return box.min.y + totalH * podiumWeight / totalWeight;
+    }
+
+    function pushFloorSlice(floor, yMin, h, box) {
+      floorSlices.push({
+        id: floor.id,
+        yMin,
+        yMax: yMin + h,
+        zone: floor.id <= 2 ? 'podium' : 'tower',
+        center: new THREE.Vector3(
+          (box.min.x + box.max.x) / 2,
+          yMin + h / 2,
+          (box.min.z + box.max.z) / 2
+        ),
+        size: new THREE.Vector3(box.max.x - box.min.x, h, box.max.z - box.min.z),
+        footprint: null,
+        footprintCenter: null,
+        footprintSize: null,
+      });
+    }
+
+    function cacheFloorFootprints() {
+      floorSlices.forEach((slice) => {
+        slice.footprint = computeSliceFootprint(slice.yMin, slice.yMax, slice.zone);
+        if (slice.footprint) {
+          slice.footprintCenter = slice.footprint.getCenter(new THREE.Vector3());
+          slice.footprintSize = slice.footprint.getSize(new THREE.Vector3());
+          slice.center.copy(slice.footprintCenter);
+          slice.size.copy(slice.footprintSize);
+        }
+      });
+    }
+
+    function computeFloorSlices() {
+      if (!model) return;
+      buildingBox = new THREE.Box3().setFromObject(model);
+      const box = buildingBox;
+      towerCoreFootprint = detectTowerCoreFootprint(box);
+      const podiumTopY = detectPodiumTopY(box);
+      const podiumFloors = buildingData.floors.filter((f) => f.id <= 2);
+      const towerFloors = buildingData.floors.filter((f) => f.id >= 3);
+      const podiumH = podiumTopY - box.min.y;
+      const towerH = box.max.y - podiumTopY;
+      const podiumWeight = podiumFloors.reduce((s, f) => s + (f.heightWeight ?? 1), 0);
+      const towerWeight = towerFloors.reduce((s, f) => s + (f.heightWeight ?? 1), 0);
+
+      floorSlices.length = 0;
+      let y = box.min.y;
+
+      podiumFloors.forEach((floor) => {
+        const h = podiumH * (floor.heightWeight ?? 1) / podiumWeight;
+        pushFloorSlice(floor, y, h, box);
+        y += h;
+      });
+
+      towerFloors.forEach((floor) => {
+        const h = towerH * (floor.heightWeight ?? 1) / towerWeight;
+        pushFloorSlice(floor, y, h, box);
+        y += h;
+      });
+
+      cacheFloorFootprints();
+    }
+
+    function meshIntersectsSlice(mesh, slice) {
+      const meshBox = new THREE.Box3().setFromObject(mesh);
+      if (meshBox.max.y < slice.yMin - 0.05 || meshBox.min.y > slice.yMax + 0.05) return false;
+
+      if (slice.zone === 'tower' && towerCoreFootprint) {
+        const center = meshBox.getCenter(new THREE.Vector3());
+        return towerCoreFootprint.containsPoint(center);
+      }
+
+      if (slice.zone === 'podium' && slice.footprint) {
+        const overlap = meshBox.clone().intersect(slice.footprint);
+        const overlapSize = overlap.getSize(new THREE.Vector3());
+        return overlapSize.x * overlapSize.z > 0.5;
+      }
+
+      return true;
+    }
+
+    function addHighlightClone(mesh, mat) {
+      mesh.updateWorldMatrix(true, false);
+      const hl = mesh.clone(true);
+      hl.material = mat;
+      hl.renderOrder = 3;
+      hl.castShadow = false;
+      hl.receiveShadow = false;
+      hl.matrix.copy(mesh.matrixWorld);
+      hl.matrixAutoUpdate = false;
+      highlightGroup.add(hl);
+    }
+
+    function rebuildHighlightMeshes(floorId) {
+      highlightGroup.clear();
+      highlightMats = [];
+      if (!floorId) return;
+
+      const slice = floorSlices.find((s) => s.id === floorId);
+      if (!slice) return;
+
+      clipPlanes[0].set(new THREE.Vector3(0, 1, 0), -slice.yMin);
+      clipPlanes[1].set(new THREE.Vector3(0, -1, 0), slice.yMax);
+
+      allMeshes.forEach((mesh) => {
+        if (!meshIntersectsSlice(mesh, slice)) return;
+
+        const mat = new THREE.MeshStandardMaterial({
+          color: 0xf0d090,
+          emissive: 0xb5935b,
+          emissiveIntensity: 0,
+          metalness: 0.12,
+          roughness: 0.38,
+          clippingPlanes: clipPlanes,
+          clipIntersection: false,
+          transparent: true,
+          opacity: 0,
+          depthWrite: false,
+          side: THREE.DoubleSide,
+          polygonOffset: true,
+          polygonOffsetFactor: -3,
+          polygonOffsetUnits: -3,
+        });
+        highlightMats.push(mat);
+        addHighlightClone(mesh, mat);
+      });
+    }
+
+    function setHighlightTargets(floorId) {
+      floorHighlight.floorId = floorId;
+      floorHighlight.targetBlend = floorId ? 1 : 0;
+      rebuildHighlightMeshes(floorId);
+    }
+
+    function updateHighlightAnimation(dt) {
+      const speed = 4;
+      floorHighlight.blend += (floorHighlight.targetBlend - floorHighlight.blend) * Math.min(1, speed * dt);
+      const b = floorHighlight.blend;
+
+      highlightMats.forEach((mat) => {
+        mat.opacity = 0.72 * b;
+        mat.emissiveIntensity = 0.65 * b;
+        mat.needsUpdate = true;
+      });
+    }
+
+    function easeInOutCubic(t) {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    function getFloorFocusPoint(floorId) {
+      const slice = floorSlices.find((s) => s.id === floorId);
+      if (!slice) return null;
+      if (slice.footprintCenter && slice.footprintSize) {
+        return {
+          center: slice.footprintCenter.clone(),
+          size: slice.footprintSize.clone(),
+        };
+      }
+      return { center: slice.center.clone(), size: slice.size.clone() };
+    }
+
+    function zoomToFloor(floorId) {
+      const focus = getFloorFocusPoint(floorId);
+      if (!focus || !buildingBox) return;
+
+      const { center, size } = focus;
+      const target = new THREE.Vector3(center.x, center.y, center.z);
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const dist = maxDim / (2 * Math.tan((camera.fov * Math.PI) / 360)) * 2.4;
+      const offset = new THREE.Vector3(dist * 0.5, Math.max(dist * 0.32, size.y * 1.8), dist * 0.5);
+
+      cameraAnim.fromTarget.copy(controls.target);
+      cameraAnim.toTarget.copy(target);
+      cameraAnim.fromPos.copy(camera.position);
+      cameraAnim.toPos.copy(target.clone().add(offset));
+      cameraAnim.startTime = performance.now();
+      cameraAnim.active = true;
+    }
+
+    function resolveFloorFromHit(hit) {
+      const y = hit.point.y;
+      for (const slice of floorSlices) {
+        if (y >= slice.yMin && y <= slice.yMax) return slice.id;
+      }
+      return null;
+    }
+
+    function resolveFloorFromId(floorId) {
+      return floorSlices.find((s) => s.id === floorId) ? floorId : null;
+    }
+
+    // ── Raycaster double-click ──
+    function onDoubleClick(event) {
       if (event.target !== renderer.domElement) return;
       const rect = renderer.domElement.getBoundingClientRect();
       pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
       raycaster.setFromCamera(pointer, camera);
-      const hits = raycaster.intersectObjects(clickableMeshes, false);
+      const hits = raycaster.intersectObjects(allMeshes, false);
       if (!hits.length) return;
 
-      const meshName = hits[0].object.name;
-      const floors = buildingData.floors.filter((f) => f.meshName === meshName);
-      if (!floors.length) return;
-
-      // Pick the first floor for this mesh band, or cycle if already selected
-      let target = floors[0];
-      if (selectedFloorId) {
-        const idx = floors.findIndex((f) => f.id === selectedFloorId);
-        if (idx >= 0 && idx < floors.length - 1) target = floors[idx + 1];
-        else if (idx === floors.length - 1) target = floors[0];
-      }
-      selectFloor(target.id);
-      if (window.innerWidth <= 768) openSidebar();
+      const floorId = resolveFloorFromHit(hits[0]);
+      if (!floorId) return;
+      selectFloor(floorId, { from3D: true, force: true });
     }
 
-    renderer.domElement.addEventListener('pointerdown', onPointerDown);
+    renderer.domElement.addEventListener('dblclick', onDoubleClick);
 
     // ── Model loading ──
+    function setupEnvironment(object) {
+      const box = new THREE.Box3().setFromObject(object);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      const groundRadius = Math.max(size.x, size.z) * 2.5;
+
+      scene.fog = new THREE.Fog(0xb8d4e8, size.y * 3, size.y * 12);
+
+      const texLoader = new THREE.TextureLoader();
+      const grassTex = texLoader.load(
+        'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r160/examples/textures/terrain/grasslight-big.jpg'
+      );
+      grassTex.wrapS = grassTex.wrapT = THREE.RepeatWrapping;
+      grassTex.repeat.set(groundRadius / 6, groundRadius / 6);
+      grassTex.colorSpace = THREE.SRGBColorSpace;
+
+      const ground = new THREE.Mesh(
+        new THREE.CircleGeometry(groundRadius, 64),
+        new THREE.MeshStandardMaterial({
+          map: grassTex,
+          roughness: 0.92,
+          metalness: 0.0,
+          color: 0xa8c878,
+        })
+      );
+      ground.rotation.x = -Math.PI / 2;
+      ground.position.set(center.x, box.min.y - 0.02, center.z);
+      ground.receiveShadow = true;
+      scene.add(ground);
+
+      const padSize = Math.max(size.x, size.z) * 1.2;
+      const pavement = new THREE.Mesh(
+        new THREE.PlaneGeometry(padSize, padSize),
+        new THREE.MeshStandardMaterial({ color: 0x8a8a88, roughness: 0.88, metalness: 0.05 })
+      );
+      pavement.rotation.x = -Math.PI / 2;
+      pavement.position.set(center.x, box.min.y - 0.01, center.z);
+      pavement.receiveShadow = true;
+      scene.add(pavement);
+    }
+
     function frameModel(object) {
       const box = new THREE.Box3().setFromObject(object);
       const center = box.getCenter(new THREE.Vector3());
@@ -720,6 +1435,8 @@
 
       controls.target.copy(center);
       camera.position.copy(center).add(new THREE.Vector3(dist * 0.7, dist * 0.45, dist * 0.7));
+      controls.minDistance = maxDim * 0.08;
+      controls.maxDistance = maxDim * 6;
       camera.near = maxDim / 200;
       camera.far = maxDim * 20;
       camera.updateProjectionMatrix();
@@ -728,12 +1445,11 @@
 
     function setupModel(gltf) {
       model = gltf.scene;
-      const floorMeshNames = new Set(buildingData.floors.map((f) => f.meshName));
 
       model.traverse((child) => {
         if (!child.isMesh) return;
-        child.castShadow = false;
-        child.receiveShadow = false;
+        child.castShadow = true;
+        child.receiveShadow = true;
 
         const mats = Array.isArray(child.material) ? child.material : [child.material];
         mats.forEach((mat) => {
@@ -741,17 +1457,29 @@
           mat.side = THREE.DoubleSide;
           if (mat.map) mat.map.colorSpace = THREE.SRGBColorSpace;
           if (mat.emissiveMap) mat.emissiveMap.colorSpace = THREE.SRGBColorSpace;
+          if (mat.name === 'Red_Beam') {
+            mat.emissive.set(0xb5935b);
+            mat.emissiveIntensity = 0.28;
+          }
+          if (mat.alphaMode === 'BLEND') {
+            mat.opacity = Math.max(mat.opacity ?? 1, 0.85);
+            mat.transparent = true;
+          } else {
+            mat.opacity = 1;
+            mat.transparent = false;
+          }
+          mat.depthWrite = true;
           mat.needsUpdate = true;
         });
 
-        if (floorMeshNames.has(child.name)) {
-          clickableMeshes.push(child);
-          if (!meshMap.has(child.name)) meshMap.set(child.name, []);
-          meshMap.get(child.name).push(child);
-        }
+        allMeshes.push(child);
+        storeOriginalMaterial(child);
       });
 
+      scene.add(highlightGroup);
       scene.add(model);
+      setupEnvironment(model);
+      computeFloorSlices();
       frameModel(model);
       loadingEl.classList.add('hidden');
     }
@@ -760,11 +1488,13 @@
     function openSidebar() {
       sidebar.classList.add('open');
       overlay.classList.add('visible');
+      sidebarToggle.textContent = '×';
     }
 
     function closeSidebar() {
       sidebar.classList.remove('open');
       overlay.classList.remove('visible');
+      sidebarToggle.textContent = '☰';
     }
 
     sidebarToggle.addEventListener('click', () => {
@@ -775,6 +1505,50 @@
       unitPanel.classList.remove('visible');
       selectedUnitId = null;
       updateSidebarUI();
+    });
+
+    function handleEnquire() {
+      window.location.href = 'mailto:info@skylinetower.com?subject=Enquiry%20-%20Skyline%20Tower';
+    }
+
+    function handleExploreUnits() {
+      if (window.innerWidth <= 768) {
+        openSidebar();
+      } else {
+        floorListEl.querySelector('.floor-btn')?.focus();
+        sidebar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+
+    document.querySelectorAll('.btn-enquire').forEach((btn) => {
+      btn.addEventListener('click', handleEnquire);
+    });
+    document.getElementById('btn-explore').addEventListener('click', handleExploreUnits);
+
+    function adjustZoom(factor) {
+      cameraAnim.active = false;
+      const offset = new THREE.Vector3().subVectors(camera.position, controls.target);
+      const dist = offset.length();
+      if (dist < 0.001) return;
+      const newDist = THREE.MathUtils.clamp(dist * factor, controls.minDistance, controls.maxDistance);
+      offset.multiplyScalar(newDist / dist);
+      camera.position.copy(controls.target).add(offset);
+      controls.update();
+    }
+
+    document.getElementById('zoom-in').addEventListener('click', () => adjustZoom(0.82));
+    document.getElementById('zoom-out').addEventListener('click', () => adjustZoom(1.22));
+
+    document.getElementById('nav-units').addEventListener('click', (e) => {
+      e.preventDefault();
+      handleExploreUnits();
+    });
+    document.getElementById('nav-amenities').addEventListener('click', (e) => {
+      e.preventDefault();
+      if (selectedUnitId) return;
+      const firstFloor = buildingData?.floors?.[0];
+      const firstUnit = firstFloor?.units?.[0];
+      if (firstFloor && firstUnit) selectUnit(firstFloor.id, firstUnit.id);
     });
 
     // ── Resize ──
@@ -797,8 +1571,23 @@
       });
     }
 
+    let lastTime = performance.now();
+
     function animate() {
       requestAnimationFrame(animate);
+      const now = performance.now();
+      const dt = Math.min((now - lastTime) / 1000, 0.05);
+      lastTime = now;
+
+      if (cameraAnim.active) {
+        const t = Math.min(1, (now - cameraAnim.startTime) / cameraAnim.duration);
+        const e = easeInOutCubic(t);
+        controls.target.lerpVectors(cameraAnim.fromTarget, cameraAnim.toTarget, e);
+        camera.position.lerpVectors(cameraAnim.fromPos, cameraAnim.toPos, e);
+        if (t >= 1) cameraAnim.active = false;
+      }
+
+      updateHighlightAnimation(dt);
       controls.update();
       renderer.render(scene, camera);
     }
