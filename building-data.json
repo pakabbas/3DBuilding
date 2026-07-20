@@ -1,0 +1,2530 @@
+{
+  "building": {
+    "name": "Skyline Tower",
+    "tagline": "Luxury living in the heart of the city",
+    "totalFloors": 30,
+    "totalUnits": 120
+  },
+  "floors": [
+    {
+      "id": 1,
+      "name": "Floor 1",
+      "meshName": "Object_4",
+      "meshGroup": "Cube.033_0",
+      "units": [
+        {
+          "id": "1A",
+          "name": "Unit 1A",
+          "price": "$189,200",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "available",
+          "features": [
+            "Standard layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "1B",
+          "name": "Unit 1B",
+          "price": "$264,200",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Standard layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "1C",
+          "name": "Unit 1C",
+          "price": "$329,200",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "reserved",
+          "features": [
+            "Standard layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "1D",
+          "name": "Unit 1D",
+          "price": "$414,200",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "sold",
+          "features": [
+            "Standard layout",
+            "East-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Floor 2",
+      "meshName": "Object_6",
+      "meshGroup": "Cube.001_1",
+      "units": [
+        {
+          "id": "2A",
+          "name": "Unit 2A",
+          "price": "$193,400",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Standard layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "2B",
+          "name": "Unit 2B",
+          "price": "$268,400",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "reserved",
+          "features": [
+            "Standard layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "2C",
+          "name": "Unit 2C",
+          "price": "$333,400",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "sold",
+          "features": [
+            "Standard layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "2D",
+          "name": "Unit 2D",
+          "price": "$418,400",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Standard layout",
+            "West-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Floor 3",
+      "meshName": "Object_8",
+      "meshGroup": "Cube.004_2",
+      "units": [
+        {
+          "id": "3A",
+          "name": "Unit 3A",
+          "price": "$197,600",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "reserved",
+          "features": [
+            "Standard layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "3B",
+          "name": "Unit 3B",
+          "price": "$272,600",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "sold",
+          "features": [
+            "Standard layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "3C",
+          "name": "Unit 3C",
+          "price": "$337,600",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Standard layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "3D",
+          "name": "Unit 3D",
+          "price": "$422,600",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Standard layout",
+            "East-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Floor 4",
+      "meshName": "Object_10",
+      "meshGroup": "Cube.009_3",
+      "units": [
+        {
+          "id": "4A",
+          "name": "Unit 4A",
+          "price": "$201,800",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "sold",
+          "features": [
+            "Standard layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "4B",
+          "name": "Unit 4B",
+          "price": "$276,800",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Standard layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "4C",
+          "name": "Unit 4C",
+          "price": "$341,800",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Standard layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "4D",
+          "name": "Unit 4D",
+          "price": "$426,800",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "available",
+          "features": [
+            "Standard layout",
+            "West-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Floor 5",
+      "meshName": "Object_12",
+      "meshGroup": "Cube.003_4",
+      "units": [
+        {
+          "id": "5A",
+          "name": "Unit 5A",
+          "price": "$206,000",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Standard layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "5B",
+          "name": "Unit 5B",
+          "price": "$281,000",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Standard layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "5C",
+          "name": "Unit 5C",
+          "price": "$346,000",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "available",
+          "features": [
+            "Standard layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "5D",
+          "name": "Unit 5D",
+          "price": "$431,000",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "reserved",
+          "features": [
+            "Standard layout",
+            "East-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Floor 6",
+      "meshName": "Object_14",
+      "meshGroup": "Cube.027_5",
+      "units": [
+        {
+          "id": "6A",
+          "name": "Unit 6A",
+          "price": "$210,200",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Standard layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "6B",
+          "name": "Unit 6B",
+          "price": "$285,200",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "available",
+          "features": [
+            "Standard layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "6C",
+          "name": "Unit 6C",
+          "price": "$350,200",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "reserved",
+          "features": [
+            "Standard layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "6D",
+          "name": "Unit 6D",
+          "price": "$435,200",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "sold",
+          "features": [
+            "Standard layout",
+            "West-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Floor 7",
+      "meshName": "Object_16",
+      "meshGroup": "Cube.036_6",
+      "units": [
+        {
+          "id": "7A",
+          "name": "Unit 7A",
+          "price": "$214,400",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "available",
+          "features": [
+            "Standard layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "7B",
+          "name": "Unit 7B",
+          "price": "$289,400",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "reserved",
+          "features": [
+            "Standard layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "7C",
+          "name": "Unit 7C",
+          "price": "$354,400",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "sold",
+          "features": [
+            "Standard layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "7D",
+          "name": "Unit 7D",
+          "price": "$439,400",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "available",
+          "features": [
+            "Standard layout",
+            "East-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Floor 8",
+      "meshName": "Object_18",
+      "meshGroup": "Cube.002_7",
+      "units": [
+        {
+          "id": "8A",
+          "name": "Unit 8A",
+          "price": "$218,600",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "reserved",
+          "features": [
+            "Standard layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "8B",
+          "name": "Unit 8B",
+          "price": "$293,600",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "sold",
+          "features": [
+            "Standard layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "8C",
+          "name": "Unit 8C",
+          "price": "$358,600",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "available",
+          "features": [
+            "Standard layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "8D",
+          "name": "Unit 8D",
+          "price": "$443,600",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Standard layout",
+            "West-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Floor 9",
+      "meshName": "Object_4",
+      "meshGroup": "Cube.033_0",
+      "units": [
+        {
+          "id": "9A",
+          "name": "Unit 9A",
+          "price": "$222,800",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "sold",
+          "features": [
+            "Standard layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "9B",
+          "name": "Unit 9B",
+          "price": "$297,800",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "available",
+          "features": [
+            "Standard layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "9C",
+          "name": "Unit 9C",
+          "price": "$362,800",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Standard layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "9D",
+          "name": "Unit 9D",
+          "price": "$447,800",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Standard layout",
+            "East-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Floor 10",
+      "meshName": "Object_6",
+      "meshGroup": "Cube.001_1",
+      "units": [
+        {
+          "id": "10A",
+          "name": "Unit 10A",
+          "price": "$227,000",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "available",
+          "features": [
+            "Standard layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "10B",
+          "name": "Unit 10B",
+          "price": "$302,000",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Standard layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "10C",
+          "name": "Unit 10C",
+          "price": "$367,000",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Standard layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "10D",
+          "name": "Unit 10D",
+          "price": "$452,000",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "reserved",
+          "features": [
+            "Standard layout",
+            "West-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Floor 11",
+      "meshName": "Object_8",
+      "meshGroup": "Cube.004_2",
+      "units": [
+        {
+          "id": "11A",
+          "name": "Unit 11A",
+          "price": "$231,200",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Mid-rise premium layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "11B",
+          "name": "Unit 11B",
+          "price": "$306,200",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Mid-rise premium layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "11C",
+          "name": "Unit 11C",
+          "price": "$371,200",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "reserved",
+          "features": [
+            "Mid-rise premium layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "11D",
+          "name": "Unit 11D",
+          "price": "$456,200",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "sold",
+          "features": [
+            "Mid-rise premium layout",
+            "East-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "name": "Floor 12",
+      "meshName": "Object_10",
+      "meshGroup": "Cube.009_3",
+      "units": [
+        {
+          "id": "12A",
+          "name": "Unit 12A",
+          "price": "$235,400",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Mid-rise premium layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "12B",
+          "name": "Unit 12B",
+          "price": "$310,400",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "reserved",
+          "features": [
+            "Mid-rise premium layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "12C",
+          "name": "Unit 12C",
+          "price": "$375,400",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "sold",
+          "features": [
+            "Mid-rise premium layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "12D",
+          "name": "Unit 12D",
+          "price": "$460,400",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Mid-rise premium layout",
+            "West-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "name": "Floor 13",
+      "meshName": "Object_12",
+      "meshGroup": "Cube.003_4",
+      "units": [
+        {
+          "id": "13A",
+          "name": "Unit 13A",
+          "price": "$239,600",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "reserved",
+          "features": [
+            "Mid-rise premium layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "13B",
+          "name": "Unit 13B",
+          "price": "$314,600",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "sold",
+          "features": [
+            "Mid-rise premium layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "13C",
+          "name": "Unit 13C",
+          "price": "$379,600",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Mid-rise premium layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "13D",
+          "name": "Unit 13D",
+          "price": "$464,600",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "available",
+          "features": [
+            "Mid-rise premium layout",
+            "East-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "name": "Floor 14",
+      "meshName": "Object_14",
+      "meshGroup": "Cube.027_5",
+      "units": [
+        {
+          "id": "14A",
+          "name": "Unit 14A",
+          "price": "$243,800",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "sold",
+          "features": [
+            "Mid-rise premium layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "14B",
+          "name": "Unit 14B",
+          "price": "$318,800",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Mid-rise premium layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "14C",
+          "name": "Unit 14C",
+          "price": "$383,800",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "available",
+          "features": [
+            "Mid-rise premium layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "14D",
+          "name": "Unit 14D",
+          "price": "$468,800",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Mid-rise premium layout",
+            "West-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "name": "Floor 15",
+      "meshName": "Object_16",
+      "meshGroup": "Cube.036_6",
+      "units": [
+        {
+          "id": "15A",
+          "name": "Unit 15A",
+          "price": "$248,000",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Mid-rise premium layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "15B",
+          "name": "Unit 15B",
+          "price": "$323,000",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "available",
+          "features": [
+            "Mid-rise premium layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "15C",
+          "name": "Unit 15C",
+          "price": "$388,000",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Mid-rise premium layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "15D",
+          "name": "Unit 15D",
+          "price": "$473,000",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "reserved",
+          "features": [
+            "Mid-rise premium layout",
+            "East-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "name": "Floor 16",
+      "meshName": "Object_18",
+      "meshGroup": "Cube.002_7",
+      "units": [
+        {
+          "id": "16A",
+          "name": "Unit 16A",
+          "price": "$252,200",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "available",
+          "features": [
+            "Mid-rise premium layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "16B",
+          "name": "Unit 16B",
+          "price": "$327,200",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Mid-rise premium layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "16C",
+          "name": "Unit 16C",
+          "price": "$392,200",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "reserved",
+          "features": [
+            "Mid-rise premium layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "16D",
+          "name": "Unit 16D",
+          "price": "$477,200",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "sold",
+          "features": [
+            "Mid-rise premium layout",
+            "West-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "name": "Floor 17",
+      "meshName": "Object_4",
+      "meshGroup": "Cube.033_0",
+      "units": [
+        {
+          "id": "17A",
+          "name": "Unit 17A",
+          "price": "$256,400",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Mid-rise premium layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "17B",
+          "name": "Unit 17B",
+          "price": "$331,400",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "reserved",
+          "features": [
+            "Mid-rise premium layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "17C",
+          "name": "Unit 17C",
+          "price": "$396,400",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "sold",
+          "features": [
+            "Mid-rise premium layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "17D",
+          "name": "Unit 17D",
+          "price": "$481,400",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Mid-rise premium layout",
+            "East-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "name": "Floor 18",
+      "meshName": "Object_6",
+      "meshGroup": "Cube.001_1",
+      "units": [
+        {
+          "id": "18A",
+          "name": "Unit 18A",
+          "price": "$260,600",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "reserved",
+          "features": [
+            "Mid-rise premium layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "18B",
+          "name": "Unit 18B",
+          "price": "$335,600",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "sold",
+          "features": [
+            "Mid-rise premium layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "18C",
+          "name": "Unit 18C",
+          "price": "$400,600",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Mid-rise premium layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "18D",
+          "name": "Unit 18D",
+          "price": "$485,600",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Mid-rise premium layout",
+            "West-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "name": "Floor 19",
+      "meshName": "Object_8",
+      "meshGroup": "Cube.004_2",
+      "units": [
+        {
+          "id": "19A",
+          "name": "Unit 19A",
+          "price": "$264,800",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "sold",
+          "features": [
+            "Mid-rise premium layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "19B",
+          "name": "Unit 19B",
+          "price": "$339,800",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Mid-rise premium layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "19C",
+          "name": "Unit 19C",
+          "price": "$404,800",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Mid-rise premium layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "19D",
+          "name": "Unit 19D",
+          "price": "$489,800",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "available",
+          "features": [
+            "Mid-rise premium layout",
+            "East-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "name": "Floor 20",
+      "meshName": "Object_10",
+      "meshGroup": "Cube.009_3",
+      "units": [
+        {
+          "id": "20A",
+          "name": "Unit 20A",
+          "price": "$269,000",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Mid-rise premium layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "20B",
+          "name": "Unit 20B",
+          "price": "$344,000",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Mid-rise premium layout",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "20C",
+          "name": "Unit 20C",
+          "price": "$409,000",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "available",
+          "features": [
+            "Mid-rise premium layout",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "20D",
+          "name": "Unit 20D",
+          "price": "$494,000",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "reserved",
+          "features": [
+            "Mid-rise premium layout",
+            "West-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "name": "Floor 21",
+      "meshName": "Object_12",
+      "meshGroup": "Cube.003_4",
+      "units": [
+        {
+          "id": "21A",
+          "name": "Unit 21A",
+          "price": "$273,200",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Penthouse level finishes",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "21B",
+          "name": "Unit 21B",
+          "price": "$348,200",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "available",
+          "features": [
+            "Penthouse level finishes",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "21C",
+          "name": "Unit 21C",
+          "price": "$413,200",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "reserved",
+          "features": [
+            "Penthouse level finishes",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "21D",
+          "name": "Unit 21D",
+          "price": "$498,200",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "sold",
+          "features": [
+            "Penthouse level finishes",
+            "East-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "name": "Floor 22",
+      "meshName": "Object_14",
+      "meshGroup": "Cube.027_5",
+      "units": [
+        {
+          "id": "22A",
+          "name": "Unit 22A",
+          "price": "$277,400",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "available",
+          "features": [
+            "Penthouse level finishes",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "22B",
+          "name": "Unit 22B",
+          "price": "$352,400",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "reserved",
+          "features": [
+            "Penthouse level finishes",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "22C",
+          "name": "Unit 22C",
+          "price": "$417,400",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "sold",
+          "features": [
+            "Penthouse level finishes",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "22D",
+          "name": "Unit 22D",
+          "price": "$502,400",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "available",
+          "features": [
+            "Penthouse level finishes",
+            "West-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "name": "Floor 23",
+      "meshName": "Object_16",
+      "meshGroup": "Cube.036_6",
+      "units": [
+        {
+          "id": "23A",
+          "name": "Unit 23A",
+          "price": "$281,600",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "reserved",
+          "features": [
+            "Penthouse level finishes",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "23B",
+          "name": "Unit 23B",
+          "price": "$356,600",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "sold",
+          "features": [
+            "Penthouse level finishes",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "23C",
+          "name": "Unit 23C",
+          "price": "$421,600",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "available",
+          "features": [
+            "Penthouse level finishes",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "23D",
+          "name": "Unit 23D",
+          "price": "$506,600",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Penthouse level finishes",
+            "East-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "name": "Floor 24",
+      "meshName": "Object_18",
+      "meshGroup": "Cube.002_7",
+      "units": [
+        {
+          "id": "24A",
+          "name": "Unit 24A",
+          "price": "$285,800",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "sold",
+          "features": [
+            "Penthouse level finishes",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "24B",
+          "name": "Unit 24B",
+          "price": "$360,800",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "available",
+          "features": [
+            "Penthouse level finishes",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "24C",
+          "name": "Unit 24C",
+          "price": "$425,800",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Penthouse level finishes",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "24D",
+          "name": "Unit 24D",
+          "price": "$510,800",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Penthouse level finishes",
+            "West-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "name": "Floor 25",
+      "meshName": "Object_4",
+      "meshGroup": "Cube.033_0",
+      "units": [
+        {
+          "id": "25A",
+          "name": "Unit 25A",
+          "price": "$290,000",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "available",
+          "features": [
+            "Penthouse level finishes",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "25B",
+          "name": "Unit 25B",
+          "price": "$365,000",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Penthouse level finishes",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "25C",
+          "name": "Unit 25C",
+          "price": "$430,000",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Penthouse level finishes",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "25D",
+          "name": "Unit 25D",
+          "price": "$515,000",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "reserved",
+          "features": [
+            "Penthouse level finishes",
+            "East-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "name": "Floor 26",
+      "meshName": "Object_6",
+      "meshGroup": "Cube.001_1",
+      "units": [
+        {
+          "id": "26A",
+          "name": "Unit 26A",
+          "price": "$294,200",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Penthouse level finishes",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "26B",
+          "name": "Unit 26B",
+          "price": "$369,200",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Penthouse level finishes",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "26C",
+          "name": "Unit 26C",
+          "price": "$434,200",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "reserved",
+          "features": [
+            "Penthouse level finishes",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "26D",
+          "name": "Unit 26D",
+          "price": "$519,200",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "sold",
+          "features": [
+            "Penthouse level finishes",
+            "West-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "name": "Floor 27",
+      "meshName": "Object_8",
+      "meshGroup": "Cube.004_2",
+      "units": [
+        {
+          "id": "27A",
+          "name": "Unit 27A",
+          "price": "$298,400",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Penthouse level finishes",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "27B",
+          "name": "Unit 27B",
+          "price": "$373,400",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "reserved",
+          "features": [
+            "Penthouse level finishes",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "27C",
+          "name": "Unit 27C",
+          "price": "$438,400",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "sold",
+          "features": [
+            "Penthouse level finishes",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "27D",
+          "name": "Unit 27D",
+          "price": "$523,400",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Penthouse level finishes",
+            "East-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "name": "Floor 28",
+      "meshName": "Object_10",
+      "meshGroup": "Cube.009_3",
+      "units": [
+        {
+          "id": "28A",
+          "name": "Unit 28A",
+          "price": "$302,600",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "reserved",
+          "features": [
+            "Penthouse level finishes",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "28B",
+          "name": "Unit 28B",
+          "price": "$377,600",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "sold",
+          "features": [
+            "Penthouse level finishes",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "28C",
+          "name": "Unit 28C",
+          "price": "$442,600",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Penthouse level finishes",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "28D",
+          "name": "Unit 28D",
+          "price": "$527,600",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "available",
+          "features": [
+            "Penthouse level finishes",
+            "West-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "name": "Floor 29",
+      "meshName": "Object_12",
+      "meshGroup": "Cube.003_4",
+      "units": [
+        {
+          "id": "29A",
+          "name": "Unit 29A",
+          "price": "$306,800",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "sold",
+          "features": [
+            "Penthouse level finishes",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "29B",
+          "name": "Unit 29B",
+          "price": "$381,800",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Penthouse level finishes",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "29C",
+          "name": "Unit 29C",
+          "price": "$446,800",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "available",
+          "features": [
+            "Penthouse level finishes",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "29D",
+          "name": "Unit 29D",
+          "price": "$531,800",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Penthouse level finishes",
+            "East-facing windows"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "name": "Floor 30",
+      "meshName": "Object_14",
+      "meshGroup": "Cube.027_5",
+      "units": [
+        {
+          "id": "30A",
+          "name": "Unit 30A",
+          "price": "$311,000",
+          "area": "620 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Penthouse level finishes",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "30B",
+          "name": "Unit 30B",
+          "price": "$386,000",
+          "area": "850 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Balcony",
+            "Parking",
+            "City View",
+            "Smart Home"
+          ],
+          "status": "available",
+          "features": [
+            "Penthouse level finishes",
+            "West-facing windows"
+          ]
+        },
+        {
+          "id": "30C",
+          "name": "Unit 30C",
+          "price": "$451,000",
+          "area": "980 sqft",
+          "bedrooms": 2,
+          "bathrooms": 2,
+          "amenities": [
+            "Balcony",
+            "Sea View",
+            "City View",
+            "Gym Access"
+          ],
+          "status": "available",
+          "features": [
+            "Penthouse level finishes",
+            "East-facing windows"
+          ]
+        },
+        {
+          "id": "30D",
+          "name": "Unit 30D",
+          "price": "$536,000",
+          "area": "1150 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Parking",
+            "Sea View",
+            "Smart Home",
+            "Gym Access"
+          ],
+          "status": "reserved",
+          "features": [
+            "Penthouse level finishes",
+            "West-facing windows"
+          ]
+        }
+      ]
+    }
+  ]
+}
