@@ -1181,18 +1181,6 @@
       highlightGroup.add(hl);
     }
 
-    function getHighlightBounds(slice) {
-      let yMin = slice.yMin;
-      let yMax = slice.yMax;
-      if (slice.id >= 2) {
-        const h = yMax - yMin;
-        const inset = h * 0.05;
-        yMin += inset;
-        yMax -= inset;
-      }
-      return { yMin, yMax };
-    }
-
     function rebuildHighlightMeshes(floorId) {
       highlightGroup.clear();
       highlightMats = [];
@@ -1201,9 +1189,8 @@
       const slice = floorSlices.find((s) => s.id === floorId);
       if (!slice) return;
 
-      const { yMin, yMax } = getHighlightBounds(slice);
-      clipPlanes[0].set(new THREE.Vector3(0, 1, 0), -yMin);
-      clipPlanes[1].set(new THREE.Vector3(0, -1, 0), yMax);
+      clipPlanes[0].set(new THREE.Vector3(0, 1, 0), -slice.yMin);
+      clipPlanes[1].set(new THREE.Vector3(0, -1, 0), slice.yMax);
 
       allMeshes.forEach((mesh) => {
         if (!meshIntersectsSlice(mesh, slice)) return;
