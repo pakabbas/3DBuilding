@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Plaza">
+  <rect width="32" height="32" rx="6" fill="#fcf5eb"/>
+  <rect x="3" y="22" width="26" height="7" rx="1" fill="#b5935b"/>
+  <rect x="5" y="24" width="22" height="1.5" fill="#d4b483" opacity="0.7"/>
+  <rect x="13" y="7" width="6" height="15" fill="#2a2520"/>
+  <rect x="11" y="5" width="10" height="2.5" rx="0.5" fill="#2a2520"/>
+  <rect x="14.2" y="10" width="1.6" height="2" fill="#d4b483"/>
+  <rect x="14.2" y="14" width="1.6" height="2" fill="#d4b483"/>
+  <rect x="14.2" y="18" width="1.6" height="2" fill="#d4b483"/>
+  <circle cx="8" cy="25.5" r="1.2" fill="#7a6f63"/>
+  <circle cx="24" cy="25.5" r="1.2" fill="#7a6f63"/>
+  <path d="M16 22v-1.5M13.5 20.5h5" stroke="#b5935b" stroke-width="1.2" stroke-linecap="round"/>
+</svg>

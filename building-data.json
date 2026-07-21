@@ -20,9 +20,8 @@
           "bathrooms": 1,
           "amenities": [
             "Parking",
-            "Balcony",
-            "Smart Home",
-            "Concierge"
+            "Pool Access",
+            "Smart Home"
           ],
           "status": "available",
           "features": [
@@ -46,9 +45,9 @@
           "bathrooms": 1,
           "amenities": [
             "Parking",
-            "City View",
             "Gym Access",
-            "Balcony"
+            "City View",
+            "West Open"
           ],
           "status": "available",
           "features": [
@@ -78,7 +77,6 @@
           "bedrooms": 1,
           "bathrooms": 1,
           "amenities": [
-            "Balcony",
             "City View",
             "Central AC",
             "Smart Home"
@@ -105,9 +103,9 @@
           "bathrooms": 1,
           "amenities": [
             "Parking",
-            "Sea View",
             "Gym Access",
-            "Balcony"
+            "Pool Access",
+            "West Open"
           ],
           "status": "reserved",
           "features": [
@@ -137,10 +135,9 @@
           "bedrooms": 1,
           "bathrooms": 1,
           "amenities": [
-            "Balcony",
+            "Pool Access",
             "City View",
-            "Concierge",
-            "Smart Home"
+            "Central AC"
           ],
           "status": "sold",
           "features": [
@@ -164,9 +161,10 @@
           "bathrooms": 1,
           "amenities": [
             "Parking",
-            "Pool Access",
             "Gym Access",
-            "Balcony"
+            
+            "Pool Access",
+            "West Open"
           ],
           "status": "available",
           "features": [
@@ -198,7 +196,7 @@
           "amenities": [
             "City View",
             "Central AC",
-            "Balcony",
+            "Pool Access",
             "Smart Home"
           ],
           "status": "available",
@@ -223,9 +221,9 @@
           "bathrooms": 1,
           "amenities": [
             "Parking",
-            "Sea View",
-            "Concierge",
-            "Balcony"
+            "Pool Access",
+            "Central AC",
+            "West Open"
           ],
           "status": "available",
           "features": [
@@ -255,9 +253,9 @@
           "bedrooms": 1,
           "bathrooms": 1,
           "amenities": [
-            "Balcony",
             "Gym Access",
             "City View",
+            "Pool Access",
             "Smart Home"
           ],
           "status": "reserved",
@@ -282,9 +280,9 @@
           "bathrooms": 1,
           "amenities": [
             "Parking",
+            "City View",
             "Pool Access",
-            "Sea View",
-            "Balcony"
+            "West Open"
           ],
           "status": "available",
           "features": [
@@ -315,8 +313,7 @@
           "bathrooms": 1,
           "amenities": [
             "City View",
-            "Concierge",
-            "Balcony",
+            "Pool Access",
             "Central AC"
           ],
           "status": "available",
@@ -342,8 +339,9 @@
           "amenities": [
             "Parking",
             "Gym Access",
-            "Sea View",
-            "Balcony"
+            "Pool Access",
+            "Smart Home",
+            "West Open"
           ],
           "status": "sold",
           "features": [
@@ -373,10 +371,10 @@
           "bedrooms": 1,
           "bathrooms": 1,
           "amenities": [
-            "Balcony",
             "Smart Home",
             "City View",
-            "Pool Access"
+            "Pool Access",
+            "Central AC"
           ],
           "status": "available",
           "features": [
@@ -400,9 +398,9 @@
           "bathrooms": 1,
           "amenities": [
             "Parking",
-            "Sea View",
-            "Concierge",
-            "Gym Access"
+            "Gym Access",
+            
+            "West Open"
           ],
           "status": "available",
           "features": [
@@ -432,10 +430,9 @@
           "bedrooms": 2,
           "bathrooms": 2,
           "amenities": [
-            "Panoramic View",
-            "Private Terrace",
+            "City View",
             "Smart Home",
-            "Concierge"
+            "Central AC"
           ],
           "status": "available",
           "features": [
@@ -458,10 +455,12 @@
           "bedrooms": 3,
           "bathrooms": 2,
           "amenities": [
-            "Panoramic View",
             "Parking",
+            "Gym Access",
+            "City View",
             "Pool Access",
-            "Balcony"
+            "Smart Home",
+            "West Open"
           ],
           "status": "reserved",
           "features": [
