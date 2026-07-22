@@ -1858,15 +1858,24 @@
     const envControls = document.getElementById('env-controls');
     const viewerWrap = document.getElementById('viewer-wrap');
 
-    // ── Quality tier (phones / tablets only — not touchscreen laptops) ──
+    // ── Quality tier (real phones only for bh3 — never IDE webviews / laptops) ──
     const quality = (() => {
       const ua = navigator.userAgent || '';
       const finePointer = window.matchMedia('(any-pointer: fine)').matches;
-      // Phones only — bh3 is reserved for these.
-      const isPhone = /Android.+Mobile|iPhone|iPod|Windows Phone/i.test(ua);
+      const hoverFine = window.matchMedia('(any-hover: hover)').matches;
+      const shortSide = Math.min(window.screen?.width || 0, window.screen?.height || 0)
+        || Math.min(window.innerWidth || 0, window.innerHeight || 0);
+      const phoneUa = /Android.+Mobile|iPhone|iPod|Windows Phone/i.test(ua);
+      // Desktop OS markers — Cursor/Electron webviews often spoof Mobile UA on Windows/Mac.
+      const desktopOs = /Windows NT|CrOS|Linux x86_64|X11/i.test(ua)
+        || (/Macintosh|Mac OS X/i.test(ua) && !/iPhone|iPad|iPod/i.test(ua));
+      // bh3 only for real phones: mobile UA, no mouse/trackpad, no desktop OS, small screen.
+      const isPhone = phoneUa && !finePointer && !hoverFine && !desktopOs && shortSide > 0 && shortSide < 700;
       // Tablets (incl. iPadOS desktop-UA spoof) — lighter rendering, but still bh2.
-      const isTablet = /iPad|Android(?!.*Mobile)|Tablet/i.test(ua)
-        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1 && !finePointer);
+      const isTablet = !isPhone && (
+        /iPad|Android(?!.*Mobile)|Tablet/i.test(ua)
+        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1 && !finePointer)
+      );
       const isMobileDevice = isPhone || isTablet;
       // Do NOT treat "(pointer: coarse)" alone as mobile — Windows touch laptops match that.
       const low = isMobileDevice;
@@ -1884,7 +1893,7 @@
         useBoostLights: !low,
         simpleSurrounds: low,
         amenityPools: true,
-        // bh3 is phone-only; laptops/desktops/tablets always use the full bh2 model.
+        // bh3 is phone-only; laptops/desktops/tablets/webviews always use bh2.
         modelUrl: isPhone ? 'model/bh3.glb' : 'model/bh2.glb',
         modelFallbackUrl: 'model/bh2.glb',
         gridN: low ? 1 : 4,
@@ -1898,8 +1907,9 @@
         rainCount: low ? 400 : 2800,
       };
     })();
+    window.__quality = quality;
     console.info(
-      `[quality] phone=${quality.isPhone} tablet=${quality.isTablet} low=${quality.low} model=${quality.modelUrl}`
+      `[quality] phone=${quality.isPhone} tablet=${quality.isTablet} low=${quality.low} model=${quality.modelUrl} ua=${navigator.userAgent}`
     );
 
     // ── Three.js setup ──
@@ -5717,7 +5727,7 @@
 
         setLoadingStage('model', 0, {
           status: quality.isPhone ? 'Loading 3D model (phone)' : 'Loading 3D model',
-          detail: 'Large model — please wait',
+          detail: quality.modelUrl,
         });
         let gltf;
         try {
