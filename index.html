@@ -1531,16 +1531,16 @@
           <input type="range" id="env-time" min="0" max="24" step="0.1" value="13.5">
         </div>
         <div class="env-row">
-          <label>Sun intensity <output id="val-sun">2.45</output></label>
-          <input type="range" id="env-sun" min="0" max="4" step="0.05" value="2.45">
+          <label>Sun intensity <output id="val-sun">2.85</output></label>
+          <input type="range" id="env-sun" min="0" max="4" step="0.05" value="2.85">
         </div>
         <div class="env-row">
-          <label>Ambient <output id="val-ambient">0.92</output></label>
-          <input type="range" id="env-ambient" min="0" max="1.5" step="0.01" value="0.92">
+          <label>Ambient <output id="val-ambient">1.15</output></label>
+          <input type="range" id="env-ambient" min="0" max="2" step="0.01" value="1.15">
         </div>
         <div class="env-row">
-          <label>Exposure <output id="val-exposure">1.62</output></label>
-          <input type="range" id="env-exposure" min="0.5" max="2.5" step="0.01" value="1.62">
+          <label>Exposure <output id="val-exposure">1.78</output></label>
+          <input type="range" id="env-exposure" min="0.5" max="2.5" step="0.01" value="1.78">
         </div>
 
         <div class="env-section">Weather</div>
@@ -1918,7 +1918,7 @@
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.62;
+    renderer.toneMappingExposure = 1.78;
     renderer.shadowMap.enabled = quality.shadows;
     renderer.shadowMap.type = quality.shadows ? THREE.PCFSoftShadowMap : THREE.BasicShadowMap;
     renderer.localClippingEnabled = true;
@@ -1973,9 +1973,9 @@
     const BUILDING_BOOST_MUL = BUILDING_LIGHT_MUL - SURROUND_LIGHT_MUL;
     const BUILDING_LAYER = 1;
     const SURROUND_ENV_MUL = 1.0;
-    // Near-zero IBL on grass — any env reflection reads as wet glass / water.
-    const GRASS_ENV_INTENSITY = 0.04;
-    const ROAD_ENV_INTENSITY = 0.45;
+    // Near-zero IBL on ground — keep matte; daylight comes from sun/ambient, not reflections.
+    const GRASS_ENV_INTENSITY = 0.05;
+    const ROAD_ENV_INTENSITY = 0.1;
 
     const PBR_SURFACE_SETS = {
       grass: {
@@ -1986,18 +1986,18 @@
         roughness: 1,
         metalness: 0,
         normalScale: 0.85,
-        aoMapIntensity: 0.35,
+        aoMapIntensity: 0.22,
         envMapIntensity: GRASS_ENV_INTENSITY,
       },
       road: {
         map: 'model/PBR/road/Road008A_1K-JPG_Color.jpg',
         normalMap: 'model/PBR/road/Road008A_1K-JPG_NormalGL.jpg',
-        roughnessMap: 'model/PBR/road/Road008A_1K-JPG_Roughness.jpg',
+        // Skip roughnessMap — dark map values make asphalt look wet under HDR.
         aoMap: 'model/PBR/road/Road008A_1K-JPG_AmbientOcclusion.jpg',
         roughness: 1,
-        metalness: 0.02,
-        normalScale: 0.9,
-        aoMapIntensity: 0.4,
+        metalness: 0,
+        normalScale: 0.7,
+        aoMapIntensity: 0.28,
         envMapIntensity: ROAD_ENV_INTENSITY,
       },
     };
@@ -2169,7 +2169,7 @@
         const rt = pmremGenerator.fromEquirectangular(iblSource);
         hdrEnvMap = rt.texture;
         scene.environment = hdrEnvMap;
-        scene.environmentIntensity = 1.55;
+        scene.environmentIntensity = 1.35;
         iblSource.dispose();
 
         // Visible sky: equirect background (not clipped by camera.far). DaySky keeps
@@ -2194,7 +2194,7 @@
 
         scene.background = skyMap;
         scene.backgroundBlurriness = 0;
-        scene.backgroundIntensity = 1.35;
+        scene.backgroundIntensity = 1.5;
 
         window.__hdrSkyReady = true;
         window.__getSceneBgType = () => (
@@ -2224,8 +2224,8 @@
     }
 
     function setEnvIntensityOnMaterials(intensity) {
-      // Day theme uses ~1.55 as the surroundings baseline; building mats stay matte relative to that.
-      const dayBaseline = 1.55;
+      // Day theme uses ~1.35 as the surroundings baseline; building mats stay matte relative to that.
+      const dayBaseline = 1.35;
       scene.traverse((obj) => {
         if (!obj.isMesh) return;
         const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
@@ -2295,21 +2295,21 @@
     const envState = {
       theme: 'sunny',
       timeOfDay: 13.5,
-      sunIntensity: 2.45,
-      ambientIntensity: 0.92,
-      exposure: 1.62,
-      fogAmount: 0.06,
-      cloudOpacity: 0.3,
+      sunIntensity: 2.85,
+      ambientIntensity: 1.15,
+      exposure: 1.78,
+      fogAmount: 0.05,
+      cloudOpacity: 0.28,
     };
 
     const THEME_PRESETS = {
       sunny: {
         timeOfDay: 13.5,
-        sunIntensity: 2.45,
-        ambientIntensity: 0.92,
-        exposure: 1.62,
-        fogAmount: 0.06,
-        cloudOpacity: 0.3,
+        sunIntensity: 2.85,
+        ambientIntensity: 1.15,
+        exposure: 1.78,
+        fogAmount: 0.05,
+        cloudOpacity: 0.28,
         rain: false,
         skyMode: 'day',
       },
@@ -2486,10 +2486,10 @@
         hemiLight.groundColor.setRGB(0.48 + elev * 0.04, 0.62 + elev * 0.04, 0.36);
         fillLight.color.setHex(0xffffff);
         applySplitLightIntensities({
-          sunI: sunIntensity * Math.max(0.35, elev),
+          sunI: sunIntensity * Math.max(0.45, elev),
           ambientI: ambientIntensity,
-          hemiI: 0.55 + elev * 0.55,
-          fillI: 0.4 + elev * 0.35,
+          hemiI: 0.7 + elev * 0.55,
+          fillI: 0.55 + elev * 0.4,
           glowVisible: false,
         });
       }
@@ -2501,10 +2501,10 @@
         if (skyDome) skyDome.visible = false;
         scene.background = hdrEquirect;
         scene.backgroundBlurriness = 0;
-        scene.backgroundIntensity = 1.35;
+        scene.backgroundIntensity = 1.5;
         if (hdrEnvMap) scene.environment = hdrEnvMap;
-        scene.environmentIntensity = 1.55;
-        setEnvIntensityOnMaterials(1.55);
+        scene.environmentIntensity = 1.35;
+        setEnvIntensityOnMaterials(1.35);
         if (cloudLayer) cloudLayer.visible = false;
         if (scene.fog) scene.fog = null;
       } else if (skyTex) {
@@ -2687,13 +2687,13 @@
     controls.maxPolarAngle = Math.PI / 2.05;
     controls.target.set(0, 20, 0);
 
-    const hemiLight = new THREE.HemisphereLight(0xb8e0f8, 0x7aab55, 0.95);
+    const hemiLight = new THREE.HemisphereLight(0xc5e8ff, 0x88b85a, 1.15);
     hemiLight.layers.enable(BUILDING_LAYER);
     scene.add(hemiLight);
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.05);
     ambientLight.layers.enable(BUILDING_LAYER);
     scene.add(ambientLight);
-    const sun = new THREE.DirectionalLight(0xfff4e0, 2.4);
+    const sun = new THREE.DirectionalLight(0xfff4e0, 2.8);
     sun.position.set(80, 150, 60);
     sun.castShadow = quality.shadows;
     sun.layers.enable(BUILDING_LAYER);
@@ -2710,7 +2710,7 @@
     }
     scene.add(sun);
     scene.add(sun.target);
-    const fillLight = new THREE.DirectionalLight(0xd4e8ff, 0.65);
+    const fillLight = new THREE.DirectionalLight(0xd4e8ff, 0.85);
     fillLight.position.set(-50, 40, -70);
     fillLight.layers.enable(BUILDING_LAYER);
     scene.add(fillLight);
@@ -3540,6 +3540,39 @@
       return pts;
     }
 
+    function ovalPointAtAngle(cx, cz, rx, rz, angle, n = 2.12) {
+      const exp = 2 / n;
+      const c = Math.cos(angle);
+      const s = Math.sin(angle);
+      const sx = c === 0 ? 0 : Math.sign(c);
+      const sz = s === 0 ? 0 : Math.sign(s);
+      return {
+        x: cx + sx * rx * Math.pow(Math.abs(c), exp),
+        z: cz + sz * rz * Math.pow(Math.abs(s), exp),
+      };
+    }
+
+    function getFloorOvalParams(slice) {
+      const floorBox = getSliceRegionBox(slice);
+      const fc = floorBox.getCenter(new THREE.Vector3());
+      const fs = floorBox.getSize(new THREE.Vector3());
+      const pad = 1.05;
+      return {
+        cx: fc.x,
+        cz: fc.z,
+        rx: Math.max(fs.x * 0.55 + pad, 1.2),
+        rz: Math.max(fs.z * 0.55 + pad, 1.2),
+        n: 2.12,
+      };
+    }
+
+    function getQuadrantAngleRange(quadrant) {
+      if (quadrant === 'NW') return [Math.PI * 0.5, Math.PI];
+      if (quadrant === 'SW') return [Math.PI, Math.PI * 1.5];
+      if (quadrant === 'SE') return [Math.PI * 1.5, Math.PI * 2];
+      return [0, Math.PI * 0.5]; // NE
+    }
+
     function makeOutlineLineMaterial() {
       return new THREE.LineBasicMaterial({
         color: THEME_GOLD,
@@ -3774,12 +3807,44 @@
       const target = new THREE.Vector3(center.x, center.y, center.z);
       const maxDim = Math.max(size.x, size.y, size.z);
       const dist = maxDim / (2 * Math.tan((camera.fov * Math.PI) / 360)) * 2.4;
-      const offset = new THREE.Vector3(dist * 0.5, Math.max(dist * 0.32, size.y * 1.8), dist * 0.5);
+
+      let toPos;
+      if (unitId) {
+        // Frame the unit from outside its curved facade arc (same oval as the gold outline).
+        const slice = floorSlices.find((s) => s.id === floorId);
+        const unitIndex = getUnitIndex(floorId, unitId);
+        const unit = getUnitByRef(floorId, unitId);
+        const quadrant = resolveUnitQuadrant(unit, unitIndex);
+        const [a0, a1] = getQuadrantAngleRange(quadrant);
+        const midAngle = (a0 + a1) * 0.5;
+        const oval = getFloorOvalParams(slice);
+        const facade = ovalPointAtAngle(oval.cx, oval.cz, oval.rx, oval.rz, midAngle, oval.n);
+
+        let ox = facade.x - oval.cx;
+        let oz = facade.z - oval.cz;
+        const radial = Math.hypot(ox, oz) || 1;
+        ox /= radial;
+        oz /= radial;
+
+        const pullBack = Math.max(dist * 0.95, Math.max(oval.rx, oval.rz) * 1.35);
+        const elev = Math.max(size.y * 0.35, dist * 0.16);
+        toPos = new THREE.Vector3(
+          facade.x + ox * pullBack,
+          center.y + elev,
+          facade.z + oz * pullBack
+        );
+        // Look at the mid-curve of this unit, slightly inward so the arc fills the view.
+        const lookIn = Math.max(oval.rx, oval.rz) * 0.22;
+        target.set(facade.x - ox * lookIn, center.y, facade.z - oz * lookIn);
+      } else {
+        const offset = new THREE.Vector3(dist * 0.5, Math.max(dist * 0.32, size.y * 1.8), dist * 0.5);
+        toPos = target.clone().add(offset);
+      }
 
       cameraAnim.fromTarget.copy(controls.target);
       cameraAnim.toTarget.copy(target);
       cameraAnim.fromPos.copy(camera.position);
-      cameraAnim.toPos.copy(target.clone().add(offset));
+      cameraAnim.toPos.copy(toPos);
       cameraAnim.startTime = performance.now();
       cameraAnim.active = true;
     }
@@ -5156,14 +5221,20 @@
       grassMat.roughness = 1;
       grassMat.roughnessMap = null;
       grassMat.metalnessMap = null;
-      grassMat.aoMapIntensity = 0.35;
+      grassMat.aoMapIntensity = 0.22;
       if (grassMat.normalScale) grassMat.normalScale.set(0.85, 0.85);
-      grassMat.color.setRGB(1.28, 1.32, 1.15);
+      // Albedo lift — matte grass needs color brightness since IBL fill is off.
+      grassMat.color.setRGB(1.55, 1.6, 1.35);
       grassMat.envMapIntensity = GRASS_ENV_INTENSITY;
       grassMat.userData.surfaceEnvIntensity = GRASS_ENV_INTENSITY;
       asphaltMat.fog = false;
-      asphaltMat.aoMapIntensity = 0.4;
-      asphaltMat.color.setRGB(1.25, 1.25, 1.28);
+      asphaltMat.metalness = 0;
+      asphaltMat.roughness = 1;
+      asphaltMat.roughnessMap = null;
+      asphaltMat.metalnessMap = null;
+      asphaltMat.aoMapIntensity = 0.28;
+      if (asphaltMat.normalScale) asphaltMat.normalScale.set(0.7, 0.7);
+      asphaltMat.color.setRGB(1.4, 1.4, 1.42);
       asphaltMat.envMapIntensity = ROAD_ENV_INTENSITY;
       asphaltMat.userData.surfaceEnvIntensity = ROAD_ENV_INTENSITY;
       [asphaltMat.map, asphaltMat.normalMap, asphaltMat.roughnessMap, asphaltMat.aoMap].forEach((tex) => {
@@ -5193,14 +5264,14 @@
       });
       sidewalkMat.userData.surfaceEnvIntensity = 0.2;
 
-      // Dark matte plinth around the tower — low IBL so sun doesn't bleach it.
+      // Grey matte plinth around the tower — low IBL so it stays flat grey.
       const plazaBaseMat = new THREE.MeshStandardMaterial({
-        color: 0x6a645c,
-        roughness: 0.96,
+        color: 0x8a8a8a,
+        roughness: 0.97,
         metalness: 0,
-        envMapIntensity: 0.06,
+        envMapIntensity: 0.05,
       });
-      plazaBaseMat.userData.surfaceEnvIntensity = 0.06;
+      plazaBaseMat.userData.surfaceEnvIntensity = 0.05;
 
       const { cityExtent, groundHalf, cellW, cellD } = await buildCityGrid(
         envGroup, cx, cz, groundY, footW, footD, heroH, {
