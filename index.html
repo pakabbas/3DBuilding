@@ -1712,17 +1712,27 @@
       return {
         low,
         antialias: !low,
-        // Keep desktop sharp; phones stay lighter but not overly soft.
-        maxPixelRatio: low ? (narrow ? 1.25 : 1.5) : 2,
-        shadowMapSize: low ? 1024 : 2048,
+        // Hard DPR=1 on phones — biggest cheap fill-rate win.
+        maxPixelRatio: low ? 1 : 2,
+        shadows: !low,
+        shadowMapSize: low ? 512 : 2048,
         useFxaa: !low,
-        gridN: low ? 2 : 4,
-        cloudCount: low ? 10 : 22,
+        useHdrIbl: !low,
+        useBoostLights: !low,
+        simpleSurrounds: low,
+        amenityPools: !low,
+        // Prefer lighter LOD on mobile; falls back to bh2 if missing.
+        modelUrl: low ? 'model/bh3.glb' : 'model/bh2.glb',
+        modelFallbackUrl: 'model/bh2.glb',
+        gridN: low ? 1 : 4,
+        cloudCount: low ? 6 : 22,
         // Higher = fewer street props / cars / lamps on low quality.
-        lampEvery: low ? 4 : 2,
-        carEvery: low ? 10 : 5,
-        carSideEvery: low ? 12 : 6,
-        streetPropEvery: low ? 2 : 1,
+        lampEvery: low ? 6 : 2,
+        carEvery: low ? 14 : 5,
+        carSideEvery: low ? 16 : 6,
+        streetPropEvery: low ? 3 : 1,
+        maxAnisotropy: low ? 4 : null,
+        rainCount: low ? 400 : 2800,
       };
     })();
 
@@ -1733,12 +1743,15 @@
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.22;
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.enabled = quality.shadows;
+    renderer.shadowMap.type = quality.shadows ? THREE.PCFSoftShadowMap : THREE.BasicShadowMap;
     renderer.localClippingEnabled = true;
     container.appendChild(renderer.domElement);
 
     const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
+    const textureAnisotropy = quality.maxAnisotropy != null
+      ? Math.min(quality.maxAnisotropy, maxAnisotropy)
+      : maxAnisotropy;
 
     function polishTexture(tex, { colorSpace = null } = {}) {
       if (!tex || tex.isRenderTargetTexture) return;
@@ -1746,7 +1759,7 @@
       tex.generateMipmaps = true;
       tex.minFilter = THREE.LinearMipmapLinearFilter;
       tex.magFilter = THREE.LinearFilter;
-      tex.anisotropy = maxAnisotropy;
+      tex.anisotropy = textureAnisotropy;
       tex.needsUpdate = true;
     }
 
@@ -1947,6 +1960,12 @@
     }
 
     async function loadDaySkyHdr() {
+      // Mobile skips EXR/PMREM IBL — gradient sky only (large GPU + decode win).
+      if (!quality.useHdrIbl) {
+        window.__hdrSkyReady = false;
+        window.__hdrSkySkipped = 'quality.low';
+        return false;
+      }
       const exrPath = 'model/PBR/DaySkyHDRI065B_2K/DaySkyHDRI065B_2K_HDR.exr';
       const jpgPath = 'model/PBR/DaySkyHDRI065B_2K/DaySkyHDRI065B_2K_TONEMAPPED.jpg';
       try {
@@ -2052,21 +2071,31 @@
     function applySplitLightIntensities({
       sunI, ambientI, hemiI, fillI, glowI = null, glowVisible = false,
     }) {
+      // On mobile, bump ambient slightly to compensate for no HDR IBL / boost lights.
+      const ambientScale = quality.useHdrIbl ? 1 : 1.35;
+      const hemiScale = quality.useHdrIbl ? 1 : 1.2;
       sun.intensity = sunI * SURROUND_LIGHT_MUL;
-      ambientLight.intensity = ambientI * SURROUND_LIGHT_MUL;
-      hemiLight.intensity = hemiI * SURROUND_LIGHT_MUL;
+      ambientLight.intensity = ambientI * SURROUND_LIGHT_MUL * ambientScale;
+      hemiLight.intensity = hemiI * SURROUND_LIGHT_MUL * hemiScale;
       fillLight.intensity = fillI * SURROUND_LIGHT_MUL;
 
-      if (buildingSun) buildingSun.intensity = sunI * BUILDING_BOOST_MUL;
-      if (buildingAmbient) buildingAmbient.intensity = ambientI * BUILDING_BOOST_MUL;
-      if (buildingHemi) buildingHemi.intensity = hemiI * BUILDING_BOOST_MUL;
-      if (buildingFill) buildingFill.intensity = fillI * BUILDING_BOOST_MUL;
+      if (quality.useBoostLights) {
+        if (buildingSun) buildingSun.intensity = sunI * BUILDING_BOOST_MUL;
+        if (buildingAmbient) buildingAmbient.intensity = ambientI * BUILDING_BOOST_MUL;
+        if (buildingHemi) buildingHemi.intensity = hemiI * BUILDING_BOOST_MUL;
+        if (buildingFill) buildingFill.intensity = fillI * BUILDING_BOOST_MUL;
+        syncBuildingBoostLights();
+      } else {
+        if (buildingSun) buildingSun.intensity = 0;
+        if (buildingAmbient) buildingAmbient.intensity = 0;
+        if (buildingHemi) buildingHemi.intensity = 0;
+        if (buildingFill) buildingFill.intensity = 0;
+      }
 
       if (cityGlowLight) {
-        cityGlowLight.visible = glowVisible;
+        cityGlowLight.visible = glowVisible && !quality.low;
         if (glowI != null) cityGlowLight.intensity = glowI * SURROUND_LIGHT_MUL;
       }
-      syncBuildingBoostLights();
     }
 
     const envState = {
@@ -2273,8 +2302,8 @@
 
       updateSkyGradient(timeOfDay, skyMode);
 
-      // DaySky HDRI as sky + IBL on sunny; gradient sky for night/rain themes.
-      if (hdrEquirect && skyMode === 'day') {
+      // DaySky HDRI as sky + IBL on sunny (desktop); mobile keeps gradient sky + no env map.
+      if (quality.useHdrIbl && hdrEquirect && skyMode === 'day') {
         if (skyDome) skyDome.visible = false;
         scene.background = hdrEquirect;
         scene.backgroundBlurriness = 0;
@@ -2289,10 +2318,14 @@
         scene.background = skyTex;
         scene.backgroundBlurriness = 0;
         scene.backgroundIntensity = 1;
-        if (hdrEnvMap) {
+        if (quality.useHdrIbl && hdrEnvMap) {
           scene.environment = hdrEnvMap;
           scene.environmentIntensity = skyMode === 'night' ? 0.22 : 0.45;
           setEnvIntensityOnMaterials(skyMode === 'night' ? 0.25 : 0.55);
+        } else {
+          scene.environment = null;
+          scene.environmentIntensity = 0;
+          setEnvIntensityOnMaterials(0.2);
         }
         if (cloudLayer) cloudLayer.visible = true;
         if (!scene.fog && fogBaseFar) {
@@ -2467,17 +2500,19 @@
     scene.add(ambientLight);
     const sun = new THREE.DirectionalLight(0xfff4e0, 1.6);
     sun.position.set(80, 150, 60);
-    sun.castShadow = true;
+    sun.castShadow = quality.shadows;
     sun.layers.enable(BUILDING_LAYER);
-    sun.shadow.mapSize.set(quality.shadowMapSize, quality.shadowMapSize);
-    sun.shadow.camera.near = 1;
-    sun.shadow.camera.far = 320;
-    sun.shadow.camera.left = -90;
-    sun.shadow.camera.right = 90;
-    sun.shadow.camera.top = 90;
-    sun.shadow.camera.bottom = -90;
-    sun.shadow.bias = -0.00035;
-    sun.shadow.normalBias = 0.035;
+    if (quality.shadows) {
+      sun.shadow.mapSize.set(quality.shadowMapSize, quality.shadowMapSize);
+      sun.shadow.camera.near = 1;
+      sun.shadow.camera.far = 320;
+      sun.shadow.camera.left = -90;
+      sun.shadow.camera.right = 90;
+      sun.shadow.camera.top = 90;
+      sun.shadow.camera.bottom = -90;
+      sun.shadow.bias = -0.00035;
+      sun.shadow.normalBias = 0.035;
+    }
     scene.add(sun);
     scene.add(sun.target);
     const fillLight = new THREE.DirectionalLight(0xd4e8ff, 0.25);
@@ -2485,21 +2520,25 @@
     fillLight.layers.enable(BUILDING_LAYER);
     scene.add(fillLight);
 
-    // Tower-only boost lights (no shadows) so the main building can sit brighter than the city.
+    // Tower-only boost lights (desktop). Disabled on mobile quality.low.
     buildingHemi = new THREE.HemisphereLight(0x87ceeb, 0x5a8f3c, 0);
     buildingHemi.layers.set(BUILDING_LAYER);
+    buildingHemi.visible = quality.useBoostLights;
     scene.add(buildingHemi);
     buildingAmbient = new THREE.AmbientLight(0xffffff, 0);
     buildingAmbient.layers.set(BUILDING_LAYER);
+    buildingAmbient.visible = quality.useBoostLights;
     scene.add(buildingAmbient);
     buildingSun = new THREE.DirectionalLight(0xfff4e0, 0);
     buildingSun.castShadow = false;
     buildingSun.layers.set(BUILDING_LAYER);
+    buildingSun.visible = quality.useBoostLights;
     scene.add(buildingSun);
     scene.add(buildingSun.target);
     buildingFill = new THREE.DirectionalLight(0xd4e8ff, 0);
     buildingFill.castShadow = false;
     buildingFill.layers.set(BUILDING_LAYER);
+    buildingFill.visible = quality.useBoostLights;
     scene.add(buildingFill);
 
     cityGlowLight = new THREE.PointLight(0xffc878, 0, 180, 1.6);
@@ -2508,7 +2547,7 @@
     scene.add(cityGlowLight);
 
     function createRainSystem() {
-      const count = quality.low ? 1200 : 2800;
+      const count = quality.rainCount;
       const positions = new Float32Array(count * 3);
       const speeds = new Float32Array(count);
       for (let i = 0; i < count; i++) {
@@ -2566,14 +2605,17 @@
     // so 2048² texels stay sharp on the hero building and near streets.
     function fitShadowCamera(cx, cz, groundY, coverRadius, towerH) {
       const half = Math.max(coverRadius, towerH * 1.6);
-      const cam = sun.shadow.camera;
-      cam.left = -half;
-      cam.right = half;
-      cam.top = half;
-      cam.bottom = -half;
-      cam.near = 1;
-      cam.far = half * 2.8 + towerH * 2;
-      cam.updateProjectionMatrix();
+
+      if (quality.shadows) {
+        const cam = sun.shadow.camera;
+        cam.left = -half;
+        cam.right = half;
+        cam.top = half;
+        cam.bottom = -half;
+        cam.near = 1;
+        cam.far = half * 2.8 + towerH * 2;
+        cam.updateProjectionMatrix();
+      }
 
       const elev = groundY + towerH * 2.15 + half * 0.28;
       const reach = half * 1.35;
@@ -2583,7 +2625,7 @@
 
       fillLight.position.set(cx - half * 0.55, groundY + towerH * 1.1, cz - half * 0.7);
       if (cityGlowLight) cityGlowLight.position.set(cx, groundY + towerH * 0.55, cz);
-      syncBuildingBoostLights();
+      if (quality.useBoostLights) syncBuildingBoostLights();
     }
 
     // Desktop: light FXAA pass to soften silhouette jaggies without changing the GLB.
@@ -3938,14 +3980,39 @@
       return group;
     }
 
+    function buildSurroundSimple(mats, w, d, h, wallMat) {
+      // Mobile LOD: single massing box + a couple of flush window planes (no dense grids).
+      const group = new THREE.Group();
+      surroundMesh(group, new THREE.BoxGeometry(w, h, d), wallMat, 0, h / 2, 0, 0, quality.shadows);
+      const winW = w * 0.22;
+      const winH = h * 0.12;
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          const x = -w * 0.28 + c * (w * 0.28);
+          const y = h * 0.28 + r * (h * 0.22);
+          surroundMesh(group, new THREE.PlaneGeometry(winW, winH), mats.glass, x, y, d / 2 + 0.02, 0, false);
+        }
+      }
+      group.userData.baseSize = { w, d, h };
+      group.userData.styleName = 'Simple Massing';
+      return group;
+    }
+
     async function initSurroundPrototypes() {
       if (surroundPrototypes) return surroundPrototypes;
       const mats = getSurroundMats();
-      // Sample 2 (Industrial Loft) + Sample 3 (Art Deco Classic) only.
-      surroundPrototypes = [
-        buildSurroundIndustrial(mats, 11, 10, 15),
-        buildSurroundArtDeco(mats, 11, 10, 24),
-      ];
+      if (quality.simpleSurrounds) {
+        surroundPrototypes = [
+          buildSurroundSimple(mats, 11, 10, 15, mats.brick),
+          buildSurroundSimple(mats, 11, 10, 18, mats.bodyStone),
+        ];
+      } else {
+        // Sample 2 (Industrial Loft) + Sample 3 (Art Deco Classic) only.
+        surroundPrototypes = [
+          buildSurroundIndustrial(mats, 11, 10, 15),
+          buildSurroundArtDeco(mats, 11, 10, 24),
+        ];
+      }
       return surroundPrototypes;
     }
 
@@ -4052,7 +4119,7 @@
 
       const body = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), wallMat);
       body.position.y = height / 2;
-      body.castShadow = true;
+      body.castShadow = quality.shadows;
       body.receiveShadow = true;
       group.add(body);
 
@@ -4254,7 +4321,7 @@
         });
         const H = 5.5 * propScale;
         const poleR = 0.07 * propScale;
-        const pole = makeIM(new THREE.CylinderGeometry(poleR, poleR * 1.28, H, 8), poleMat, lamps.length, true);
+        const pole = makeIM(new THREE.CylinderGeometry(poleR, poleR * 1.28, H, 8), poleMat, lamps.length, quality.shadows);
         const arm = makeIM(new THREE.BoxGeometry(0.75 * propScale, 0.06 * propScale, 0.06 * propScale), poleMat, lamps.length, false);
         const head = makeIM(new THREE.BoxGeometry(0.55 * propScale, 0.14 * propScale, 0.28 * propScale), headMat, lamps.length, false);
         lamps.forEach(([x, z, rotY], k) => {
@@ -4274,7 +4341,7 @@
           opacity: 0.75,
         });
         const wheelMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.92 });
-        const body = makeIM(new THREE.BoxGeometry(1.8 * carScale, 0.55 * carScale, 4.2 * carScale), bodyMat, cars.length, true);
+        const body = makeIM(new THREE.BoxGeometry(1.8 * carScale, 0.55 * carScale, 4.2 * carScale), bodyMat, cars.length, quality.shadows);
         const cabin = makeIM(new THREE.BoxGeometry(1.55 * carScale, 0.45 * carScale, 2.2 * carScale), cabinMat, cars.length, false);
         const wheelGeo = new THREE.CylinderGeometry(0.32 * carScale, 0.32 * carScale, 0.22 * carScale, 10);
         wheelGeo.rotateZ(Math.PI / 2);
@@ -4348,22 +4415,22 @@
           new THREE.CylinderGeometry(0.1 * propScale, 0.26 * propScale, trunkH, 12),
           trunkMat,
           trees.length,
-          true
+          quality.shadows
         );
         // Subtle root flare
         const flare = makeIM(
           new THREE.CylinderGeometry(0.28 * propScale, 0.38 * propScale, 0.35 * propScale, 10),
           trunkMat,
           trees.length,
-          true
+          quality.shadows
         );
 
         const canopyParts = [
-          makeIM(makeOrganicCanopyGeo(1.45 * propScale, 0.78, 1), foliageMats[0], trees.length, true),
-          makeIM(makeOrganicCanopyGeo(1.15 * propScale, 0.84, 1), foliageMats[1], trees.length, true),
-          makeIM(makeOrganicCanopyGeo(1.05 * propScale, 0.8, 1), foliageMats[2], trees.length, true),
-          makeIM(makeOrganicCanopyGeo(0.95 * propScale, 0.86, 1), foliageMats[3], trees.length, true),
-          makeIM(makeOrganicCanopyGeo(0.8 * propScale, 0.9, 0), foliageMats[4], trees.length, true),
+          makeIM(makeOrganicCanopyGeo(1.45 * propScale, 0.78, 1), foliageMats[0], trees.length, quality.shadows),
+          makeIM(makeOrganicCanopyGeo(1.15 * propScale, 0.84, 1), foliageMats[1], trees.length, quality.shadows),
+          makeIM(makeOrganicCanopyGeo(1.05 * propScale, 0.8, 1), foliageMats[2], trees.length, quality.shadows),
+          makeIM(makeOrganicCanopyGeo(0.95 * propScale, 0.86, 1), foliageMats[3], trees.length, quality.shadows),
+          makeIM(makeOrganicCanopyGeo(0.8 * propScale, 0.9, 0), foliageMats[4], trees.length, quality.shadows),
         ];
 
         // Local offsets for a natural multi-lobe canopy (relative to trunk top)
@@ -4611,7 +4678,7 @@
       ].forEach(([ox, oz, w, d]) => {
         const wall = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, d), rimMat);
         wall.position.set(px + ox, groundY + wallH * 0.15, pz + oz);
-        wall.castShadow = true;
+        wall.castShadow = quality.shadows;
         wall.receiveShadow = true;
         envGroup.add(wall);
       });
@@ -4659,10 +4726,12 @@
       envGroup.add(addGroundPlane(pathW, (swD - lawnD) * 0.48, sidewalkMat, cx, elev.path - 0.004, cz + (lawnD + swD) * 0.22));
       envGroup.add(addGroundPlane(pathW, (swD - lawnD) * 0.48, sidewalkMat, cx, elev.path - 0.004, cz - (lawnD + swD) * 0.22));
 
-      // Amenity pools left/right — offset farther so white apron shows between tower and water.
-      const poolOffsetX = heroW * 0.5 + 13.5;
-      addSideAmenityPool(envGroup, cx - poolOffsetX, cz, groundY, propScale, grassMat);
-      addSideAmenityPool(envGroup, cx + poolOffsetX, cz, groundY, propScale, grassMat);
+      // Amenity pools left/right — skipped on mobile for fill-rate / transparency cost.
+      if (quality.amenityPools) {
+        const poolOffsetX = heroW * 0.5 + 13.5;
+        addSideAmenityPool(envGroup, cx - poolOffsetX, cz, groundY, propScale, grassMat);
+        addSideAmenityPool(envGroup, cx + poolOffsetX, cz, groundY, propScale, grassMat);
+      }
 
       const seatZ = (lawnD + swD) * 0.28;
       [
@@ -4915,7 +4984,7 @@
 
     // ── Model loading ──
     async function setupEnvironment(object) {
-      const grassRepeat = quality.low ? [28, 28] : [56, 56];
+      const grassRepeat = quality.low ? [16, 16] : [56, 56];
 
       const [grassMat, asphaltMat] = await Promise.all([
         createPbrMaterial('grass', PBR_SURFACE_SETS.grass, { repeat: grassRepeat }),
@@ -5128,8 +5197,8 @@
 
       model.traverse((child) => {
         if (!child.isMesh || !child.visible) return;
-        child.castShadow = true;
-        child.receiveShadow = true;
+        child.castShadow = quality.shadows;
+        child.receiveShadow = quality.shadows;
 
         // Ensure aoMap can sample (glTF often stores AO in UV0; duplicate to uv2 if missing).
         if (child.geometry && child.geometry.attributes.uv && !child.geometry.attributes.uv2) {
@@ -5237,9 +5306,11 @@
       };
 
       // Everything that casts shadows is static, so render the shadow map once and freeze it.
-      renderer.shadowMap.needsUpdate = true;
-      renderer.render(scene, camera);
-      renderer.shadowMap.autoUpdate = false;
+      if (quality.shadows) {
+        renderer.shadowMap.needsUpdate = true;
+        renderer.render(scene, camera);
+        renderer.shadowMap.autoUpdate = false;
+      }
 
       beginExperience();
     }
@@ -5406,6 +5477,7 @@
       const h = container.clientHeight;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality.maxPixelRatio));
       renderer.setSize(w, h);
       if (composer) {
         composer.setSize(w, h);
@@ -5418,29 +5490,43 @@
     window.addEventListener('resize', onResize);
 
     // ── Init ──
+    function loadGltf(url) {
+      return new Promise((resolve, reject) => {
+        const loader = new GLTFLoader();
+        loader.load(
+          url,
+          resolve,
+          (progress) => {
+            if (progress.total) {
+              const pct = Math.round((progress.loaded / progress.total) * 100);
+              setLoadingStatus(`Loading 3D model ${pct}%`);
+            }
+          },
+          reject
+        );
+      });
+    }
+
     async function init() {
       try {
-        setLoadingStatus('Loading HDR sky');
+        setLoadingStatus(quality.useHdrIbl ? 'Loading HDR sky' : 'Preparing sky');
         await loadDaySkyHdr();
         setLoadingStatus('Loading building data');
         await loadData();
-        setLoadingStatus('Loading 3D model');
-        await new Promise((resolve, reject) => {
-          const loader = new GLTFLoader();
-          loader.load(
-            'model/bh2.glb',
-            (gltf) => {
-              setupModel(gltf).then(resolve).catch(reject);
-            },
-            (progress) => {
-              if (progress.total) {
-                const pct = Math.round((progress.loaded / progress.total) * 100);
-                setLoadingStatus(`Loading 3D model ${pct}%`);
-              }
-            },
-            reject
-          );
-        });
+        setLoadingStatus(quality.low ? 'Loading 3D model (mobile)' : 'Loading 3D model');
+        let gltf;
+        try {
+          gltf = await loadGltf(quality.modelUrl);
+        } catch (primaryErr) {
+          if (quality.modelUrl !== quality.modelFallbackUrl) {
+            console.warn(`Primary model failed (${quality.modelUrl}), falling back to ${quality.modelFallbackUrl}`, primaryErr);
+            setLoadingStatus('Loading fallback 3D model');
+            gltf = await loadGltf(quality.modelFallbackUrl);
+          } else {
+            throw primaryErr;
+          }
+        }
+        await setupModel(gltf);
       } catch (err) {
         loadingEl.textContent = 'Failed to load model.';
         console.error(err);
@@ -5461,7 +5547,7 @@
       const info = renderer.info;
       const ms = (elapsed / fpsFrames).toFixed(1);
       fpsHud.textContent =
-        `${fps} FPS  (${ms} ms)\n` +
+        `${fps} FPS  (${ms} ms)  ${quality.low ? 'MOBILE' : 'DESKTOP'}\n` +
         `calls ${info.render.calls}  tris ${info.render.triangles.toLocaleString()}\n` +
         `geo ${info.memory.geometries}  tex ${info.memory.textures}`;
       fpsFrames = 0;
