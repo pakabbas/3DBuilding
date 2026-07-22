@@ -2,30 +2,30 @@
   "building": {
     "name": "Skyline Tower",
     "tagline": "Luxury living in the heart of the city",
-    "totalFloors": 8,
-    "totalUnits": 16
+    "totalFloors": 10,
+    "totalUnits": 40
   },
   "floors": [
     {
       "id": 1,
       "name": "Ground",
-      "heightWeight": 1.35,
+      "heightWeight": 1,
       "units": [
         {
           "id": "1A",
           "name": "Unit 1A",
-          "price": "$195,000",
-          "area": "620 sqft",
-          "bedrooms": 1,
+          "price": "PKR 1.25 Crore",
+          "area": "840 sqft",
+          "bedrooms": 2,
           "bathrooms": 1,
           "amenities": [
-            "Parking",
-            "Pool Access",
-            "Smart Home"
+            "City View",
+            "Central AC"
           ],
           "status": "available",
+          "quadrant": "NE",
           "features": [
-            "East half",
+            "Northeast quadrant",
             "Ground-level access"
           ],
           "images": [
@@ -39,19 +39,70 @@
         {
           "id": "1B",
           "name": "Unit 1B",
-          "price": "$277,000",
-          "area": "620 sqft",
-          "bedrooms": 2,
+          "price": "PKR 1.8 Crore",
+          "area": "960 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "City View",
+            "Central AC"
+          ],
+          "status": "reserved",
+          "quadrant": "NW",
+          "features": [
+            "Northwest quadrant",
+            "Ground-level access"
+          ],
+          "images": [
+            "model/UnitImages/1.jpg",
+            "model/UnitImages/2.jpg",
+            "model/UnitImages/3.jpg",
+            "model/UnitImages/4.jpg",
+            "model/UnitImages/5.jpg"
+          ]
+        },
+        {
+          "id": "1C",
+          "name": "Unit 1C",
+          "price": "PKR 80 Lakh",
+          "area": "760 sqft",
+          "bedrooms": 1,
           "bathrooms": 1,
           "amenities": [
-            "Parking",
-            "Gym Access",
+            "Central AC",
+            "Pool Access",
             "City View",
             "West Open"
           ],
           "status": "available",
+          "quadrant": "SW",
           "features": [
-            "West half",
+            "Southwest quadrant",
+            "Ground-level access"
+          ],
+          "images": [
+            "model/UnitImages/1.jpg",
+            "model/UnitImages/2.jpg",
+            "model/UnitImages/3.jpg",
+            "model/UnitImages/4.jpg",
+            "model/UnitImages/5.jpg"
+          ]
+        },
+        {
+          "id": "1D",
+          "name": "Unit 1D",
+          "price": "PKR 1.35 Crore",
+          "area": "880 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Central AC",
+            "Pool Access"
+          ],
+          "status": "available",
+          "quadrant": "SE",
+          "features": [
+            "Southeast quadrant",
             "Ground-level access"
           ],
           "images": [
@@ -67,24 +118,24 @@
     {
       "id": 2,
       "name": "Floor 1",
-      "heightWeight": 1.1,
+      "heightWeight": 1,
       "units": [
         {
           "id": "2A",
           "name": "Unit 2A",
-          "price": "$210,000",
-          "area": "620 sqft",
-          "bedrooms": 1,
-          "bathrooms": 1,
+          "price": "PKR 1.8 Crore",
+          "area": "920 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
           "amenities": [
-            "City View",
-            "Central AC",
-            "Smart Home"
+            "Pool Access",
+            "Gym Access"
           ],
           "status": "available",
+          "quadrant": "NE",
           "features": [
-            "East half",
-            "Standard layout"
+            "Northeast quadrant",
+            "Open plan living"
           ],
           "images": [
             "model/UnitImages/1.jpg",
@@ -97,20 +148,71 @@
         {
           "id": "2B",
           "name": "Unit 2B",
-          "price": "$292,000",
-          "area": "620 sqft",
+          "price": "PKR 1 Crore",
+          "area": "800 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Gym Access",
+            "Smart Home",
+            "West Open"
+          ],
+          "status": "available",
+          "quadrant": "NW",
+          "features": [
+            "Northwest quadrant",
+            "Open plan living"
+          ],
+          "images": [
+            "model/UnitImages/1.jpg",
+            "model/UnitImages/2.jpg",
+            "model/UnitImages/3.jpg",
+            "model/UnitImages/4.jpg",
+            "model/UnitImages/5.jpg"
+          ]
+        },
+        {
+          "id": "2C",
+          "name": "Unit 2C",
+          "price": "PKR 1.35 Crore",
+          "area": "840 sqft",
           "bedrooms": 2,
           "bathrooms": 1,
           "amenities": [
-            "Parking",
-            "Gym Access",
+            "City View",
             "Pool Access",
-            "West Open"
+            "Central AC"
           ],
-          "status": "reserved",
+          "status": "available",
+          "quadrant": "SW",
           "features": [
-            "West half",
-            "Standard layout"
+            "Southwest quadrant",
+            "Open plan living"
+          ],
+          "images": [
+            "model/UnitImages/1.jpg",
+            "model/UnitImages/2.jpg",
+            "model/UnitImages/3.jpg",
+            "model/UnitImages/4.jpg",
+            "model/UnitImages/5.jpg"
+          ]
+        },
+        {
+          "id": "2D",
+          "name": "Unit 2D",
+          "price": "PKR 1.95 Crore",
+          "area": "960 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Gym Access",
+            "Parking"
+          ],
+          "status": "sold",
+          "quadrant": "SE",
+          "features": [
+            "Southeast quadrant",
+            "Open plan living"
           ],
           "images": [
             "model/UnitImages/1.jpg",
@@ -125,24 +227,26 @@
     {
       "id": 3,
       "name": "Floor 2",
-      "heightWeight": 1.1,
+      "heightWeight": 1,
       "units": [
         {
           "id": "3A",
           "name": "Unit 3A",
-          "price": "$225,000",
-          "area": "620 sqft",
+          "price": "PKR 95 Lakh",
+          "area": "760 sqft",
           "bedrooms": 1,
           "bathrooms": 1,
           "amenities": [
+            "Central AC",
             "Pool Access",
-            "City View",
-            "Central AC"
+            "Smart Home",
+            "City View"
           ],
-          "status": "sold",
+          "status": "available",
+          "quadrant": "NE",
           "features": [
-            "East half",
-            "Standard layout"
+            "Northeast quadrant",
+            "Open plan living"
           ],
           "images": [
             "model/UnitImages/1.jpg",
@@ -155,21 +259,71 @@
         {
           "id": "3B",
           "name": "Unit 3B",
-          "price": "$307,000",
-          "area": "620 sqft",
+          "price": "PKR 1.55 Crore",
+          "area": "880 sqft",
           "bedrooms": 2,
           "bathrooms": 1,
           "amenities": [
-            "Parking",
-            "Gym Access",
-            
-            "Pool Access",
+            "Central AC",
+            "City View",
+            "Parking"
+          ],
+          "status": "reserved",
+          "quadrant": "NW",
+          "features": [
+            "Northwest quadrant",
+            "Open plan living"
+          ],
+          "images": [
+            "model/UnitImages/1.jpg",
+            "model/UnitImages/2.jpg",
+            "model/UnitImages/3.jpg",
+            "model/UnitImages/4.jpg",
+            "model/UnitImages/5.jpg"
+          ]
+        },
+        {
+          "id": "3C",
+          "name": "Unit 3C",
+          "price": "PKR 1.95 Crore",
+          "area": "920 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "City View",
+            "Smart Home",
             "West Open"
           ],
           "status": "available",
+          "quadrant": "SW",
           "features": [
-            "West half",
-            "Standard layout"
+            "Southwest quadrant",
+            "Open plan living"
+          ],
+          "images": [
+            "model/UnitImages/1.jpg",
+            "model/UnitImages/2.jpg",
+            "model/UnitImages/3.jpg",
+            "model/UnitImages/4.jpg",
+            "model/UnitImages/5.jpg"
+          ]
+        },
+        {
+          "id": "3D",
+          "name": "Unit 3D",
+          "price": "PKR 1.1 Crore",
+          "area": "800 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Gym Access",
+            "City View"
+          ],
+          "status": "available",
+          "quadrant": "SE",
+          "features": [
+            "Southeast quadrant",
+            "Open plan living"
           ],
           "images": [
             "model/UnitImages/1.jpg",
@@ -184,25 +338,25 @@
     {
       "id": 4,
       "name": "Floor 3",
-      "heightWeight": 1.1,
+      "heightWeight": 1,
       "units": [
         {
           "id": "4A",
           "name": "Unit 4A",
-          "price": "$240,000",
-          "area": "620 sqft",
-          "bedrooms": 1,
+          "price": "PKR 1.55 Crore",
+          "area": "840 sqft",
+          "bedrooms": 2,
           "bathrooms": 1,
           "amenities": [
-            "City View",
-            "Central AC",
+            "Smart Home",
             "Pool Access",
-            "Smart Home"
+            "Central AC"
           ],
           "status": "available",
+          "quadrant": "NE",
           "features": [
-            "East half",
-            "Standard layout"
+            "Northeast quadrant",
+            "Open plan living"
           ],
           "images": [
             "model/UnitImages/1.jpg",
@@ -215,20 +369,69 @@
         {
           "id": "4B",
           "name": "Unit 4B",
-          "price": "$322,000",
-          "area": "620 sqft",
+          "price": "PKR 2.2 Crore",
+          "area": "960 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Pool Access",
+            "Gym Access"
+          ],
+          "status": "available",
+          "quadrant": "NW",
+          "features": [
+            "Northwest quadrant",
+            "Open plan living"
+          ],
+          "images": [
+            "model/UnitImages/1.jpg",
+            "model/UnitImages/2.jpg",
+            "model/UnitImages/3.jpg",
+            "model/UnitImages/4.jpg",
+            "model/UnitImages/5.jpg"
+          ]
+        },
+        {
+          "id": "4C",
+          "name": "Unit 4C",
+          "price": "PKR 1.05 Crore",
+          "area": "760 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "City View",
+            "Pool Access"
+          ],
+          "status": "available",
+          "quadrant": "SW",
+          "features": [
+            "Southwest quadrant",
+            "Open plan living"
+          ],
+          "images": [
+            "model/UnitImages/1.jpg",
+            "model/UnitImages/2.jpg",
+            "model/UnitImages/3.jpg",
+            "model/UnitImages/4.jpg",
+            "model/UnitImages/5.jpg"
+          ]
+        },
+        {
+          "id": "4D",
+          "name": "Unit 4D",
+          "price": "PKR 1.65 Crore",
+          "area": "880 sqft",
           "bedrooms": 2,
           "bathrooms": 1,
           "amenities": [
-            "Parking",
-            "Pool Access",
             "Central AC",
             "West Open"
           ],
-          "status": "available",
+          "status": "sold",
+          "quadrant": "SE",
           "features": [
-            "West half",
-            "Standard layout"
+            "Southeast quadrant",
+            "Open plan living"
           ],
           "images": [
             "model/UnitImages/1.jpg",
@@ -243,25 +446,26 @@
     {
       "id": 5,
       "name": "Floor 4",
-      "heightWeight": 1.1,
+      "heightWeight": 1,
       "units": [
         {
           "id": "5A",
           "name": "Unit 5A",
-          "price": "$255,000",
-          "area": "620 sqft",
-          "bedrooms": 1,
-          "bathrooms": 1,
+          "price": "PKR 2.2 Crore",
+          "area": "920 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
           "amenities": [
+            "Parking",
             "Gym Access",
-            "City View",
             "Pool Access",
             "Smart Home"
           ],
-          "status": "reserved",
+          "status": "available",
+          "quadrant": "NE",
           "features": [
-            "East half",
-            "Standard layout"
+            "Northeast quadrant",
+            "Open plan living"
           ],
           "images": [
             "model/UnitImages/1.jpg",
@@ -274,20 +478,71 @@
         {
           "id": "5B",
           "name": "Unit 5B",
-          "price": "$337,000",
-          "area": "620 sqft",
+          "price": "PKR 1.25 Crore",
+          "area": "800 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "City View",
+            "West Open"
+          ],
+          "status": "reserved",
+          "quadrant": "NW",
+          "features": [
+            "Northwest quadrant",
+            "Open plan living"
+          ],
+          "images": [
+            "model/UnitImages/1.jpg",
+            "model/UnitImages/2.jpg",
+            "model/UnitImages/3.jpg",
+            "model/UnitImages/4.jpg",
+            "model/UnitImages/5.jpg"
+          ]
+        },
+        {
+          "id": "5C",
+          "name": "Unit 5C",
+          "price": "PKR 1.65 Crore",
+          "area": "840 sqft",
           "bedrooms": 2,
           "bathrooms": 1,
           "amenities": [
-            "Parking",
-            "City View",
-            "Pool Access",
-            "West Open"
+            "West Open",
+            "Gym Access"
           ],
           "status": "available",
+          "quadrant": "SW",
           "features": [
-            "West half",
-            "Standard layout"
+            "Southwest quadrant",
+            "Open plan living"
+          ],
+          "images": [
+            "model/UnitImages/1.jpg",
+            "model/UnitImages/2.jpg",
+            "model/UnitImages/3.jpg",
+            "model/UnitImages/4.jpg",
+            "model/UnitImages/5.jpg"
+          ]
+        },
+        {
+          "id": "5D",
+          "name": "Unit 5D",
+          "price": "PKR 2.35 Crore",
+          "area": "960 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Central AC",
+            "Pool Access",
+            "Smart Home",
+            "Parking"
+          ],
+          "status": "available",
+          "quadrant": "SE",
+          "features": [
+            "Southeast quadrant",
+            "Open plan living"
           ],
           "images": [
             "model/UnitImages/1.jpg",
@@ -302,24 +557,24 @@
     {
       "id": 6,
       "name": "Floor 5",
-      "heightWeight": 1.1,
+      "heightWeight": 1,
       "units": [
         {
           "id": "6A",
           "name": "Unit 6A",
-          "price": "$270,000",
-          "area": "620 sqft",
+          "price": "PKR 1.25 Crore",
+          "area": "760 sqft",
           "bedrooms": 1,
           "bathrooms": 1,
           "amenities": [
-            "City View",
             "Pool Access",
-            "Central AC"
+            "Smart Home"
           ],
           "status": "available",
+          "quadrant": "NE",
           "features": [
-            "East half",
-            "Premium layout"
+            "Northeast quadrant",
+            "Open plan living"
           ],
           "images": [
             "model/UnitImages/1.jpg",
@@ -332,21 +587,70 @@
         {
           "id": "6B",
           "name": "Unit 6B",
-          "price": "$352,000",
-          "area": "620 sqft",
+          "price": "PKR 1.9 Crore",
+          "area": "880 sqft",
           "bedrooms": 2,
           "bathrooms": 1,
           "amenities": [
-            "Parking",
+            "West Open",
+            "Parking"
+          ],
+          "status": "available",
+          "quadrant": "NW",
+          "features": [
+            "Northwest quadrant",
+            "Open plan living"
+          ],
+          "images": [
+            "model/UnitImages/1.jpg",
+            "model/UnitImages/2.jpg",
+            "model/UnitImages/3.jpg",
+            "model/UnitImages/4.jpg",
+            "model/UnitImages/5.jpg"
+          ]
+        },
+        {
+          "id": "6C",
+          "name": "Unit 6C",
+          "price": "PKR 2.35 Crore",
+          "area": "920 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
             "Gym Access",
-            "Pool Access",
-            "Smart Home",
-            "West Open"
+            "City View",
+            "Pool Access"
+          ],
+          "status": "available",
+          "quadrant": "SW",
+          "features": [
+            "Southwest quadrant",
+            "Open plan living"
+          ],
+          "images": [
+            "model/UnitImages/1.jpg",
+            "model/UnitImages/2.jpg",
+            "model/UnitImages/3.jpg",
+            "model/UnitImages/4.jpg",
+            "model/UnitImages/5.jpg"
+          ]
+        },
+        {
+          "id": "6D",
+          "name": "Unit 6D",
+          "price": "PKR 1.35 Crore",
+          "area": "800 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Parking",
+            "Central AC"
           ],
           "status": "sold",
+          "quadrant": "SE",
           "features": [
-            "West half",
-            "Premium layout"
+            "Southeast quadrant",
+            "Open plan living"
           ],
           "images": [
             "model/UnitImages/1.jpg",
@@ -361,25 +665,24 @@
     {
       "id": 7,
       "name": "Floor 6",
-      "heightWeight": 1.1,
+      "heightWeight": 1,
       "units": [
         {
           "id": "7A",
           "name": "Unit 7A",
-          "price": "$285,000",
-          "area": "620 sqft",
-          "bedrooms": 1,
+          "price": "PKR 1.85 Crore",
+          "area": "840 sqft",
+          "bedrooms": 2,
           "bathrooms": 1,
           "amenities": [
-            "Smart Home",
-            "City View",
             "Pool Access",
             "Central AC"
           ],
           "status": "available",
+          "quadrant": "NE",
           "features": [
-            "East half",
-            "Premium layout"
+            "Northeast quadrant",
+            "Open plan living"
           ],
           "images": [
             "model/UnitImages/1.jpg",
@@ -392,20 +695,71 @@
         {
           "id": "7B",
           "name": "Unit 7B",
-          "price": "$367,000",
-          "area": "620 sqft",
-          "bedrooms": 2,
+          "price": "PKR 2.6 Crore",
+          "area": "960 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Central AC",
+            "Gym Access"
+          ],
+          "status": "reserved",
+          "quadrant": "NW",
+          "features": [
+            "Northwest quadrant",
+            "Open plan living"
+          ],
+          "images": [
+            "model/UnitImages/1.jpg",
+            "model/UnitImages/2.jpg",
+            "model/UnitImages/3.jpg",
+            "model/UnitImages/4.jpg",
+            "model/UnitImages/5.jpg"
+          ]
+        },
+        {
+          "id": "7C",
+          "name": "Unit 7C",
+          "price": "PKR 1.3 Crore",
+          "area": "760 sqft",
+          "bedrooms": 1,
           "bathrooms": 1,
           "amenities": [
             "Parking",
+            "Central AC",
+            "City View"
+          ],
+          "status": "available",
+          "quadrant": "SW",
+          "features": [
+            "Southwest quadrant",
+            "Open plan living"
+          ],
+          "images": [
+            "model/UnitImages/1.jpg",
+            "model/UnitImages/2.jpg",
+            "model/UnitImages/3.jpg",
+            "model/UnitImages/4.jpg",
+            "model/UnitImages/5.jpg"
+          ]
+        },
+        {
+          "id": "7D",
+          "name": "Unit 7D",
+          "price": "PKR 2 Crore",
+          "area": "880 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
             "Gym Access",
-            
+            "Central AC",
             "West Open"
           ],
           "status": "available",
+          "quadrant": "SE",
           "features": [
-            "West half",
-            "Premium layout"
+            "Southeast quadrant",
+            "Open plan living"
           ],
           "images": [
             "model/UnitImages/1.jpg",
@@ -420,24 +774,24 @@
     {
       "id": 8,
       "name": "Floor 7",
-      "heightWeight": 1.1,
+      "heightWeight": 1,
       "units": [
         {
           "id": "8A",
           "name": "Unit 8A",
-          "price": "$425,000",
-          "area": "750 sqft",
-          "bedrooms": 2,
+          "price": "PKR 2.6 Crore",
+          "area": "920 sqft",
+          "bedrooms": 3,
           "bathrooms": 2,
           "amenities": [
-            "City View",
-            "Smart Home",
-            "Central AC"
+            "West Open",
+            "Pool Access"
           ],
           "status": "available",
+          "quadrant": "NE",
           "features": [
-            "East half",
-            "Top floor suite"
+            "Northeast quadrant",
+            "Open plan living"
           ],
           "images": [
             "model/UnitImages/1.jpg",
@@ -450,22 +804,289 @@
         {
           "id": "8B",
           "name": "Unit 8B",
-          "price": "$465,000",
-          "area": "750 sqft",
+          "price": "PKR 1.55 Crore",
+          "area": "800 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Smart Home",
+            "Pool Access"
+          ],
+          "status": "available",
+          "quadrant": "NW",
+          "features": [
+            "Northwest quadrant",
+            "Open plan living"
+          ],
+          "images": [
+            "model/UnitImages/1.jpg",
+            "model/UnitImages/2.jpg",
+            "model/UnitImages/3.jpg",
+            "model/UnitImages/4.jpg",
+            "model/UnitImages/5.jpg"
+          ]
+        },
+        {
+          "id": "8C",
+          "name": "Unit 8C",
+          "price": "PKR 1.95 Crore",
+          "area": "840 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Gym Access",
+            "Central AC"
+          ],
+          "status": "available",
+          "quadrant": "SW",
+          "features": [
+            "Southwest quadrant",
+            "Open plan living"
+          ],
+          "images": [
+            "model/UnitImages/1.jpg",
+            "model/UnitImages/2.jpg",
+            "model/UnitImages/3.jpg",
+            "model/UnitImages/4.jpg",
+            "model/UnitImages/5.jpg"
+          ]
+        },
+        {
+          "id": "8D",
+          "name": "Unit 8D",
+          "price": "PKR 2.75 Crore",
+          "area": "960 sqft",
           "bedrooms": 3,
           "bathrooms": 2,
           "amenities": [
+            "West Open",
             "Parking",
-            "Gym Access",
-            "City View",
+            "Pool Access"
+          ],
+          "status": "sold",
+          "quadrant": "SE",
+          "features": [
+            "Southeast quadrant",
+            "Open plan living"
+          ],
+          "images": [
+            "model/UnitImages/1.jpg",
+            "model/UnitImages/2.jpg",
+            "model/UnitImages/3.jpg",
+            "model/UnitImages/4.jpg",
+            "model/UnitImages/5.jpg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Floor 8",
+      "heightWeight": 1,
+      "units": [
+        {
+          "id": "9A",
+          "name": "Unit 9A",
+          "price": "PKR 1.5 Crore",
+          "area": "760 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
             "Pool Access",
+            "Smart Home"
+          ],
+          "status": "available",
+          "quadrant": "NE",
+          "features": [
+            "Northeast quadrant",
+            "Upper-level views"
+          ],
+          "images": [
+            "model/UnitImages/1.jpg",
+            "model/UnitImages/2.jpg",
+            "model/UnitImages/3.jpg",
+            "model/UnitImages/4.jpg",
+            "model/UnitImages/5.jpg"
+          ]
+        },
+        {
+          "id": "9B",
+          "name": "Unit 9B",
+          "price": "PKR 2.2 Crore",
+          "area": "880 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "City View",
+            "West Open",
             "Smart Home",
-            "West Open"
+            "Central AC"
           ],
           "status": "reserved",
+          "quadrant": "NW",
           "features": [
-            "West half",
-            "Top floor suite"
+            "Northwest quadrant",
+            "Upper-level views"
+          ],
+          "images": [
+            "model/UnitImages/1.jpg",
+            "model/UnitImages/2.jpg",
+            "model/UnitImages/3.jpg",
+            "model/UnitImages/4.jpg",
+            "model/UnitImages/5.jpg"
+          ]
+        },
+        {
+          "id": "9C",
+          "name": "Unit 9C",
+          "price": "PKR 2.7 Crore",
+          "area": "920 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "Central AC",
+            "Pool Access",
+            "Parking"
+          ],
+          "status": "available",
+          "quadrant": "SW",
+          "features": [
+            "Southwest quadrant",
+            "Upper-level views"
+          ],
+          "images": [
+            "model/UnitImages/1.jpg",
+            "model/UnitImages/2.jpg",
+            "model/UnitImages/3.jpg",
+            "model/UnitImages/4.jpg",
+            "model/UnitImages/5.jpg"
+          ]
+        },
+        {
+          "id": "9D",
+          "name": "Unit 9D",
+          "price": "PKR 1.6 Crore",
+          "area": "800 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Parking",
+            "Central AC"
+          ],
+          "status": "available",
+          "quadrant": "SE",
+          "features": [
+            "Southeast quadrant",
+            "Upper-level views"
+          ],
+          "images": [
+            "model/UnitImages/1.jpg",
+            "model/UnitImages/2.jpg",
+            "model/UnitImages/3.jpg",
+            "model/UnitImages/4.jpg",
+            "model/UnitImages/5.jpg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Floor 9",
+      "heightWeight": 1,
+      "units": [
+        {
+          "id": "10A",
+          "name": "Unit 10A",
+          "price": "PKR 2.15 Crore",
+          "area": "840 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Parking",
+            "City View"
+          ],
+          "status": "available",
+          "quadrant": "NE",
+          "features": [
+            "Northeast quadrant",
+            "Upper-level views"
+          ],
+          "images": [
+            "model/UnitImages/1.jpg",
+            "model/UnitImages/2.jpg",
+            "model/UnitImages/3.jpg",
+            "model/UnitImages/4.jpg",
+            "model/UnitImages/5.jpg"
+          ]
+        },
+        {
+          "id": "10B",
+          "name": "Unit 10B",
+          "price": "PKR 3 Crore",
+          "area": "960 sqft",
+          "bedrooms": 3,
+          "bathrooms": 2,
+          "amenities": [
+            "West Open",
+            "Parking"
+          ],
+          "status": "available",
+          "quadrant": "NW",
+          "features": [
+            "Northwest quadrant",
+            "Upper-level views"
+          ],
+          "images": [
+            "model/UnitImages/1.jpg",
+            "model/UnitImages/2.jpg",
+            "model/UnitImages/3.jpg",
+            "model/UnitImages/4.jpg",
+            "model/UnitImages/5.jpg"
+          ]
+        },
+        {
+          "id": "10C",
+          "name": "Unit 10C",
+          "price": "PKR 1.55 Crore",
+          "area": "760 sqft",
+          "bedrooms": 1,
+          "bathrooms": 1,
+          "amenities": [
+            "Parking",
+            "Pool Access",
+            "Central AC",
+            "West Open"
+          ],
+          "status": "available",
+          "quadrant": "SW",
+          "features": [
+            "Southwest quadrant",
+            "Upper-level views"
+          ],
+          "images": [
+            "model/UnitImages/1.jpg",
+            "model/UnitImages/2.jpg",
+            "model/UnitImages/3.jpg",
+            "model/UnitImages/4.jpg",
+            "model/UnitImages/5.jpg"
+          ]
+        },
+        {
+          "id": "10D",
+          "name": "Unit 10D",
+          "price": "PKR 2.35 Crore",
+          "area": "880 sqft",
+          "bedrooms": 2,
+          "bathrooms": 1,
+          "amenities": [
+            "Parking",
+            "Pool Access"
+          ],
+          "status": "sold",
+          "quadrant": "SE",
+          "features": [
+            "Southeast quadrant",
+            "Upper-level views"
           ],
           "images": [
             "model/UnitImages/1.jpg",
