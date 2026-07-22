@@ -1776,25 +1776,28 @@
     const DEFAULT_ENV_INTENSITY = 1.05;
     // Building surfaces use a lower IBL response so facade materials read matte, not wet/glossy.
     const BUILDING_ENV_INTENSITY = 0.36 * 1.1; // +10% vs prior matte baseline
-    const BUILDING_GLASS_ENV_INTENSITY = 0.55 * 1.1;
+    const BUILDING_GLASS_ENV_INTENSITY = 0.32;
     // Split scene lighting: surroundings darker, tower a touch brighter.
     const SURROUND_LIGHT_MUL = 0.7;  // 30% less on city / ground
     const BUILDING_LIGHT_MUL = 1.1;  // 10% more on main building
     const BUILDING_BOOST_MUL = BUILDING_LIGHT_MUL - SURROUND_LIGHT_MUL;
     const BUILDING_LAYER = 1;
     const SURROUND_ENV_MUL = 0.7;
+    // Keep ground albedo dominant — high IBL washes grass into a wet/glass look.
+    const GRASS_ENV_INTENSITY = 0.14;
+    const ROAD_ENV_INTENSITY = 0.35;
 
     const PBR_SURFACE_SETS = {
       grass: {
-        map: 'model/PBR/grass/Grass008_1K-JPG_Color.jpg',
-        normalMap: 'model/PBR/grass/Grass008_1K-JPG_NormalGL.jpg',
-        roughnessMap: 'model/PBR/grass/Grass008_1K-JPG_Roughness.jpg',
-        aoMap: 'model/PBR/grass/Grass008_1K-JPG_AmbientOcclusion.jpg',
+        map: 'model/PBR/grass1/Grass001_1K-JPG_Color.jpg',
+        normalMap: 'model/PBR/grass1/Grass001_1K-JPG_NormalGL.jpg',
+        roughnessMap: 'model/PBR/grass1/Grass001_1K-JPG_Roughness.jpg',
+        aoMap: 'model/PBR/grass1/Grass001_1K-JPG_AmbientOcclusion.jpg',
         roughness: 1,
         metalness: 0,
-        normalScale: 0.85,
-        aoMapIntensity: 0.65,
-        envMapIntensity: DEFAULT_ENV_INTENSITY * 0.7,
+        normalScale: 1.2,
+        aoMapIntensity: 0.9,
+        envMapIntensity: GRASS_ENV_INTENSITY,
       },
       road: {
         map: 'model/PBR/road/Road008A_1K-JPG_Color.jpg',
@@ -1805,7 +1808,7 @@
         metalness: 0.02,
         normalScale: 0.9,
         aoMapIntensity: 0.75,
-        envMapIntensity: DEFAULT_ENV_INTENSITY * 0.85,
+        envMapIntensity: ROAD_ENV_INTENSITY,
       },
     };
 
@@ -1823,9 +1826,9 @@
         normalMap: 'model/textures/GLASS_BUILDING_normal.png',
         metalRoughMap: 'model/textures/GLASS_BUILDING_metallicRoughness.png',
         transparent: true,
-        opacity: 0.78,
-        metalness: 0.08,
-        roughness: 0.42,
+        opacity: 0.82,
+        metalness: 0.04,
+        roughness: 0.62,
         envMapIntensity: BUILDING_GLASS_ENV_INTENSITY,
       },
       material_0: {
@@ -1919,6 +1922,10 @@
       if (aoMap) mat.aoMap.channel = 0;
       if (def.emissive != null) mat.emissive.set(def.emissive);
       if (def.emissiveIntensity != null) mat.emissiveIntensity = def.emissiveIntensity;
+      // Preserve authored IBL so applyEnvironment doesn't turn ground into wet glass.
+      if (def.envMapIntensity != null) {
+        mat.userData.surfaceEnvIntensity = def.envMapIntensity;
+      }
       return mat;
     }
 
@@ -2013,6 +2020,8 @@
           if (!mat || !('envMapIntensity' in mat)) return;
           if (mat.userData && mat.userData.buildingEnvIntensity != null) {
             mat.envMapIntensity = mat.userData.buildingEnvIntensity * (intensity / dayBaseline);
+          } else if (mat.userData && mat.userData.surfaceEnvIntensity != null) {
+            mat.envMapIntensity = mat.userData.surfaceEnvIntensity * (intensity / dayBaseline);
           } else {
             mat.envMapIntensity = intensity * SURROUND_ENV_MUL;
           }
@@ -2593,6 +2602,7 @@
     }
 
     const raycaster = new THREE.Raycaster();
+    raycaster.layers.enable(BUILDING_LAYER);
     const pointer = new THREE.Vector2();
     let cloudLayer = null;
 
@@ -3794,22 +3804,30 @@
         parapet: std(0xd8d2c8, 0.88, 0.02),
         base: std(0xcfc9c0, 0.88, 0.12),
         rail: std(0x2a2a2a, 0.55, 0.45),
-        glass: new THREE.MeshStandardMaterial({
-          color: 0x5a7088,
-          roughness: 0.08,
-          metalness: 0.55,
-          transparent: true,
-          opacity: 0.78,
-          envMapIntensity: DEFAULT_ENV_INTENSITY * SURROUND_ENV_MUL,
-        }),
-        loftGlass: new THREE.MeshStandardMaterial({
-          color: 0x7aa8b8,
-          roughness: 0.1,
-          metalness: 0.5,
-          transparent: true,
-          opacity: 0.55,
-          envMapIntensity: DEFAULT_ENV_INTENSITY * SURROUND_ENV_MUL,
-        }),
+        glass: (() => {
+          const m = new THREE.MeshStandardMaterial({
+            color: 0x6a7e90,
+            roughness: 0.48,
+            metalness: 0.08,
+            transparent: true,
+            opacity: 0.72,
+            envMapIntensity: 0.28,
+          });
+          m.userData.surfaceEnvIntensity = 0.28;
+          return m;
+        })(),
+        loftGlass: (() => {
+          const m = new THREE.MeshStandardMaterial({
+            color: 0x7aa8b8,
+            roughness: 0.42,
+            metalness: 0.1,
+            transparent: true,
+            opacity: 0.58,
+            envMapIntensity: 0.3,
+          });
+          m.userData.surfaceEnvIntensity = 0.3;
+          return m;
+        })(),
         frame: std(0xf0ebe2, 0.75, 0.02),
         metal: std(0x2a2e32, 0.4, 0.65),
         rust: std(0x8a4a32, 0.7, 0.25),
@@ -4015,7 +4033,12 @@
         entry = {
           wallMat,
           winMat: blockBuildingMatCache.get('win')?.winMat
-            || new THREE.MeshStandardMaterial({ color: 0x7a8a98, roughness: 0.25, metalness: 0.25 }),
+            || new THREE.MeshStandardMaterial({
+              color: 0x7a8a98,
+              roughness: 0.45,
+              metalness: 0.08,
+              envMapIntensity: 0.3,
+            }),
         };
         blockBuildingMatCache.set(wallColor, entry);
         if (!blockBuildingMatCache.has('win')) blockBuildingMatCache.set('win', entry);
@@ -4534,7 +4557,7 @@
       addProp(envGroup, createBollard(), blockCx + edge * 0.88, blockCz + edge * 0.35, groundY, 0, propScale);
     }
 
-    function addSideAmenityPool(envGroup, px, pz, groundY, propScale) {
+    function addSideAmenityPool(envGroup, px, pz, groundY, propScale, grassMat = null) {
       // Compact residential amenity pool (~8×18m) for tower left/right flanks.
       const poolW = 8;
       const poolD = 18;
@@ -4550,14 +4573,29 @@
       const basinMat = new THREE.MeshStandardMaterial({ color: 0x1f5f7a, roughness: 0.45, metalness: 0.1 });
       const waterMat = new THREE.MeshStandardMaterial({
         color: 0x3aa8d0,
-        roughness: 0.06,
-        metalness: 0.4,
+        roughness: 0.22,
+        metalness: 0.12,
         transparent: true,
-        opacity: 0.8,
+        opacity: 0.78,
         depthWrite: false,
+        envMapIntensity: 0.35,
       });
       const laneMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85 });
-      const lawnMat = new THREE.MeshStandardMaterial({ color: 0x7aaa58, roughness: 0.9, metalness: 0 });
+      const lawnMat = grassMat
+        ? (() => {
+            const m = grassMat.clone();
+            m.envMapIntensity = GRASS_ENV_INTENSITY;
+            m.userData.surfaceEnvIntensity = GRASS_ENV_INTENSITY;
+            m.metalness = 0;
+            m.roughness = 1;
+            return m;
+          })()
+        : new THREE.MeshStandardMaterial({
+            color: 0x7aaa58,
+            roughness: 0.95,
+            metalness: 0,
+            envMapIntensity: GRASS_ENV_INTENSITY,
+          });
 
       envGroup.add(addGroundPlane(deckW + 4, deckD + 4, lawnMat, px, elev.grassLawn, pz));
       envGroup.add(addGroundPlane(deckW, deckD, deckMat, px, elev.path - 0.006, pz));
@@ -4623,8 +4661,8 @@
 
       // Amenity pools left/right — offset farther so white apron shows between tower and water.
       const poolOffsetX = heroW * 0.5 + 13.5;
-      addSideAmenityPool(envGroup, cx - poolOffsetX, cz, groundY, propScale);
-      addSideAmenityPool(envGroup, cx + poolOffsetX, cz, groundY, propScale);
+      addSideAmenityPool(envGroup, cx - poolOffsetX, cz, groundY, propScale, grassMat);
+      addSideAmenityPool(envGroup, cx + poolOffsetX, cz, groundY, propScale, grassMat);
 
       const seatZ = (lawnD + swD) * 0.28;
       [
@@ -4687,7 +4725,12 @@
       }
 
       const plazaGrassMat = grassMat.clone();
-      plazaGrassMat.envMapIntensity = DEFAULT_ENV_INTENSITY * 0.7;
+      if (plazaGrassMat.userData) {
+        plazaGrassMat.userData.surfaceEnvIntensity = GRASS_ENV_INTENSITY;
+      }
+      plazaGrassMat.envMapIntensity = GRASS_ENV_INTENSITY;
+      plazaGrassMat.metalness = 0;
+      plazaGrassMat.roughness = 1;
 
       const roadHalf = cityExtent * 1.1;
       const gridHalf = (gridN + 1) * Math.max(cellW, cellD);
@@ -4698,7 +4741,10 @@
         new THREE.PlaneGeometry(groundSpan, groundSpan),
         grassMat.clone()
       );
-      ground.material.envMapIntensity = DEFAULT_ENV_INTENSITY * 0.65;
+      ground.material.envMapIntensity = GRASS_ENV_INTENSITY;
+      ground.material.userData.surfaceEnvIntensity = GRASS_ENV_INTENSITY;
+      ground.material.metalness = 0;
+      ground.material.roughness = 1;
       ground.rotation.x = -Math.PI / 2;
       ground.position.set(cx, elev.grassBase - 0.006, cz);
       ground.receiveShadow = true;
@@ -4869,12 +4915,16 @@
 
     // ── Model loading ──
     async function setupEnvironment(object) {
-      const grassRepeat = quality.low ? [22, 22] : [44, 44];
+      const grassRepeat = quality.low ? [28, 28] : [56, 56];
 
       const [grassMat, asphaltMat] = await Promise.all([
         createPbrMaterial('grass', PBR_SURFACE_SETS.grass, { repeat: grassRepeat }),
         createPbrMaterial('road', PBR_SURFACE_SETS.road, { repeat: [1, 1] }),
       ]);
+      grassMat.metalness = 0;
+      grassMat.roughness = 1;
+      grassMat.envMapIntensity = GRASS_ENV_INTENSITY;
+      grassMat.userData.surfaceEnvIntensity = GRASS_ENV_INTENSITY;
       asphaltMat.fog = false;
       [asphaltMat.map, asphaltMat.normalMap, asphaltMat.roughnessMap, asphaltMat.aoMap].forEach((tex) => {
         if (!tex) return;
@@ -5032,11 +5082,11 @@
         || ((mat.transparent || mat.opacity < 0.96) && !name.includes('interior'));
 
       if (isGlass) {
-        mat.roughness = Math.max(mat.roughness ?? 0.35, 0.35);
-        mat.metalness = Math.min(mat.metalness ?? 0.1, 0.1);
+        mat.roughness = Math.max(mat.roughness ?? 0.55, 0.55);
+        mat.metalness = Math.min(mat.metalness ?? 0.06, 0.06);
         mat.envMapIntensity = BUILDING_GLASS_ENV_INTENSITY;
         mat.userData.buildingEnvIntensity = BUILDING_GLASS_ENV_INTENSITY;
-        if (mat.opacity > 0.82) mat.opacity = 0.78;
+        if (mat.opacity > 0.88) mat.opacity = 0.82;
         mat.transparent = true;
       } else {
         // Packed metal-rough maps often author too much metal / too little roughness.
