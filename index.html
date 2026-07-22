@@ -422,6 +422,24 @@
       backdrop-filter: blur(4px);
     }
 
+    #fps-hud {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      z-index: 6;
+      color: rgba(255, 252, 247, 0.92);
+      font: 11px/1.45 ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Consolas, monospace;
+      letter-spacing: 0.02em;
+      pointer-events: none;
+      user-select: none;
+      white-space: pre;
+      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+      background: rgba(28, 28, 28, 0.55);
+      padding: 8px 12px;
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
     #amenity-bar {
       position: absolute;
       top: 20px;
@@ -713,6 +731,67 @@
       stroke-width: 2;
       stroke-linecap: round;
       stroke-linejoin: round;
+    }
+
+    #zoom-controls .theme-control {
+      position: relative;
+    }
+
+    #theme-menu {
+      position: absolute;
+      right: 50px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 168px;
+      padding: 8px;
+      background: rgba(255, 252, 247, 0.96);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      box-shadow: 0 8px 28px rgba(42, 37, 32, 0.16);
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      z-index: 8;
+    }
+
+    #theme-menu.open {
+      display: flex;
+    }
+
+    #theme-menu .theme-label {
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gold);
+      font-weight: 600;
+      padding: 4px 8px 6px;
+    }
+
+    #theme-menu button.theme-option {
+      width: 100%;
+      height: auto;
+      min-height: 36px;
+      justify-content: flex-start;
+      gap: 8px;
+      padding: 8px 10px;
+      font: 600 11px/1.2 'Montserrat', sans-serif;
+      letter-spacing: 0.04em;
+      text-align: left;
+      box-shadow: none;
+      border-radius: 2px;
+    }
+
+    #theme-menu button.theme-option svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    #theme-menu button.theme-option.active {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: #fff;
     }
 
     /* Unit detail panel */
@@ -1337,6 +1416,7 @@
         <div id="amenity-tags"></div>
       </div>
 
+      <div id="fps-hud">— FPS</div>
       <div id="hint">Click a unit · Drag to rotate · Scroll to zoom</div>
 
       <div id="env-controls" aria-label="Weather and lighting controls">
@@ -1399,6 +1479,30 @@
             <path d="M17.7 6.3l1.4-1.4"/>
           </svg>
         </button>
+        <div class="theme-control">
+          <button type="button" id="toggle-theme" aria-label="Theme selection" title="Theme" aria-expanded="false" aria-haspopup="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3a6.5 6.5 0 1 0 9 9 7.5 7.5 0 0 1-9-9z"/>
+              <circle cx="7.5" cy="8" r="0.9" fill="currentColor" stroke="none"/>
+              <circle cx="9.5" cy="12.5" r="0.7" fill="currentColor" stroke="none"/>
+            </svg>
+          </button>
+          <div id="theme-menu" role="menu" aria-label="Scene theme">
+            <div class="theme-label">Theme</div>
+            <button type="button" class="theme-option" data-theme="sunny" role="menuitem">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4l1.4-1.4M17 7l1.4-1.4"/></svg>
+              Sunny Day
+            </button>
+            <button type="button" class="theme-option" data-theme="night" role="menuitem">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4 7 7 0 0 0 20 14.5z"/></svg>
+              Night Mode
+            </button>
+            <button type="button" class="theme-option" data-theme="rainy" role="menuitem">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 16a5 5 0 0 1 .4-9.9A6.5 6.5 0 0 1 19.5 9 4 4 0 0 1 18 17H7z"/><path d="M8 19l-1 2M12 19l-1 2M16 19l-1 2"/></svg>
+              Rainy Evening
+            </button>
+          </div>
+        </div>
         <div class="tool-divider" aria-hidden="true"></div>
         <button type="button" id="zoom-in" aria-label="Zoom in">
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -1510,6 +1614,7 @@
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { EXRLoader } from 'three/addons/loaders/EXRLoader.js';
     import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
     import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
     import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
@@ -1570,7 +1675,9 @@
       center: new THREE.Vector3(),
     };
     const siteOffset = new THREE.Vector3(0, 0, 0);
+    // Artistic multiplier only — Tripo GLBs are unit-normalized and converted to meters separately.
     const buildingScale = 1;
+    const METERS_PER_FLOOR = 3.15;
 
     // ── DOM refs ──
     const container = document.getElementById('canvas-container');
@@ -1662,15 +1769,346 @@
     let cloudMaterial = null;
     let fogBaseNear = 80;
     let fogBaseFar = 400;
+    let hdrEquirect = null;
+    let hdrEnvMap = null;
+    let pmremGenerator = null;
+    let skyDome = null;
+    const DEFAULT_ENV_INTENSITY = 1.05;
+    // Building surfaces use a lower IBL response so facade materials read matte, not wet/glossy.
+    const BUILDING_ENV_INTENSITY = 0.36 * 1.1; // +10% vs prior matte baseline
+    const BUILDING_GLASS_ENV_INTENSITY = 0.55 * 1.1;
+    // Split scene lighting: surroundings darker, tower a touch brighter.
+    const SURROUND_LIGHT_MUL = 0.7;  // 30% less on city / ground
+    const BUILDING_LIGHT_MUL = 1.1;  // 10% more on main building
+    const BUILDING_BOOST_MUL = BUILDING_LIGHT_MUL - SURROUND_LIGHT_MUL;
+    const BUILDING_LAYER = 1;
+    const SURROUND_ENV_MUL = 0.7;
+
+    const PBR_SURFACE_SETS = {
+      grass: {
+        map: 'model/PBR/grass/Grass008_1K-JPG_Color.jpg',
+        normalMap: 'model/PBR/grass/Grass008_1K-JPG_NormalGL.jpg',
+        roughnessMap: 'model/PBR/grass/Grass008_1K-JPG_Roughness.jpg',
+        aoMap: 'model/PBR/grass/Grass008_1K-JPG_AmbientOcclusion.jpg',
+        roughness: 1,
+        metalness: 0,
+        normalScale: 0.85,
+        aoMapIntensity: 0.65,
+        envMapIntensity: DEFAULT_ENV_INTENSITY * 0.7,
+      },
+      road: {
+        map: 'model/PBR/road/Road008A_1K-JPG_Color.jpg',
+        normalMap: 'model/PBR/road/Road008A_1K-JPG_NormalGL.jpg',
+        roughnessMap: 'model/PBR/road/Road008A_1K-JPG_Roughness.jpg',
+        aoMap: 'model/PBR/road/Road008A_1K-JPG_AmbientOcclusion.jpg',
+        roughness: 1,
+        metalness: 0.02,
+        normalScale: 0.9,
+        aoMapIntensity: 0.75,
+        envMapIntensity: DEFAULT_ENV_INTENSITY * 0.85,
+      },
+    };
+
+    const PBR_TEXTURE_SETS = {
+      Trimsheet: {
+        map: 'model/textures/Trimsheet_baseColor.png',
+        normalMap: 'model/textures/Trimsheet_normal.png',
+        metalRoughMap: 'model/textures/Trimsheet_metallicRoughness.png',
+        roughness: 1,
+        metalness: 0.06,
+        envMapIntensity: BUILDING_ENV_INTENSITY,
+      },
+      GLASS_BUILDING: {
+        map: 'model/textures/GLASS_BUILDING_baseColor.png',
+        normalMap: 'model/textures/GLASS_BUILDING_normal.png',
+        metalRoughMap: 'model/textures/GLASS_BUILDING_metallicRoughness.png',
+        transparent: true,
+        opacity: 0.78,
+        metalness: 0.08,
+        roughness: 0.42,
+        envMapIntensity: BUILDING_GLASS_ENV_INTENSITY,
+      },
+      material_0: {
+        map: 'model/textures/material_0_baseColor.png',
+        metalRoughMap: 'model/textures/material_0_metallicRoughness.png',
+        roughness: 1,
+        metalness: 0.04,
+        envMapIntensity: BUILDING_ENV_INTENSITY,
+      },
+      Red_Beam: {
+        map: 'model/textures/Red_Beam_baseColor.png',
+        emissiveMap: 'model/textures/Red_Beam_emissive.png',
+        emissive: 0xb5935b,
+        emissiveIntensity: 0.14,
+        roughness: 0.78,
+        metalness: 0.18,
+        envMapIntensity: BUILDING_ENV_INTENSITY * 0.9,
+      },
+      Interior: {
+        map: 'model/textures/Interior_baseColor.png',
+        emissiveMap: 'model/textures/Interior_emissive.png',
+        emissive: 0xffffff,
+        emissiveIntensity: 0.22,
+        roughness: 0.9,
+        metalness: 0.02,
+        envMapIntensity: BUILDING_ENV_INTENSITY * 0.5,
+      },
+      Emmsive: {
+        map: 'model/textures/Emmsive_baseColor.png',
+        emissiveMap: 'model/textures/Emmsive_emissive.png',
+        emissive: 0xfff2d8,
+        emissiveIntensity: 0.32,
+        roughness: 0.85,
+        metalness: 0.05,
+        envMapIntensity: BUILDING_ENV_INTENSITY * 0.6,
+      },
+    };
+
+    function applyTextureRepeat(tex, repeat, { colorSpace = null } = {}) {
+      if (!tex) return;
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(repeat[0], repeat[1]);
+      polishTexture(tex, colorSpace ? { colorSpace } : {});
+    }
+
+    async function createPbrMaterial(name, def = {}, { repeat = null } = {}) {
+      const [
+        map,
+        normalMap,
+        metalRoughMap,
+        roughnessMap,
+        aoMap,
+        emissiveMap,
+      ] = await Promise.all([
+        def.map ? loadTexture(def.map) : Promise.resolve(null),
+        def.normalMap ? loadTexture(def.normalMap) : Promise.resolve(null),
+        def.metalRoughMap ? loadTexture(def.metalRoughMap) : Promise.resolve(null),
+        def.roughnessMap ? loadTexture(def.roughnessMap) : Promise.resolve(null),
+        def.aoMap ? loadTexture(def.aoMap) : Promise.resolve(null),
+        def.emissiveMap ? loadTexture(def.emissiveMap) : Promise.resolve(null),
+      ]);
+
+      if (map) applyTextureRepeat(map, repeat || [1, 1], { colorSpace: THREE.SRGBColorSpace });
+      if (emissiveMap) applyTextureRepeat(emissiveMap, repeat || [1, 1], { colorSpace: THREE.SRGBColorSpace });
+      if (normalMap) applyTextureRepeat(normalMap, repeat || [1, 1]);
+      if (metalRoughMap) applyTextureRepeat(metalRoughMap, repeat || [1, 1]);
+      if (roughnessMap) applyTextureRepeat(roughnessMap, repeat || [1, 1]);
+      if (aoMap) applyTextureRepeat(aoMap, repeat || [1, 1]);
+
+      const mat = new THREE.MeshStandardMaterial({
+        name,
+        color: 0xffffff,
+        map: map || null,
+        normalMap: normalMap || null,
+        roughnessMap: roughnessMap || metalRoughMap || null,
+        metalnessMap: metalRoughMap || null,
+        aoMap: aoMap || null,
+        emissiveMap: emissiveMap || null,
+        roughness: def.roughness != null ? def.roughness : (roughnessMap || metalRoughMap ? 1 : 0.75),
+        metalness: def.metalness != null ? def.metalness : (metalRoughMap ? 1 : 0.05),
+        aoMapIntensity: aoMap ? (def.aoMapIntensity != null ? def.aoMapIntensity : 1) : 0,
+        envMapIntensity: def.envMapIntensity != null ? def.envMapIntensity : DEFAULT_ENV_INTENSITY,
+        transparent: !!def.transparent,
+        opacity: def.opacity != null ? def.opacity : 1,
+        side: THREE.FrontSide,
+      });
+
+      if (normalMap && def.normalScale != null) {
+        mat.normalScale.set(def.normalScale, def.normalScale);
+      }
+      if (aoMap) mat.aoMap.channel = 0;
+      if (def.emissive != null) mat.emissive.set(def.emissive);
+      if (def.emissiveIntensity != null) mat.emissiveIntensity = def.emissiveIntensity;
+      return mat;
+    }
+
+    /** Expand the sky-only upper band of DaySky so horizon views aren't washed gray. */
+    function makeExpandedSkyTexture(image, skyBand = 0.58) {
+      const w = image.width;
+      const h = image.height;
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      const srcH = Math.max(1, Math.floor(h * skyBand));
+      ctx.drawImage(image, 0, 0, w, srcH, 0, 0, w, h);
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.mapping = THREE.EquirectangularReflectionMapping;
+      tex.needsUpdate = true;
+      return tex;
+    }
+
+    async function loadDaySkyHdr() {
+      const exrPath = 'model/PBR/DaySkyHDRI065B_2K/DaySkyHDRI065B_2K_HDR.exr';
+      const jpgPath = 'model/PBR/DaySkyHDRI065B_2K/DaySkyHDRI065B_2K_TONEMAPPED.jpg';
+      try {
+        if (!pmremGenerator) {
+          pmremGenerator = new THREE.PMREMGenerator(renderer);
+          pmremGenerator.compileEquirectangularShader();
+        }
+
+        let iblSource = null;
+        try {
+          iblSource = await new Promise((resolve, reject) => {
+            new EXRLoader().load(exrPath, resolve, undefined, reject);
+          });
+        } catch (exrErr) {
+          console.warn('EXR load failed, falling back to tonemapped JPG for IBL.', exrErr);
+          iblSource = await loadTexture(jpgPath);
+          polishTexture(iblSource, { colorSpace: THREE.SRGBColorSpace });
+        }
+        iblSource.mapping = THREE.EquirectangularReflectionMapping;
+
+        const rt = pmremGenerator.fromEquirectangular(iblSource);
+        hdrEnvMap = rt.texture;
+        scene.environment = hdrEnvMap;
+        scene.environmentIntensity = 1.35;
+        iblSource.dispose();
+
+        // Visible sky: equirect background (not clipped by camera.far). DaySky keeps
+        // all cloud detail in the upper ~half, so expand that band for the backdrop.
+        const skySrc = await loadTexture(jpgPath);
+        const skyMap = skySrc.image
+          ? makeExpandedSkyTexture(skySrc.image, 0.58)
+          : skySrc;
+        if (skyMap !== skySrc) skySrc.dispose();
+        else {
+          polishTexture(skyMap, { colorSpace: THREE.SRGBColorSpace });
+          skyMap.mapping = THREE.EquirectangularReflectionMapping;
+        }
+        hdrEquirect = skyMap;
+
+        if (skyDome) {
+          scene.remove(skyDome);
+          skyDome.geometry?.dispose();
+          skyDome.material?.dispose();
+          skyDome = null;
+        }
+
+        scene.background = skyMap;
+        scene.backgroundBlurriness = 0;
+        scene.backgroundIntensity = 1.1;
+
+        window.__hdrSkyReady = true;
+        window.__getSceneBgType = () => (
+          scene.background && scene.background.isTexture ? 'equirect' : String(scene.background)
+        );
+        return true;
+      } catch (err) {
+        console.warn('DaySky HDRI failed to load, keeping gradient sky.', err);
+        window.__hdrSkyReady = false;
+        window.__hdrSkyError = String(err && err.message ? err.message : err);
+        return false;
+      }
+    }
+
+    function setEnvIntensityOnMaterials(intensity) {
+      // Day theme uses ~1.35 as the surroundings baseline; building mats stay matte relative to that.
+      const dayBaseline = 1.35;
+      scene.traverse((obj) => {
+        if (!obj.isMesh) return;
+        const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+        mats.forEach((mat) => {
+          if (!mat || !('envMapIntensity' in mat)) return;
+          if (mat.userData && mat.userData.buildingEnvIntensity != null) {
+            mat.envMapIntensity = mat.userData.buildingEnvIntensity * (intensity / dayBaseline);
+          } else {
+            mat.envMapIntensity = intensity * SURROUND_ENV_MUL;
+          }
+          mat.needsUpdate = true;
+        });
+      });
+    }
+
+    function syncBuildingBoostLights() {
+      if (!buildingSun) return;
+      buildingSun.position.copy(sun.position);
+      buildingSun.color.copy(sun.color);
+      buildingSun.target.position.copy(sun.target.position);
+      buildingSun.target.updateMatrixWorld();
+      if (buildingFill && fillLight) {
+        buildingFill.position.copy(fillLight.position);
+        buildingFill.color.copy(fillLight.color);
+      }
+      if (buildingHemi && hemiLight) {
+        buildingHemi.color.copy(hemiLight.color);
+        buildingHemi.groundColor.copy(hemiLight.groundColor);
+      }
+      if (buildingAmbient && ambientLight) {
+        buildingAmbient.color.copy(ambientLight.color);
+      }
+    }
+
+    function applySplitLightIntensities({
+      sunI, ambientI, hemiI, fillI, glowI = null, glowVisible = false,
+    }) {
+      sun.intensity = sunI * SURROUND_LIGHT_MUL;
+      ambientLight.intensity = ambientI * SURROUND_LIGHT_MUL;
+      hemiLight.intensity = hemiI * SURROUND_LIGHT_MUL;
+      fillLight.intensity = fillI * SURROUND_LIGHT_MUL;
+
+      if (buildingSun) buildingSun.intensity = sunI * BUILDING_BOOST_MUL;
+      if (buildingAmbient) buildingAmbient.intensity = ambientI * BUILDING_BOOST_MUL;
+      if (buildingHemi) buildingHemi.intensity = hemiI * BUILDING_BOOST_MUL;
+      if (buildingFill) buildingFill.intensity = fillI * BUILDING_BOOST_MUL;
+
+      if (cityGlowLight) {
+        cityGlowLight.visible = glowVisible;
+        if (glowI != null) cityGlowLight.intensity = glowI * SURROUND_LIGHT_MUL;
+      }
+      syncBuildingBoostLights();
+    }
 
     const envState = {
-      timeOfDay: 14,
-      sunIntensity: 1.6,
-      ambientIntensity: 0.3,
-      exposure: 1.22,
-      fogAmount: 0.20,
-      cloudOpacity: 0.68,
+      theme: 'sunny',
+      timeOfDay: 13.5,
+      sunIntensity: 1.85,
+      ambientIntensity: 0.38,
+      exposure: 1.28,
+      fogAmount: 0.12,
+      cloudOpacity: 0.45,
     };
+
+    const THEME_PRESETS = {
+      sunny: {
+        timeOfDay: 13.5,
+        sunIntensity: 1.85,
+        ambientIntensity: 0.38,
+        exposure: 1.28,
+        fogAmount: 0.12,
+        cloudOpacity: 0.45,
+        rain: false,
+        skyMode: 'day',
+      },
+      night: {
+        timeOfDay: 22,
+        sunIntensity: 0.55,
+        ambientIntensity: 0.62,
+        exposure: 1.2,
+        fogAmount: 0.22,
+        cloudOpacity: 0.15,
+        rain: false,
+        skyMode: 'night',
+      },
+      rainy: {
+        timeOfDay: 18.4,
+        sunIntensity: 0.62,
+        ambientIntensity: 0.48,
+        exposure: 0.86,
+        fogAmount: 0.78,
+        cloudOpacity: 0.95,
+        rain: true,
+        skyMode: 'rain',
+      },
+    };
+
+    let rainSystem = null;
+    let cityGlowLight = null;
+    let buildingSun = null;
+    let buildingAmbient = null;
+    let buildingHemi = null;
+    let buildingFill = null;
 
     function mixHex(a, b, t) {
       const c1 = new THREE.Color(a);
@@ -1678,7 +2116,7 @@
       return `#${c1.lerp(c2, t).getHexString()}`;
     }
 
-    function updateSkyGradient(timeOfDay) {
+    function updateSkyGradient(timeOfDay, skyMode = 'auto') {
       if (!skyCanvas || !skyTex) return;
       const ctx = skyCanvas.getContext('2d');
       const grad = ctx.createLinearGradient(0, 0, 0, 512);
@@ -1687,21 +2125,30 @@
       const dayMid = '#8eb8e0';
       const dayHorizon = '#c5dce8';
       const dayLow = '#e8eef2';
-      const nightTop = '#0c1830';
-      const nightMid = '#1a2848';
-      const nightHorizon = '#2a3858';
-      const nightLow = '#3a4858';
+      const nightTop = '#060b18';
+      const nightMid = '#101c38';
+      const nightHorizon = '#1c2a48';
+      const nightLow = '#2a3548';
       const dawnTop = '#3a5888';
       const dawnMid = '#c87858';
       const dawnHorizon = '#e8a878';
       const dawnLow = '#f0d8c0';
+      const rainTop = '#3a4554';
+      const rainMid = '#5a6674';
+      const rainHorizon = '#7a8490';
+      const rainLow = '#9aa3ac';
 
       let top;
       let mid;
       let horizon;
       let low;
 
-      if (timeOfDay < 5 || timeOfDay >= 20) {
+      if (skyMode === 'rain') {
+        top = rainTop;
+        mid = rainMid;
+        horizon = rainHorizon;
+        low = rainLow;
+      } else if (skyMode === 'night' || timeOfDay < 5 || timeOfDay >= 20) {
         top = nightTop;
         mid = nightMid;
         horizon = nightHorizon;
@@ -1750,11 +2197,16 @@
       return Math.max(0, Math.sin(((hour - 6) / 12) * Math.PI));
     }
 
+    function getActiveThemePreset() {
+      return THEME_PRESETS[envState.theme] || THEME_PRESETS.sunny;
+    }
+
     function applyEnvironment() {
       const { timeOfDay, sunIntensity, ambientIntensity, exposure, fogAmount, cloudOpacity } = envState;
+      const preset = getActiveThemePreset();
+      const skyMode = preset.skyMode || 'auto';
 
       renderer.toneMappingExposure = exposure;
-      ambientLight.intensity = ambientIntensity;
 
       const elev = getSunElevation(timeOfDay);
       const az = ((timeOfDay - 6) / 24) * Math.PI * 2;
@@ -1764,26 +2216,163 @@
         Math.max(10, elev * radius),
         Math.sin(az) * radius * 0.72
       );
-      sun.intensity = sunIntensity * Math.max(0.12, elev);
 
-      const warm = Math.pow(1 - elev, 1.4);
-      sun.color.setRGB(1, 0.96 - warm * 0.22, 0.88 - warm * 0.38);
+      if (skyMode === 'night') {
+        sun.color.setRGB(0.7, 0.8, 1.0);
+        ambientLight.color.setHex(0xc0d0e8);
+        hemiLight.color.setHex(0x3a5080);
+        hemiLight.groundColor.setRGB(0.16, 0.18, 0.22);
+        fillLight.color.setHex(0xffe0b0);
+        applySplitLightIntensities({
+          sunI: Math.max(0.35, sunIntensity * 0.7),
+          ambientI: ambientIntensity,
+          hemiI: 0.4,
+          fillI: 0.75,
+          glowI: 3.2,
+          glowVisible: true,
+        });
+        if (cityGlowLight) cityGlowLight.distance = 260;
+      } else if (skyMode === 'rain') {
+        sun.color.setRGB(0.78, 0.82, 0.88);
+        ambientLight.color.setHex(0xc5ced6);
+        hemiLight.color.setHex(0x8a96a4);
+        hemiLight.groundColor.setRGB(0.22, 0.26, 0.24);
+        fillLight.color.setHex(0xd0d8e0);
+        applySplitLightIntensities({
+          sunI: sunIntensity * Math.max(0.18, elev * 0.7),
+          ambientI: ambientIntensity,
+          hemiI: 0.34,
+          fillI: 0.18,
+          glowI: 0.35,
+          glowVisible: true,
+        });
+      } else {
+        const warm = Math.pow(1 - elev, 1.4);
+        sun.color.setRGB(1, 0.96 - warm * 0.22, 0.88 - warm * 0.38);
+        ambientLight.color.setHex(0xffffff);
+        hemiLight.color.setHex(0x87ceeb);
+        hemiLight.groundColor.setRGB(0.35 + elev * 0.02, 0.55 + elev * 0.02, 0.24);
+        fillLight.color.setHex(0xffffff);
+        applySplitLightIntensities({
+          sunI: sunIntensity * Math.max(0.12, elev),
+          ambientI: ambientIntensity,
+          hemiI: 0.18 + elev * 0.42,
+          fillI: 0.1 + elev * 0.2,
+          glowVisible: false,
+        });
+      }
 
-      hemiLight.intensity = 0.18 + elev * 0.42;
-      hemiLight.color.setHex(0x87ceeb);
-      hemiLight.groundColor.setRGB(0.35 + elev * 0.02, 0.55 + elev * 0.02, 0.24);
+      updateSkyGradient(timeOfDay, skyMode);
 
-      fillLight.intensity = 0.1 + elev * 0.2;
-
-      updateSkyGradient(timeOfDay);
+      // DaySky HDRI as sky + IBL on sunny; gradient sky for night/rain themes.
+      if (hdrEquirect && skyMode === 'day') {
+        if (skyDome) skyDome.visible = false;
+        scene.background = hdrEquirect;
+        scene.backgroundBlurriness = 0;
+        scene.backgroundIntensity = 1.1;
+        if (hdrEnvMap) scene.environment = hdrEnvMap;
+        scene.environmentIntensity = 1.35;
+        setEnvIntensityOnMaterials(1.35);
+        if (cloudLayer) cloudLayer.visible = false;
+        if (scene.fog) scene.fog = null;
+      } else if (skyTex) {
+        if (skyDome) skyDome.visible = false;
+        scene.background = skyTex;
+        scene.backgroundBlurriness = 0;
+        scene.backgroundIntensity = 1;
+        if (hdrEnvMap) {
+          scene.environment = hdrEnvMap;
+          scene.environmentIntensity = skyMode === 'night' ? 0.22 : 0.45;
+          setEnvIntensityOnMaterials(skyMode === 'night' ? 0.25 : 0.55);
+        }
+        if (cloudLayer) cloudLayer.visible = true;
+        if (!scene.fog && fogBaseFar) {
+          scene.fog = new THREE.Fog(0xb8d4e8, fogBaseNear, fogBaseFar);
+        }
+      }
 
       if (scene.fog) {
         scene.fog.near = fogBaseNear * (1.05 - fogAmount * 0.75);
         scene.fog.far = fogBaseFar * (1.02 - fogAmount * 0.42);
-        scene.fog.color.set(0xb8d4e8).lerp(new THREE.Color(0x7a8a98), fogAmount * 0.55);
+        if (skyMode === 'night') {
+          scene.fog.color.setHex(0x0c1428);
+        } else if (skyMode === 'rain') {
+          scene.fog.color.setHex(0x6a7380);
+        } else {
+          scene.fog.color.set(0xb8d4e8).lerp(new THREE.Color(0x7a8a98), fogAmount * 0.55);
+        }
       }
 
-      if (cloudMaterial) cloudMaterial.opacity = cloudOpacity;
+      if (cloudMaterial) {
+        cloudMaterial.opacity = skyMode === 'day' && hdrEquirect ? Math.min(cloudOpacity, 0.35) : cloudOpacity;
+        if (skyMode === 'rain') cloudMaterial.color.setHex(0x8a929c);
+        else if (skyMode === 'night') cloudMaterial.color.setHex(0x3a4458);
+        else cloudMaterial.color.setHex(0xffffff);
+      }
+
+      if (rainSystem) rainSystem.visible = !!preset.rain;
+    }
+
+    function syncEnvSlidersFromState() {
+      const map = [
+        ['env-time', 'timeOfDay'],
+        ['env-sun', 'sunIntensity'],
+        ['env-ambient', 'ambientIntensity'],
+        ['env-exposure', 'exposure'],
+        ['env-fog', 'fogAmount'],
+        ['env-clouds', 'cloudOpacity'],
+      ];
+      map.forEach(([id, key]) => {
+        const input = document.getElementById(id);
+        if (input) input.value = String(envState[key]);
+      });
+      syncEnvOutputs();
+    }
+
+    function setSceneTheme(themeId) {
+      const preset = THEME_PRESETS[themeId];
+      if (!preset) return;
+      envState.theme = themeId;
+      envState.timeOfDay = preset.timeOfDay;
+      envState.sunIntensity = preset.sunIntensity;
+      envState.ambientIntensity = preset.ambientIntensity;
+      envState.exposure = preset.exposure;
+      envState.fogAmount = preset.fogAmount;
+      envState.cloudOpacity = preset.cloudOpacity;
+      syncEnvSlidersFromState();
+      applyEnvironment();
+      updateThemeMenuUI();
+    }
+
+    function updateThemeMenuUI() {
+      const menu = document.getElementById('theme-menu');
+      const toggle = document.getElementById('toggle-theme');
+      if (!menu || !toggle) return;
+      menu.querySelectorAll('.theme-option').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.theme === envState.theme);
+      });
+      toggle.classList.toggle('active', menu.classList.contains('open'));
+      toggle.setAttribute('aria-expanded', menu.classList.contains('open') ? 'true' : 'false');
+    }
+
+    function openThemeMenu() {
+      document.getElementById('theme-menu')?.classList.add('open');
+      updateThemeMenuUI();
+    }
+
+    function closeThemeMenu() {
+      document.getElementById('theme-menu')?.classList.remove('open');
+      updateThemeMenuUI();
+    }
+
+    function toggleThemeMenu() {
+      const menu = document.getElementById('theme-menu');
+      if (!menu) return;
+      if (menu.classList.contains('open')) closeThemeMenu();
+      else {
+        hideEnvControls();
+        openThemeMenu();
+      }
     }
 
     function formatEnvValue(key, value) {
@@ -1836,8 +2425,9 @@
         }, 1800);
       });
 
-      syncEnvOutputs();
+      syncEnvSlidersFromState();
       applyEnvironment();
+      updateThemeMenuUI();
     }
 
     (function createSky() {
@@ -1852,6 +2442,7 @@
 
     const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 2000);
     camera.position.set(80, 50, 80);
+    camera.layers.enable(BUILDING_LAYER);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -1860,12 +2451,15 @@
     controls.target.set(0, 20, 0);
 
     const hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x5a8f3c, 0.55);
+    hemiLight.layers.enable(BUILDING_LAYER);
     scene.add(hemiLight);
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+    ambientLight.layers.enable(BUILDING_LAYER);
     scene.add(ambientLight);
     const sun = new THREE.DirectionalLight(0xfff4e0, 1.6);
     sun.position.set(80, 150, 60);
     sun.castShadow = true;
+    sun.layers.enable(BUILDING_LAYER);
     sun.shadow.mapSize.set(quality.shadowMapSize, quality.shadowMapSize);
     sun.shadow.camera.near = 1;
     sun.shadow.camera.far = 320;
@@ -1873,11 +2467,115 @@
     sun.shadow.camera.right = 90;
     sun.shadow.camera.top = 90;
     sun.shadow.camera.bottom = -90;
-    sun.shadow.bias = -0.0005;
+    sun.shadow.bias = -0.00035;
+    sun.shadow.normalBias = 0.035;
     scene.add(sun);
+    scene.add(sun.target);
     const fillLight = new THREE.DirectionalLight(0xd4e8ff, 0.25);
     fillLight.position.set(-50, 40, -70);
+    fillLight.layers.enable(BUILDING_LAYER);
     scene.add(fillLight);
+
+    // Tower-only boost lights (no shadows) so the main building can sit brighter than the city.
+    buildingHemi = new THREE.HemisphereLight(0x87ceeb, 0x5a8f3c, 0);
+    buildingHemi.layers.set(BUILDING_LAYER);
+    scene.add(buildingHemi);
+    buildingAmbient = new THREE.AmbientLight(0xffffff, 0);
+    buildingAmbient.layers.set(BUILDING_LAYER);
+    scene.add(buildingAmbient);
+    buildingSun = new THREE.DirectionalLight(0xfff4e0, 0);
+    buildingSun.castShadow = false;
+    buildingSun.layers.set(BUILDING_LAYER);
+    scene.add(buildingSun);
+    scene.add(buildingSun.target);
+    buildingFill = new THREE.DirectionalLight(0xd4e8ff, 0);
+    buildingFill.castShadow = false;
+    buildingFill.layers.set(BUILDING_LAYER);
+    scene.add(buildingFill);
+
+    cityGlowLight = new THREE.PointLight(0xffc878, 0, 180, 1.6);
+    cityGlowLight.position.set(0, 40, 0);
+    cityGlowLight.visible = false;
+    scene.add(cityGlowLight);
+
+    function createRainSystem() {
+      const count = quality.low ? 1200 : 2800;
+      const positions = new Float32Array(count * 3);
+      const speeds = new Float32Array(count);
+      for (let i = 0; i < count; i++) {
+        positions[i * 3] = (Math.random() - 0.5) * 120;
+        positions[i * 3 + 1] = Math.random() * 80;
+        positions[i * 3 + 2] = (Math.random() - 0.5) * 120;
+        speeds[i] = 38 + Math.random() * 42;
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const mat = new THREE.PointsMaterial({
+        color: 0xb8cce0,
+        size: 0.22,
+        transparent: true,
+        opacity: 0.55,
+        depthWrite: false,
+        sizeAttenuation: true,
+        fog: false,
+      });
+      const points = new THREE.Points(geo, mat);
+      points.frustumCulled = false;
+      points.visible = false;
+      points.userData.speeds = speeds;
+      points.userData.count = count;
+      scene.add(points);
+      rainSystem = points;
+      return points;
+    }
+
+    function updateRain(dt) {
+      if (!rainSystem || !rainSystem.visible) return;
+      const pos = rainSystem.geometry.attributes.position.array;
+      const speeds = rainSystem.userData.speeds;
+      const count = rainSystem.userData.count;
+      const cx = camera.position.x;
+      const cy = camera.position.y;
+      const cz = camera.position.z;
+      rainSystem.position.set(cx, Math.max(8, cy - 20), cz);
+      for (let i = 0; i < count; i++) {
+        const iy = i * 3 + 1;
+        pos[iy] -= speeds[i] * dt;
+        pos[i * 3] += dt * 6;
+        if (pos[iy] < -20) {
+          pos[iy] = 55 + Math.random() * 35;
+          pos[i * 3] = (Math.random() - 0.5) * 120;
+          pos[i * 3 + 2] = (Math.random() - 0.5) * 120;
+        }
+      }
+      rainSystem.geometry.attributes.position.needsUpdate = true;
+    }
+
+    createRainSystem();
+
+    // Focus the shadow map on the tower precinct (not the whole distant city)
+    // so 2048² texels stay sharp on the hero building and near streets.
+    function fitShadowCamera(cx, cz, groundY, coverRadius, towerH) {
+      const half = Math.max(coverRadius, towerH * 1.6);
+      const cam = sun.shadow.camera;
+      cam.left = -half;
+      cam.right = half;
+      cam.top = half;
+      cam.bottom = -half;
+      cam.near = 1;
+      cam.far = half * 2.8 + towerH * 2;
+      cam.updateProjectionMatrix();
+
+      const elev = groundY + towerH * 2.15 + half * 0.28;
+      const reach = half * 1.35;
+      sun.position.set(cx + reach * 0.55, elev, cz + reach * 0.42);
+      sun.target.position.set(cx, groundY + towerH * 0.4, cz);
+      sun.target.updateMatrixWorld();
+
+      fillLight.position.set(cx - half * 0.55, groundY + towerH * 1.1, cz - half * 0.7);
+      if (cityGlowLight) cityGlowLight.position.set(cx, groundY + towerH * 0.55, cz);
+      syncBuildingBoostLights();
+    }
 
     // Desktop: light FXAA pass to soften silhouette jaggies without changing the GLB.
     let composer = null;
@@ -2008,7 +2706,7 @@
 
     // ── Data loading ──
     async function loadData() {
-      const res = await fetch('building-data.json?v=12');
+      const res = await fetch('building-data.json?v=15');
       buildingData = await res.json();
       const name = buildingData.building.name;
       document.getElementById('building-name').textContent = name;
@@ -2069,6 +2767,7 @@
     }
 
     function showEnvControls() {
+      closeThemeMenu();
       envControls.classList.add('visible');
       syncPanelToggleButtons();
     }
@@ -2114,7 +2813,18 @@
           }
         });
       });
-      return refs;
+
+      // Fresh random subset every time this amenity is selected.
+      for (let i = refs.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = refs[i];
+        refs[i] = refs[j];
+        refs[j] = tmp;
+      }
+      const minShow = Math.min(refs.length, 6);
+      const maxShow = Math.min(refs.length, 14);
+      const count = minShow + Math.floor(Math.random() * (maxShow - minShow + 1));
+      return refs.slice(0, count);
     }
 
     function renderAmenityTags() {
@@ -2387,12 +3097,11 @@
     }
 
     function pushFloorSlice(floor, yMin, h, box) {
-      const highlightInset = floor.id === 1 ? Math.min(h * 0.12, 0.75) : 0;
       floorSlices.push({
         id: floor.id,
         yMin,
         yMax: yMin + h,
-        highlightYMin: yMin + highlightInset,
+        highlightYMin: yMin,
         center: new THREE.Vector3(
           (box.min.x + box.max.x) / 2,
           yMin + h / 2,
@@ -2422,23 +3131,20 @@
       buildingBox = new THREE.Box3().setFromObject(model);
       const box = buildingBox;
       const totalH = box.max.y - box.min.y;
-      const totalWeight = buildingData.floors.reduce((s, f) => s + (f.heightWeight ?? 1), 0);
-      const stdH = totalH / totalWeight;
+      const floors = buildingData.floors;
+      const totalWeight = floors.reduce((s, f) => s + (f.heightWeight ?? 1), 0);
 
+      // Equal-height floors when weights match; otherwise proportional split.
       const bounds = [box.min.y];
       let y = box.min.y;
-      buildingData.floors.forEach((floor) => {
+      floors.forEach((floor) => {
         y += totalH * (floor.heightWeight ?? 1) / totalWeight;
         bounds.push(y);
       });
       bounds[bounds.length - 1] = box.max.y;
 
-      for (let i = 3; i < bounds.length - 1; i++) {
-        bounds[i] -= stdH * 0.1 * (i - 2);
-      }
-
       floorSlices.length = 0;
-      buildingData.floors.forEach((floor, i) => {
+      floors.forEach((floor, i) => {
         pushFloorSlice(floor, bounds[i], bounds[i + 1] - bounds[i], box);
       });
 
@@ -2486,26 +3192,41 @@
       return floor.units.findIndex((u) => u.id === unitId);
     }
 
-    function getUnitBounds(slice, unitIndex) {
+    function getUnitByRef(floorId, unitId) {
+      const floor = buildingData.floors.find((f) => f.id === floorId);
+      if (!floor) return null;
+      return floor.units.find((u) => u.id === unitId) || null;
+    }
+
+    function resolveUnitQuadrant(unit, unitIndex = 0) {
+      if (unit?.quadrant) return unit.quadrant;
+      return ['NE', 'NW', 'SW', 'SE'][unitIndex] || 'NE';
+    }
+
+    function getUnitBounds(slice, unitIndex, unit = null) {
       const floorBox = getSliceRegionBox(slice);
       const center = floorBox.getCenter(new THREE.Vector3());
       const yMin = getHighlightYMin(slice);
-      const seamPad = 0.25;
-      const edgePad = 0.35;
+      const seamPad = 0.22;
+      const edgePad = 0.32;
       const unitBox = new THREE.Box3();
+      const quadrant = resolveUnitQuadrant(unit, unitIndex);
+      const east = quadrant === 'NE' || quadrant === 'SE';
+      const north = quadrant === 'NE' || quadrant === 'NW';
 
-      // Units are east/west halves — always split on X (A = east/+X, B = west/-X).
-      if (unitIndex <= 0) {
-        unitBox.set(
-          new THREE.Vector3(center.x - seamPad, yMin, floorBox.min.z),
-          new THREE.Vector3(floorBox.max.x + edgePad, slice.yMax, floorBox.max.z)
-        );
-      } else {
-        unitBox.set(
-          new THREE.Vector3(floorBox.min.x - edgePad, yMin, floorBox.min.z),
-          new THREE.Vector3(center.x + seamPad, slice.yMax, floorBox.max.z)
-        );
-      }
+      // Square building: four quadrants split on X and Z through the floor center.
+      unitBox.set(
+        new THREE.Vector3(
+          east ? center.x - seamPad : floorBox.min.x - edgePad,
+          yMin,
+          north ? center.z - seamPad : floorBox.min.z - edgePad
+        ),
+        new THREE.Vector3(
+          east ? floorBox.max.x + edgePad : center.x + seamPad,
+          slice.yMax,
+          north ? floorBox.max.z + edgePad : center.z + seamPad
+        )
+      );
       return unitBox;
     }
 
@@ -2532,40 +3253,137 @@
       hl.receiveShadow = false;
       hl.matrix.copy(mesh.matrixWorld);
       hl.matrixAutoUpdate = false;
+      hl.traverse((obj) => obj.layers.set(BUILDING_LAYER));
       highlightGroup.add(hl);
     }
 
-    function addHighlightOutline(slice, unitBox) {
-      if (!slice) return;
+    function appendLineSeg(positions, ax, ay, az, bx, by, bz) {
+      positions.push(ax, ay, az, bx, by, bz);
+    }
 
-      const region = unitBox ? unitBox.clone() : getSliceRegionBox(slice);
-      if (!unitBox) {
-        region.min.y = getHighlightYMin(slice);
-        region.max.y = slice.yMax;
+    function appendPolylineLoop(positions, pts, y) {
+      for (let i = 0; i < pts.length; i++) {
+        const a = pts[i];
+        const b = pts[(i + 1) % pts.length];
+        appendLineSeg(positions, a.x, y, a.z, b.x, y, b.z);
       }
+    }
 
-      const pad = 0.14;
-      const min = region.min.clone().add(new THREE.Vector3(-pad, 0.04, -pad));
-      const max = region.max.clone().add(new THREE.Vector3(pad, 0.04, pad));
-      const size = new THREE.Vector3().subVectors(max, min);
-      const center = new THREE.Vector3().addVectors(min, max).multiplyScalar(0.5);
+    function appendPolyline(positions, pts, y) {
+      for (let i = 0; i < pts.length - 1; i++) {
+        const a = pts[i];
+        const b = pts[i + 1];
+        appendLineSeg(positions, a.x, y, a.z, b.x, y, b.z);
+      }
+    }
 
-      const boxGeo = new THREE.BoxGeometry(size.x, size.y, size.z);
-      const edges = new THREE.EdgesGeometry(boxGeo);
-      boxGeo.dispose();
+    // Soft oval ring (superellipse). n=2 is a pure ellipse; slightly above 2 keeps
+    // gentle curves without snapping back to square corners.
+    function buildOvalRingPoints(cx, cz, rx, rz, segs = 64, n = 2.15) {
+      const pts = [];
+      const exp = 2 / n;
+      for (let i = 0; i < segs; i++) {
+        const t = (i / segs) * Math.PI * 2;
+        const c = Math.cos(t);
+        const s = Math.sin(t);
+        pts.push({
+          x: cx + Math.sign(c) * rx * Math.pow(Math.abs(c), exp),
+          z: cz + Math.sign(s) * rz * Math.pow(Math.abs(s), exp),
+          angle: t,
+        });
+      }
+      return pts;
+    }
 
-      const mat = new THREE.LineBasicMaterial({
+    function makeOutlineLineMaterial() {
+      return new THREE.LineBasicMaterial({
         color: THEME_GOLD,
         transparent: true,
         opacity: 0,
         depthTest: true,
         depthWrite: false,
       });
-      const lines = new THREE.LineSegments(edges, mat);
-      lines.position.copy(center);
+    }
+
+    function addOutlineFromPositions(positions) {
+      if (!positions.length) return;
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      const mat = makeOutlineLineMaterial();
+      const lines = new THREE.LineSegments(geo, mat);
       lines.renderOrder = 6;
+      lines.layers.set(BUILDING_LAYER);
       highlightOutlineGroup.add(lines);
       highlightOutlineMats.push(mat);
+    }
+
+    // Curved outline that reads oval like the tower (not a square box).
+    function addHighlightOutline(slice, unitBox) {
+      if (!slice) return;
+
+      const floorBox = getSliceRegionBox(slice);
+      const fc = floorBox.getCenter(new THREE.Vector3());
+      const fs = floorBox.getSize(new THREE.Vector3());
+      const pad = 1.05;
+      // Sit outside the facade so the gold ring stays visible around the oval massing.
+      const rx = Math.max(fs.x * 0.55 + pad, 1.2);
+      const rz = Math.max(fs.z * 0.55 + pad, 1.2);
+      const pts = buildOvalRingPoints(fc.x, fc.z, rx, rz, 72, 2.12);
+      const y0 = getHighlightYMin(slice) - 0.08;
+      const y1 = slice.yMax + 0.12;
+      const positions = [];
+
+      if (unitBox) {
+        const uc = unitBox.getCenter(new THREE.Vector3());
+        const east = uc.x >= fc.x;
+        const north = uc.z >= fc.z;
+        let a0;
+        let a1;
+        if (east && north) {
+          a0 = 0;
+          a1 = Math.PI * 0.5;
+        } else if (!east && north) {
+          a0 = Math.PI * 0.5;
+          a1 = Math.PI;
+        } else if (!east && !north) {
+          a0 = Math.PI;
+          a1 = Math.PI * 1.5;
+        } else {
+          a0 = Math.PI * 1.5;
+          a1 = Math.PI * 2;
+        }
+
+        const ringPts = pts.filter((p) => p.angle >= a0 - 1e-4 && p.angle <= a1 + 1e-4);
+        if (ringPts.length < 2) return;
+
+        appendPolyline(positions, ringPts, y0);
+        appendPolyline(positions, ringPts, y1);
+
+        const first = ringPts[0];
+        const last = ringPts[ringPts.length - 1];
+        appendLineSeg(positions, first.x, y0, first.z, fc.x, y0, fc.z);
+        appendLineSeg(positions, last.x, y0, last.z, fc.x, y0, fc.z);
+        appendLineSeg(positions, first.x, y1, first.z, fc.x, y1, fc.z);
+        appendLineSeg(positions, last.x, y1, last.z, fc.x, y1, fc.z);
+        appendLineSeg(positions, fc.x, y0, fc.z, fc.x, y1, fc.z);
+
+        const vertStep = Math.max(1, Math.floor(ringPts.length / 5));
+        for (let i = 0; i < ringPts.length; i += vertStep) {
+          const p = ringPts[i];
+          appendLineSeg(positions, p.x, y0, p.z, p.x, y1, p.z);
+        }
+        appendLineSeg(positions, last.x, y0, last.z, last.x, y1, last.z);
+      } else {
+        appendPolylineLoop(positions, pts, y0);
+        appendPolylineLoop(positions, pts, y1);
+        const vertStep = Math.max(1, Math.floor(pts.length / 16));
+        for (let i = 0; i < pts.length; i += vertStep) {
+          const p = pts[i];
+          appendLineSeg(positions, p.x, y0, p.z, p.x, y1, p.z);
+        }
+      }
+
+      addOutlineFromPositions(positions);
     }
 
     function rebuildMultiUnitHighlights(unitRefs = []) {
@@ -2583,7 +3401,9 @@
         let unitBox = null;
         if (unitId) {
           const unitIndex = getUnitIndex(floorId, unitId);
-          if (unitIndex >= 0) unitBox = getUnitBounds(slice, unitIndex);
+          if (unitIndex >= 0) {
+            unitBox = getUnitBounds(slice, unitIndex, getUnitByRef(floorId, unitId));
+          }
         }
 
         addHighlightOutline(slice, unitBox);
@@ -2619,7 +3439,13 @@
         let firstUnitBox = null;
         if (firstRef.unitId) {
           const unitIndex = getUnitIndex(firstRef.floorId, firstRef.unitId);
-          if (unitIndex >= 0) firstUnitBox = getUnitBounds(firstSlice, unitIndex);
+          if (unitIndex >= 0) {
+            firstUnitBox = getUnitBounds(
+              firstSlice,
+              unitIndex,
+              getUnitByRef(firstRef.floorId, firstRef.unitId)
+            );
+          }
         }
         activeClipPlanes = buildHighlightClipPlanes(firstSlice, firstUnitBox);
         clipPlanes[0].copy(activeClipPlanes[0]);
@@ -2676,7 +3502,7 @@
       if (!slice) return null;
       const unitIndex = getUnitIndex(floorId, unitId);
       if (unitIndex < 0) return null;
-      const unitBox = getUnitBounds(slice, unitIndex);
+      const unitBox = getUnitBounds(slice, unitIndex, getUnitByRef(floorId, unitId));
       return {
         center: unitBox.getCenter(new THREE.Vector3()),
         size: unitBox.getSize(new THREE.Vector3()),
@@ -2732,9 +3558,16 @@
 
       const region = getSliceRegionBox(slice);
       const center = region.getCenter(new THREE.Vector3());
-      // A = east (+X), B = west (-X)
-      const unitIndex = hit.point.x >= center.x ? 0 : Math.min(1, floor.units.length - 1);
-      const unit = floor.units[unitIndex];
+      const east = hit.point.x >= center.x;
+      const north = hit.point.z >= center.z;
+      const quadrant = east
+        ? (north ? 'NE' : 'SE')
+        : (north ? 'NW' : 'SW');
+
+      const unit =
+        floor.units.find((u) => u.quadrant === quadrant)
+        || floor.units.find((u, i) => resolveUnitQuadrant(u, i) === quadrant)
+        || floor.units[0];
       if (!unit) return null;
       return { floorId, unitId: unit.id };
     }
@@ -2793,6 +3626,41 @@
       mesh.rotation.x = -Math.PI / 2;
       mesh.position.set(x, y, z);
       mesh.receiveShadow = true;
+      return mesh;
+    }
+
+    function bakeRoadLocalUvs(geo, length, width, alongX, centerX, centerZ) {
+      const pos = geo.attributes.position;
+      const uv = geo.attributes.uv;
+      const halfL = length * 0.5;
+      const halfW = width * 0.5;
+      const lengthTile = width; // one texture module = one road-width in meters
+      for (let i = 0; i < pos.count; i++) {
+        const lx = pos.getX(i);
+        const ly = pos.getY(i);
+        if (alongX) {
+          // Road runs ±X: U across width (Z), V tiles continuously along world X.
+          uv.setXY(i, (ly + halfW) / width, (centerX + lx) / lengthTile);
+        } else {
+          // Road runs ±Z: U across width (X), V tiles continuously along world Z.
+          uv.setXY(i, (lx + halfW) / width, (centerZ + ly) / lengthTile);
+        }
+      }
+      uv.needsUpdate = true;
+    }
+
+    /** PBR road plane — texture edge lines span road width; lanes tile along length. */
+    function addRoadPlane(length, width, material, x, y, z, alongX) {
+      const planeW = alongX ? length : width;
+      const planeD = alongX ? width : length;
+      const geo = new THREE.PlaneGeometry(planeW, planeD);
+      bakeRoadLocalUvs(geo, length, width, alongX, x, z);
+      const mesh = new THREE.Mesh(geo, material);
+      mesh.rotation.x = -Math.PI / 2;
+      mesh.position.set(x, y, z);
+      mesh.receiveShadow = true;
+      mesh.renderOrder = 1;
+      mesh.userData.roadPlane = { x, z, length, width, alongX };
       return mesh;
     }
 
@@ -2901,63 +3769,30 @@
     }
 
     // ── Surrounding buildings (cached prototypes, shared materials) ──
-    const SURROUND_STYLES = ['brick-residential', 'industrial-loft', 'art-deco'];
+    const SURROUND_STYLES = ['industrial-loft', 'art-deco'];
     let surroundMats = null;
     let surroundPrototypes = null;
 
     function getSurroundMats() {
       if (surroundMats) return surroundMats;
 
-      const brickTex = (() => {
-        const c = document.createElement('canvas');
-        c.width = 256;
-        c.height = 256;
-        const ctx = c.getContext('2d');
-        ctx.fillStyle = '#8b4a3a';
-        ctx.fillRect(0, 0, 256, 256);
-        const bh = 256 / 16;
-        const bw = 256 / 8;
-        for (let r = 0; r < 16; r++) {
-          const offset = (r % 2) * (bw / 2);
-          for (let col = 0; col < 9; col++) {
-            const shade = 120 + ((r * 17 + col * 31) % 40);
-            ctx.fillStyle = `rgb(${shade + 40}, ${shade - 10}, ${shade - 25})`;
-            ctx.fillRect(col * bw - offset + 2, r * bh + 2, bw - 4, bh - 4);
-          }
-        }
-        const tex = new THREE.CanvasTexture(c);
-        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(2, 3);
-        tex.colorSpace = THREE.SRGBColorSpace;
-        return tex;
-      })();
-
-      const stoneTex = (() => {
-        const c = document.createElement('canvas');
-        c.width = 128;
-        c.height = 128;
-        const ctx = c.getContext('2d');
-        ctx.fillStyle = '#d8cfc0';
-        ctx.fillRect(0, 0, 128, 128);
-        for (let i = 0; i < 400; i++) {
-          const g = 160 + ((i * 47) % 40);
-          ctx.fillStyle = `rgba(${g}, ${g - 8}, ${g - 16}, 0.25)`;
-          ctx.fillRect((i * 17) % 128, (i * 31) % 128, 2, 2);
-        }
-        const tex = new THREE.CanvasTexture(c);
-        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(2, 2);
-        tex.colorSpace = THREE.SRGBColorSpace;
-        return tex;
-      })();
-
       const std = (color, roughness = 0.85, metalness = 0.04) =>
-        new THREE.MeshStandardMaterial({ color, roughness, metalness });
+        new THREE.MeshStandardMaterial({
+          color,
+          roughness,
+          metalness,
+          envMapIntensity: DEFAULT_ENV_INTENSITY * SURROUND_ENV_MUL,
+        });
 
+      // Flat colors only for now — wall PBR textures temporarily disabled.
       surroundMats = {
-        brick: new THREE.MeshStandardMaterial({ map: brickTex, roughness: 0.92, metalness: 0.02 }),
-        stone: std(0x8a8580, 0.9),
-        parapet: std(0x6a6460, 0.88),
+        wall: std(0xb8b0a4, 0.88, 0.04),
+        brick: std(0x8b5a4a, 0.92, 0.02),
+        upper: std(0xf2ece4, 0.88, 0.02),
+        bodyStone: std(0xd8cfc0, 0.82, 0.03),
+        stone: std(0xe8e2d8, 0.9, 0.02),
+        parapet: std(0xd8d2c8, 0.88, 0.02),
+        base: std(0xcfc9c0, 0.88, 0.12),
         rail: std(0x2a2a2a, 0.55, 0.45),
         glass: new THREE.MeshStandardMaterial({
           color: 0x5a7088,
@@ -2965,13 +3800,20 @@
           metalness: 0.55,
           transparent: true,
           opacity: 0.78,
+          envMapIntensity: DEFAULT_ENV_INTENSITY * SURROUND_ENV_MUL,
+        }),
+        loftGlass: new THREE.MeshStandardMaterial({
+          color: 0x7aa8b8,
+          roughness: 0.1,
+          metalness: 0.5,
+          transparent: true,
+          opacity: 0.55,
+          envMapIntensity: DEFAULT_ENV_INTENSITY * SURROUND_ENV_MUL,
         }),
         frame: std(0xf0ebe2, 0.75, 0.02),
-        base: std(0x4a4a48, 0.88, 0.12),
-        upper: std(0x8a8078, 0.86, 0.08),
-        metal: std(0x3a3a3a, 0.45, 0.55),
-        darkFrame: std(0x2a2a2a, 0.5, 0.45),
-        bodyStone: new THREE.MeshStandardMaterial({ map: stoneTex, roughness: 0.82, metalness: 0.03 }),
+        metal: std(0x2a2e32, 0.4, 0.65),
+        rust: std(0x8a4a32, 0.7, 0.25),
+        darkFrame: std(0x1a1c1e, 0.45, 0.5),
         gold: std(0xb5935b, 0.45, 0.35),
         dark: std(0x3a3530, 0.7, 0.15),
         rib: std(0xcfc4b4, 0.78),
@@ -3017,50 +3859,49 @@
       }
     }
 
-    function buildSurroundBrick(mats, w, d, h) {
-      const group = new THREE.Group();
-      surroundMesh(group, new THREE.BoxGeometry(w, h, d), mats.brick, 0, h / 2, 0);
-      surroundMesh(group, new THREE.BoxGeometry(w + 0.08, 1.1, d + 0.08), mats.stone, 0, 0.55, 0, 0, false);
-      surroundMesh(group, new THREE.BoxGeometry(w + 0.12, 0.55, d + 0.12), mats.parapet, 0, h + 0.28, 0, 0, false);
-      // Primary (larger) windows on front — buildings are rotated to face the tower.
-      surroundFaceGrid(group, mats, 'front', w, d, h, 5, 1.9, 1.05, 1.45, 1.85, 4);
-      surroundFaceGrid(group, mats, 'left', w, d, h, 4, 2.0, 1.3, 1.15, 1.5, 3);
-      surroundFaceGrid(group, mats, 'right', w, d, h, 4, 2.0, 1.3, 1.15, 1.5, 3);
-      for (let i = 0; i < 3; i++) {
-        const y = 2.5 + i * 3.2;
-        surroundMesh(group, new THREE.BoxGeometry(0.06, 0.06, 1.8), mats.rail, w / 2 + 0.35, y, 0.2, 0, false);
-        if (i < 2) {
-          surroundMesh(group, new THREE.BoxGeometry(0.06, 2.8, 0.06), mats.rail, w / 2 + 0.35, y + 1.4, 0, 0, false);
-          surroundMesh(group, new THREE.BoxGeometry(0.8, 0.06, 0.06), mats.rail, w / 2 + 0.1, y + 2.6, 0, 0, false);
-        }
-      }
-      group.userData.baseSize = { w, d, h };
-      return group;
-    }
-
     function buildSurroundIndustrial(mats, w, d, h) {
+      // Sample 2 — Industrial Loft: warehouse base, factory windows, fire stairs, rooftop tank.
       const group = new THREE.Group();
-      surroundMesh(group, new THREE.BoxGeometry(w, h * 0.35, d), mats.base, 0, (h * 0.35) / 2, 0);
-      surroundMesh(group, new THREE.BoxGeometry(w, h * 0.65, d), mats.upper, 0, h * 0.35 + (h * 0.65) / 2, 0);
-      surroundMesh(group, new THREE.BoxGeometry(w * 0.55, 0.18, 1.8), mats.metal, 0, h * 0.35, d / 2 + 0.85, 0, false);
+      const baseH = h * 0.38;
+      const loftH = h * 0.62;
+      surroundMesh(group, new THREE.BoxGeometry(w, baseH, d), mats.brick, 0, baseH / 2, 0);
+      surroundMesh(group, new THREE.BoxGeometry(w, loftH, d), mats.upper, 0, baseH + loftH / 2, 0);
+      surroundMesh(group, new THREE.BoxGeometry(w + 0.1, 0.35, d + 0.1), mats.rust, 0, baseH, 0, 0, false);
+      surroundMesh(group, new THREE.BoxGeometry(w * 0.55, 0.16, 1.9), mats.metal, 0, baseH, d / 2 + 0.9, 0, false);
+
       for (let r = 0; r < 3; r++) {
         for (let c = 0; c < 3; c++) {
-          const x = -3.2 + c * 3.2;
-          const y = 5.2 + r * 3.0;
-          surroundMesh(group, new THREE.BoxGeometry(2.4, 2.5, 0.1), mats.darkFrame, x, y, d / 2 + 0.07, 0, false);
-          surroundMesh(group, new THREE.BoxGeometry(2.15, 2.25, 0.06), mats.glass, x, y, d / 2 + 0.12, 0, false);
+          const x = (-w * 0.29) + c * (w * 0.29);
+          const y = baseH + 1.6 + r * Math.max(2.4, loftH / 3.4);
+          surroundMesh(group, new THREE.BoxGeometry(w * 0.22, loftH * 0.17, 0.1), mats.darkFrame, x, y, d / 2 + 0.07, 0, false);
+          surroundMesh(group, new THREE.BoxGeometry(w * 0.2, loftH * 0.15, 0.06), mats.loftGlass, x, y, d / 2 + 0.12, 0, false);
+          surroundMesh(group, new THREE.BoxGeometry(0.06, loftH * 0.15, 0.06), mats.darkFrame, x, y, d / 2 + 0.14, 0, false);
+          surroundMesh(group, new THREE.BoxGeometry(w * 0.2, 0.06, 0.06), mats.darkFrame, x, y, d / 2 + 0.14, 0, false);
         }
       }
-      for (let i = 0; i < 3; i++) {
+
+      for (let i = 0; i < 2; i++) {
+        surroundMesh(group, new THREE.BoxGeometry(0.1, 2.8, 2.2), mats.metal, w / 2 + 0.06, 1.5, -d * 0.22 + i * (d * 0.44), 0, false);
+        surroundMesh(group, new THREE.BoxGeometry(0.08, 2.4, 1.9), mats.glass, w / 2 + 0.1, 1.5, -d * 0.22 + i * (d * 0.44), 0, false);
+      }
+
+      for (let i = 0; i < 4; i++) {
         const y = 2.0 + i * 2.8;
         surroundMesh(group, new THREE.BoxGeometry(1.2, 0.14, 2.4), mats.metal, -w / 2 - 0.55, y, 0, 0, false);
+        surroundMesh(group, new THREE.BoxGeometry(0.08, 2.6, 0.08), mats.metal, -w / 2 - 0.55, y + 1.3, 1.1, 0, false);
+        surroundMesh(group, new THREE.BoxGeometry(0.08, 2.6, 0.08), mats.metal, -w / 2 - 0.55, y + 1.3, -1.1, 0, false);
       }
-      surroundMesh(group, new THREE.CylinderGeometry(1.1, 1.1, 1.8, 12), mats.metal, w * 0.25, h + 0.9, -d * 0.2, 0, false);
+
+      surroundMesh(group, new THREE.CylinderGeometry(1.1, 1.1, 1.8, 14), mats.rust, w * 0.25, h + 0.9, -d * 0.2);
+      surroundMesh(group, new THREE.CylinderGeometry(1.15, 1.15, 0.12, 14), mats.metal, w * 0.25, h + 1.85, -d * 0.2, 0, false);
+      surroundMesh(group, new THREE.BoxGeometry(0.9, 2.4, 0.9), mats.brick, -w * 0.25, h + 1.2, d * 0.15);
       group.userData.baseSize = { w, d, h };
+      group.userData.styleName = 'Industrial Loft';
       return group;
     }
 
     function buildSurroundArtDeco(mats, w, d, h) {
+      // Sample 3 — Art Deco Classic: stepped limestone, gold bands, vertical ribs.
       const group = new THREE.Group();
       surroundMesh(group, new THREE.BoxGeometry(w, h * 0.72, d), mats.bodyStone, 0, (h * 0.72) / 2, 0);
       surroundMesh(group, new THREE.BoxGeometry(w * 0.82, h * 0.14, d * 0.82), mats.bodyStone, 0, h * 0.72 + (h * 0.14) / 2, 0);
@@ -3071,28 +3912,30 @@
       surroundMesh(group, new THREE.BoxGeometry(w + 0.1, 0.28, d + 0.1), mats.gold, 0, h * 0.72, 0, 0, false);
       surroundMesh(group, new THREE.BoxGeometry(w * 0.84, 0.22, d * 0.84), mats.gold, 0, h * 0.86, 0, 0, false);
       surroundMesh(group, new THREE.BoxGeometry(w * 0.64, 0.35, d * 0.64), mats.dark, 0, h + 0.18, 0, 0, false);
-      // Front windows face the tower after placement rotation; sides get a lighter grid.
       surroundFaceGrid(group, mats, 'front', w, d, h * 0.68, 5, 2.0, 1.0, 1.25, 1.55, 4);
       surroundFaceGrid(group, mats, 'left', w, d, h * 0.68, 4, 2.2, 1.2, 1.05, 1.3, 3);
       surroundFaceGrid(group, mats, 'right', w, d, h * 0.68, 4, 2.2, 1.2, 1.05, 1.3, 3);
       group.userData.baseSize = { w, d, h };
+      group.userData.styleName = 'Art Deco Classic';
       return group;
     }
 
-    function initSurroundPrototypes() {
+    async function initSurroundPrototypes() {
       if (surroundPrototypes) return surroundPrototypes;
       const mats = getSurroundMats();
-      // Sample 1 (Brick Residential) + Sample 3 (Art Deco Classic) only.
+      // Sample 2 (Industrial Loft) + Sample 3 (Art Deco Classic) only.
       surroundPrototypes = [
-        buildSurroundBrick(mats, 10, 10, 20),
+        buildSurroundIndustrial(mats, 11, 10, 15),
         buildSurroundArtDeco(mats, 11, 10, 24),
       ];
       return surroundPrototypes;
     }
 
     function cloneSurroundBuilding(styleIndex, width, depth, height) {
-      const prototypes = initSurroundPrototypes();
-      const proto = prototypes[styleIndex % prototypes.length];
+      if (!surroundPrototypes) {
+        throw new Error('Surround prototypes not initialized — call initSurroundPrototypes() first.');
+      }
+      const proto = surroundPrototypes[styleIndex % surroundPrototypes.length];
       const { w, d, h } = proto.userData.baseSize;
       const building = proto.clone(true);
       building.scale.set(width / w, height / h, depth / d);
@@ -3124,16 +3967,16 @@
       };
     }
 
-    // Sidewalk pad + grass collar + tower-facing Brick/Art Deco building.
+    // Sidewalk pad + grass collar + tower-facing Industrial / Mediterranean building.
     function dressBuildingLot(envGroup, x, z, groundY, blockW, blockD, lotW, lotD, height, style, sidewalkMat, grassMat, trees, towerCx, towerCz, propScale) {
       const elev = groundElevations(groundY);
-      const courtW = Math.min(lotW * 1.32, blockW * 0.72);
-      const courtD = Math.min(lotD * 1.32, blockD * 0.72);
+      const courtW = Math.min(lotW * 1.28, blockW * 0.55);
+      const courtD = Math.min(lotD * 1.28, blockD * 0.55);
       envGroup.add(addGroundPlane(courtW, courtD, sidewalkMat, x, elev.pavement, z));
       // Narrow planting strip near the street-facing edge
-      const bed = Math.min(lotW, lotD) * 0.16;
-      envGroup.add(addGroundPlane(lotW + bed * 2, bed * 0.5, grassMat, x, elev.grassLawn, z + lotD * 0.4));
-      envGroup.add(addGroundPlane(lotW + bed * 2, bed * 0.5, grassMat, x, elev.grassLawn, z - lotD * 0.4));
+      const bed = Math.min(lotW, lotD) * 0.18;
+      envGroup.add(addGroundPlane(lotW + bed * 2, bed * 0.5, grassMat, x, elev.grassLawn, z + lotD * 0.42));
+      envGroup.add(addGroundPlane(lotW + bed * 2, bed * 0.5, grassMat, x, elev.grassLawn, z - lotD * 0.42));
 
       addProp(
         envGroup,
@@ -3144,15 +3987,15 @@
         rotationFacingTower(x, z, towerCx, towerCz)
       );
 
-      const e = Math.min(courtW, courtD) * 0.38;
+      const e = Math.min(courtW, courtD) * 0.4;
       [
         [-e, -e], [e, -e], [-e, e], [e, e],
       ].forEach(([ox, oz], idx) => {
-        trees.push([x + ox, z + oz, idx * 0.55, 0.82 + (idx % 3) * 0.05]);
+        trees.push([x + ox, z + oz, idx * 0.55, 0.9 + (idx % 3) * 0.04]);
       });
       if (propScale) {
-        addProp(envGroup, createPlanter(), x - lotW * 0.38, z + lotD * 0.48, groundY, 0, propScale * 0.85);
-        addProp(envGroup, createPlanter(), x + lotW * 0.38, z + lotD * 0.48, groundY, 0.4, propScale * 0.85);
+        addProp(envGroup, createPlanter(), x - lotW * 0.42, z + lotD * 0.52, groundY, 0, propScale * 0.9);
+        addProp(envGroup, createPlanter(), x + lotW * 0.42, z + lotD * 0.52, groundY, 0.4, propScale * 0.9);
       }
     }
 
@@ -3161,8 +4004,16 @@
     function getBlockBuildingMats(wallColor) {
       let entry = blockBuildingMatCache.get(wallColor);
       if (!entry) {
+        const wallMat = surroundMats?.wall
+          ? (() => {
+              const mat = surroundMats.wall.clone();
+              mat.name = 'block-wall';
+              mat.color.setHex(wallColor);
+              return mat;
+            })()
+          : new THREE.MeshStandardMaterial({ color: wallColor, roughness: 0.88, metalness: 0.04 });
         entry = {
-          wallMat: new THREE.MeshStandardMaterial({ color: wallColor, roughness: 0.88, metalness: 0.04 }),
+          wallMat,
           winMat: blockBuildingMatCache.get('win')?.winMat
             || new THREE.MeshStandardMaterial({ color: 0x7a8a98, roughness: 0.25, metalness: 0.25 }),
         };
@@ -3219,57 +4070,6 @@
       addFaceWindows(colsD, depth, 'right');
       addFaceWindows(colsD, depth, 'left');
       return group;
-    }
-
-    function makeDashedLineOverlayMat(lengthMeters, widthMeters) {
-      const c = document.createElement('canvas');
-      c.width = 256;
-      c.height = 128;
-      const ctx = c.getContext('2d');
-      ctx.clearRect(0, 0, 256, 128);
-      const lineH = Math.max(2, Math.round((0.16 / Math.max(widthMeters, 0.2)) * 128));
-      ctx.fillStyle = '#e8e8e8';
-      ctx.fillRect(0, 64 - lineH / 2, Math.round(256 * 0.4), lineH);
-      const tex = new THREE.CanvasTexture(c);
-      tex.colorSpace = THREE.SRGBColorSpace;
-      tex.wrapS = THREE.RepeatWrapping;
-      tex.repeat.set(Math.max(1, lengthMeters / 5), 1);
-      return new THREE.MeshStandardMaterial({
-        map: tex,
-        transparent: true,
-        alphaTest: 0.5,
-        depthWrite: false,
-        roughness: 0.95,
-        metalness: 0.0,
-        polygonOffset: true,
-        polygonOffsetFactor: -2,
-        polygonOffsetUnits: -2,
-      });
-    }
-
-    // Physical dashes along a road centerline (avoids full-width "tile" overlays).
-    function addRoadCenterDashes(group, cx, cz, y, length, alongX, mat) {
-      const dashLen = 2.4;
-      const gap = 2.2;
-      const half = length * 0.5;
-      for (let d = -half; d < half - dashLen; d += dashLen + gap) {
-        if (alongX) {
-          group.add(addGroundPlane(dashLen, 0.28, mat, cx + d + dashLen * 0.5, y, cz));
-        } else {
-          group.add(addGroundPlane(0.28, dashLen, mat, cx, y, cz + d + dashLen * 0.5));
-        }
-      }
-    }
-
-    function addRoadEdgeLines(group, cx, cz, y, length, roadW, alongX, mat) {
-      const inset = roadW * 0.42;
-      if (alongX) {
-        group.add(addGroundPlane(length, 0.14, mat, cx, y, cz + inset));
-        group.add(addGroundPlane(length, 0.14, mat, cx, y, cz - inset));
-      } else {
-        group.add(addGroundPlane(0.14, length, mat, cx + inset, y, cz));
-        group.add(addGroundPlane(0.14, length, mat, cx - inset, y, cz));
-      }
     }
 
     function makeTreeBarkTexture() {
@@ -3591,12 +4391,18 @@
     function materialMergeKey(m, castShadow) {
       return [
         m.type,
+        m.name || '',
         m.color ? m.color.getHex() : '',
         m.map ? m.map.uuid : '',
+        m.normalMap ? m.normalMap.uuid : '',
+        m.roughnessMap ? m.roughnessMap.uuid : '',
+        m.aoMap ? m.aoMap.uuid : '',
         m.transparent ? 1 : 0,
         m.opacity,
         m.roughness ?? '',
         m.metalness ?? '',
+        m.envMapIntensity ?? '',
+        m.fog === false ? 0 : 1,
         m.emissive ? m.emissive.getHex() : '',
         m.emissiveIntensity ?? '',
         m.side,
@@ -3650,223 +4456,33 @@
       return merged;
     }
 
-    function addCrosswalk(group, x, z, width, depth, groundY, mat, stripeY) {
-      const stripeW = 0.55;
-      const gap = 0.55;
-      const count = Math.floor(depth / (stripeW + gap));
-      const y = stripeY ?? groundY - 0.002;
-      for (let i = 0; i < count; i++) {
-        group.add(
-          addGroundPlane(stripeW, stripeW, mat, x, y, z - depth / 2 + i * (stripeW + gap) + stripeW / 2)
-        );
-      }
-    }
-
     function cityHash(i, j, seed = 0) {
       return Math.abs((i * 73856093) ^ (j * 19349663) ^ (seed * 83492791));
     }
 
     function isBlockTooCloseToHero(i, j, heroW, heroD, cellW, cellD, blockW, blockD, buildScale) {
       if (i === 0 && j === 0) return true;
-      const heroHalfW = (heroW + 7) / 2 + 4;
-      const heroHalfD = (heroD + 7) / 2 + 4;
+      const heroHalfW = heroW * 0.5 + 3;
+      const heroHalfD = heroD * 0.5 + 3;
       const buildHalf = Math.max(blockW * buildScale, blockD * buildScale) * 0.5;
       const dx = Math.abs(i * cellW);
       const dz = Math.abs(j * cellD);
       return dx < heroHalfW + buildHalf && dz < heroHalfD + buildHalf;
     }
 
-    // Full 3×3 square around the tower (Chebyshev distance ≤ 1) stays building-free.
+    // Only the hero cell is reserved; adjacent lots may hold pools.
+    // (A full 3×3 clear ring made mid-rise towers look lost in a park.)
     function isPlazaRing(i, j) {
-      return Math.max(Math.abs(i), Math.abs(j)) <= 1;
+      return i === 0 && j === 0;
     }
 
     function isHeroClearZone(i, j, heroW, heroD, cellW, cellD, blockW, blockD, buildScale) {
-      return isPlazaRing(i, j)
-        || isBlockTooCloseToHero(i, j, heroW, heroD, cellW, cellD, blockW, blockD, buildScale);
+      if (i === 0 && j === 0) return true;
+      if (j === 0 && Math.abs(i) === 1) return true; // pool lots
+      return isBlockTooCloseToHero(i, j, heroW, heroD, cellW, cellD, blockW, blockD, buildScale);
     }
 
-    function dressPoolLot(envGroup, blockCx, blockCz, groundY, blockW, blockD, sidewalkMat, trees, propScale) {
-      const padW = blockW * 0.92;
-      const padD = blockD * 0.92;
-      const deckW = blockW * 0.82;
-      const deckD = blockD * 0.72;
-      const poolW = blockW * 0.52;
-      const poolD = blockD * 0.36;
-      const rimPad = 1.1;
-      const waterY = groundY + 0.08;
-      const rimY = groundY + 0.045;
-
-      const deckTex = (() => {
-        const c = document.createElement('canvas');
-        c.width = 128;
-        c.height = 128;
-        const ctx = c.getContext('2d');
-        ctx.fillStyle = '#e6dcc8';
-        ctx.fillRect(0, 0, 128, 128);
-        ctx.strokeStyle = 'rgba(180, 160, 130, 0.45)';
-        ctx.lineWidth = 1;
-        for (let i = 0; i <= 8; i++) {
-          ctx.beginPath();
-          ctx.moveTo(0, i * 16);
-          ctx.lineTo(128, i * 16);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(i * 16, 0);
-          ctx.lineTo(i * 16, 128);
-          ctx.stroke();
-        }
-        for (let i = 0; i < 80; i++) {
-          const g = 200 + ((i * 17) % 30);
-          ctx.fillStyle = `rgba(${g}, ${g - 12}, ${g - 30}, 0.2)`;
-          ctx.fillRect((i * 23) % 128, (i * 41) % 128, 3, 3);
-        }
-        const tex = new THREE.CanvasTexture(c);
-        tex.colorSpace = THREE.SRGBColorSpace;
-        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(6, 5);
-        return tex;
-      })();
-
-      const waterTex = (() => {
-        const c = document.createElement('canvas');
-        c.width = 256;
-        c.height = 256;
-        const ctx = c.getContext('2d');
-        const g = ctx.createLinearGradient(0, 0, 256, 256);
-        g.addColorStop(0, '#7ad4ef');
-        g.addColorStop(0.35, '#3aa8d0');
-        g.addColorStop(0.7, '#2a88b8');
-        g.addColorStop(1, '#1f6a98');
-        ctx.fillStyle = g;
-        ctx.fillRect(0, 0, 256, 256);
-        for (let i = 0; i < 18; i++) {
-          ctx.strokeStyle = `rgba(255,255,255,${0.06 + (i % 3) * 0.03})`;
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          const y = 20 + i * 12;
-          ctx.moveTo(0, y);
-          ctx.bezierCurveTo(60, y - 6, 140, y + 8, 256, y - 2);
-          ctx.stroke();
-        }
-        const tex = new THREE.CanvasTexture(c);
-        tex.colorSpace = THREE.SRGBColorSpace;
-        return tex;
-      })();
-
-      const deckMat = new THREE.MeshStandardMaterial({
-        map: deckTex,
-        color: 0xffffff,
-        roughness: 0.86,
-        metalness: 0.02,
-      });
-      const rimMat = new THREE.MeshStandardMaterial({
-        color: 0xf7f3ec,
-        roughness: 0.55,
-        metalness: 0.08,
-      });
-      const basinMat = new THREE.MeshStandardMaterial({
-        color: 0x1f5f7a,
-        roughness: 0.45,
-        metalness: 0.1,
-      });
-      const waterMat = new THREE.MeshStandardMaterial({
-        map: waterTex,
-        color: 0xffffff,
-        roughness: 0.05,
-        metalness: 0.45,
-        transparent: true,
-        opacity: 0.78,
-        depthWrite: false,
-      });
-      const laneMat = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        roughness: 0.85,
-        metalness: 0.0,
-      });
-      const stepMat = new THREE.MeshStandardMaterial({
-        color: 0xd8eef5,
-        roughness: 0.35,
-        metalness: 0.12,
-      });
-
-      // Outer sidewalk + pool deck
-      const elev = groundElevations(groundY);
-      envGroup.add(addGroundPlane(padW, padD, sidewalkMat, blockCx, elev.pavement, blockCz));
-      envGroup.add(addGroundPlane(deckW, deckD, deckMat, blockCx, elev.path - 0.006, blockCz));
-
-      // Raised stone rim
-      envGroup.add(addGroundPlane(poolW + rimPad * 2, poolD + rimPad * 2, rimMat, blockCx, rimY, blockCz));
-
-      // Basin walls as a shallow tray
-      const wallH = 0.42;
-      const wallT = 0.22;
-      [
-        [0, (poolD + wallT) / 2, poolW + wallT * 2, wallT],
-        [0, -(poolD + wallT) / 2, poolW + wallT * 2, wallT],
-        [(poolW + wallT) / 2, 0, wallT, poolD],
-        [-(poolW + wallT) / 2, 0, wallT, poolD],
-      ].forEach(([ox, oz, w, d]) => {
-        const wall = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, d), rimMat);
-        wall.position.set(blockCx + ox, groundY + wallH * 0.15, blockCz + oz);
-        wall.castShadow = true;
-        wall.receiveShadow = true;
-        envGroup.add(wall);
-      });
-
-      // Basin floor
-      const basin = new THREE.Mesh(new THREE.BoxGeometry(poolW, 0.2, poolD), basinMat);
-      basin.position.set(blockCx, groundY - 0.18, blockCz);
-      basin.receiveShadow = true;
-      envGroup.add(basin);
-
-      // Water surface
-      envGroup.add(addGroundPlane(poolW * 0.97, poolD * 0.97, waterMat, blockCx, waterY, blockCz));
-
-      // Soft highlight strip on water
-      const gloss = new THREE.Mesh(
-        new THREE.PlaneGeometry(poolW * 0.7, poolD * 0.12),
-        new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.18, depthWrite: false })
-      );
-      gloss.rotation.x = -Math.PI / 2;
-      gloss.position.set(blockCx, waterY + 0.01, blockCz - poolD * 0.22);
-      envGroup.add(gloss);
-
-      // Lane markers
-      for (let i = 0; i < 5; i++) {
-        const lx = blockCx - poolW * 0.38 + (i / 4) * poolW * 0.76;
-        const lane = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.015, poolD * 0.82), laneMat);
-        lane.position.set(lx, groundY - 0.08, blockCz);
-        envGroup.add(lane);
-      }
-
-      // Shallow entry steps at one short end
-      for (let s = 0; s < 3; s++) {
-        const step = new THREE.Mesh(
-          new THREE.BoxGeometry(poolW * 0.28, 0.08, 0.55),
-          stepMat
-        );
-        step.position.set(
-          blockCx - poolW * 0.28,
-          groundY - 0.02 - s * 0.08,
-          blockCz + poolD * 0.5 - 0.4 - s * 0.45
-        );
-        step.receiveShadow = true;
-        envGroup.add(step);
-      }
-
-      // Corner trees only — keep deck clear (pools beside tower: no trees)
-      // (trees removed from pool lots near the tower)
-      // Loungers / planters along the long edges — no poles in the water
-      addProp(envGroup, createPlanter(), blockCx - poolW * 0.62, blockCz - poolD * 0.55, groundY, 0, propScale * 0.95);
-      addProp(envGroup, createPlanter(), blockCx + poolW * 0.62, blockCz - poolD * 0.55, groundY, 0, propScale * 0.95);
-      addProp(envGroup, createPlanter(), blockCx - poolW * 0.62, blockCz + poolD * 0.55, groundY, 0, propScale * 0.95);
-      addProp(envGroup, createPlanter(), blockCx + poolW * 0.62, blockCz + poolD * 0.55, groundY, 0, propScale * 0.95);
-      addProp(envGroup, createBench(), blockCx + poolW * 0.15, blockCz + poolD * 0.72, groundY, Math.PI, propScale * 0.85);
-      addProp(envGroup, createBench(), blockCx - poolW * 0.15, blockCz - poolD * 0.72, groundY, 0, propScale * 0.85);
-    }
-
-    function dressPlazaLot(envGroup, blockCx, blockCz, groundY, roadY, stripeY, blockW, blockD, sidewalkMat, asphaltMat, lineMat, dashedPadOverlayMat, grassMat, lamps, trees, propScale, { skipTrees = false } = {}) {
+    function dressPlazaLot(envGroup, blockCx, blockCz, groundY, blockW, blockD, sidewalkMat, grassMat, lamps, trees, propScale, { skipTrees = false } = {}) {
       const elev = groundElevations(groundY);
       const padW = blockW * 0.9;
       const padD = blockD * 0.9;
@@ -3918,84 +4534,116 @@
       addProp(envGroup, createBollard(), blockCx + edge * 0.88, blockCz + edge * 0.35, groundY, 0, propScale);
     }
 
-    function dressHeroPlaza(envGroup, cx, cz, groundY, roadY, stripeY, heroW, heroD, roadW, blockW, blockD, sidewalkMat, asphaltMat, lineMat, grassMat, lamps, trees, propScale) {
+    function addSideAmenityPool(envGroup, px, pz, groundY, propScale) {
+      // Compact residential amenity pool (~8×18m) for tower left/right flanks.
+      const poolW = 8;
+      const poolD = 18;
+      const deckW = 14;
+      const deckD = 24;
+      const rimPad = 0.9;
+      const waterY = groundY + 0.08;
+      const rimY = groundY + 0.045;
       const elev = groundElevations(groundY);
-      // Keep the ceremonial plaza inside the center city block so through-roads stay clear.
-      const margin = Math.max(10, Math.min(heroW, heroD) * 0.22);
-      const swW = Math.min(heroW + margin, blockW * 0.94);
-      const swD = Math.min(heroD + margin, blockD * 0.94);
-      const midW = Math.max(10, swW * 0.78);
-      const midD = Math.max(10, swD * 0.78);
-      const lawnW = Math.max(8, swW * 0.55);
-      const lawnD = Math.max(8, swD * 0.55);
-      const innerW = Math.max(6, swW * 0.32);
-      const innerD = Math.max(6, swD * 0.32);
 
-      // Outer stone court
+      const deckMat = new THREE.MeshStandardMaterial({ color: 0xe6dcc8, roughness: 0.86, metalness: 0.02 });
+      const rimMat = new THREE.MeshStandardMaterial({ color: 0xf7f3ec, roughness: 0.55, metalness: 0.08 });
+      const basinMat = new THREE.MeshStandardMaterial({ color: 0x1f5f7a, roughness: 0.45, metalness: 0.1 });
+      const waterMat = new THREE.MeshStandardMaterial({
+        color: 0x3aa8d0,
+        roughness: 0.06,
+        metalness: 0.4,
+        transparent: true,
+        opacity: 0.8,
+        depthWrite: false,
+      });
+      const laneMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85 });
+      const lawnMat = new THREE.MeshStandardMaterial({ color: 0x7aaa58, roughness: 0.9, metalness: 0 });
+
+      envGroup.add(addGroundPlane(deckW + 4, deckD + 4, lawnMat, px, elev.grassLawn, pz));
+      envGroup.add(addGroundPlane(deckW, deckD, deckMat, px, elev.path - 0.006, pz));
+      envGroup.add(addGroundPlane(poolW + rimPad * 2, poolD + rimPad * 2, rimMat, px, rimY, pz));
+
+      const wallH = 0.4;
+      const wallT = 0.2;
+      [
+        [0, (poolD + wallT) / 2, poolW + wallT * 2, wallT],
+        [0, -(poolD + wallT) / 2, poolW + wallT * 2, wallT],
+        [(poolW + wallT) / 2, 0, wallT, poolD],
+        [-(poolW + wallT) / 2, 0, wallT, poolD],
+      ].forEach(([ox, oz, w, d]) => {
+        const wall = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, d), rimMat);
+        wall.position.set(px + ox, groundY + wallH * 0.15, pz + oz);
+        wall.castShadow = true;
+        wall.receiveShadow = true;
+        envGroup.add(wall);
+      });
+
+      const basin = new THREE.Mesh(new THREE.BoxGeometry(poolW, 0.2, poolD), basinMat);
+      basin.position.set(px, groundY - 0.18, pz);
+      basin.receiveShadow = true;
+      envGroup.add(basin);
+      envGroup.add(addGroundPlane(poolW * 0.97, poolD * 0.97, waterMat, px, waterY, pz));
+
+      for (let i = 0; i < 4; i++) {
+        const lx = px - poolW * 0.32 + (i / 3) * poolW * 0.64;
+        const lane = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.015, poolD * 0.8), laneMat);
+        lane.position.set(lx, groundY - 0.08, pz);
+        envGroup.add(lane);
+      }
+
+      addProp(envGroup, createPlanter(), px - deckW * 0.38, pz - deckD * 0.4, groundY, 0, propScale * 0.9);
+      addProp(envGroup, createPlanter(), px + deckW * 0.38, pz - deckD * 0.4, groundY, 0.3, propScale * 0.9);
+      addProp(envGroup, createPlanter(), px - deckW * 0.38, pz + deckD * 0.4, groundY, 0.2, propScale * 0.9);
+      addProp(envGroup, createPlanter(), px + deckW * 0.38, pz + deckD * 0.4, groundY, 0.5, propScale * 0.9);
+      addProp(envGroup, createBench(), px + 1.2, pz + poolD * 0.55, groundY, Math.PI, propScale * 0.85);
+      addProp(envGroup, createBench(), px - 1.2, pz - poolD * 0.55, groundY, 0, propScale * 0.85);
+    }
+
+    function dressHeroPlaza(envGroup, cx, cz, groundY, heroW, heroD, roadW, blockW, blockD, sidewalkMat, grassMat, lamps, trees, propScale) {
+      const elev = groundElevations(groundY);
+      const margin = Math.max(8, Math.min(heroW, heroD) * 0.12);
+      // Wide white stone apron so pools sit clearly apart from the tower.
+      const swW = Math.min(blockW * 0.98, Math.max(heroW + margin * 2.4, blockW * 0.94));
+      const swD = Math.min(blockD * 0.96, Math.max(heroD + margin, blockD * 0.9));
+      const midW = Math.max(8, heroW * 0.88);
+      const midD = Math.max(8, heroD * 0.88);
+      const lawnW = Math.max(6, heroW * 0.62);
+      const lawnD = Math.max(6, heroD * 0.62);
+      const innerW = Math.max(5, heroW * 0.58);
+      const innerD = Math.max(5, heroD * 0.48);
+
       envGroup.add(addGroundPlane(swW, swD, sidewalkMat, cx, elev.pavement, cz));
-      // Mid lawn ring
       envGroup.add(addGroundPlane(midW, midD, grassMat, cx, elev.grassLawn, cz));
-      // Inner promenade
-      envGroup.add(addGroundPlane(lawnW * 1.15, lawnD * 1.15, sidewalkMat, cx, elev.path - 0.012, cz));
-      // Soft lawn near tower footprint
       envGroup.add(addGroundPlane(lawnW, lawnD, grassMat, cx, elev.grassLawn, cz));
-      // Tight stone band against the tower base
       envGroup.add(addGroundPlane(innerW, innerD, sidewalkMat, cx, elev.trim, cz));
 
-      // Approach paths from all four roads into the plaza
       const pathW = 3.2;
       envGroup.add(addGroundPlane(pathW, (swD - lawnD) * 0.48, sidewalkMat, cx, elev.path - 0.004, cz + (lawnD + swD) * 0.22));
       envGroup.add(addGroundPlane(pathW, (swD - lawnD) * 0.48, sidewalkMat, cx, elev.path - 0.004, cz - (lawnD + swD) * 0.22));
-      envGroup.add(addGroundPlane((swW - lawnW) * 0.48, pathW, sidewalkMat, cx + (lawnW + swW) * 0.22, elev.path - 0.004, cz));
-      envGroup.add(addGroundPlane((swW - lawnW) * 0.48, pathW, sidewalkMat, cx - (lawnW + swW) * 0.22, elev.path - 0.004, cz));
 
-      // No trees on the tower plaza — they were blocking the ground floor.
-      // Seating + planters on the mid court
-      const seatZ = (lawnD + swD) * 0.26;
-      const seatX = (lawnW + swW) * 0.26;
+      // Amenity pools left/right — offset farther so white apron shows between tower and water.
+      const poolOffsetX = heroW * 0.5 + 13.5;
+      addSideAmenityPool(envGroup, cx - poolOffsetX, cz, groundY, propScale);
+      addSideAmenityPool(envGroup, cx + poolOffsetX, cz, groundY, propScale);
+
+      const seatZ = (lawnD + swD) * 0.28;
       [
         [0, seatZ, Math.PI],
         [0, -seatZ, 0],
-        [seatX, 0, -Math.PI / 2],
-        [-seatX, 0, Math.PI / 2],
-        [seatX * 0.7, seatZ * 0.7, Math.PI * 0.75],
-        [-seatX * 0.7, -seatZ * 0.7, Math.PI * 0.25],
+        [heroW * 0.22, seatZ * 0.85, Math.PI * 0.85],
+        [-heroW * 0.22, -seatZ * 0.85, Math.PI * 0.15],
       ].forEach(([ox, oz, rot], idx) => {
         addProp(envGroup, createBench(), cx + ox, cz + oz, groundY, rot, propScale);
-        addProp(envGroup, createPlanter(), cx + ox * 0.82, cz + oz * 0.82, groundY, rot, propScale * (0.95 + (idx % 3) * 0.05));
+        addProp(envGroup, createPlanter(), cx + ox * 0.75, cz + oz * 0.75, groundY, rot, propScale * (0.95 + (idx % 3) * 0.05));
       });
 
-      // Bollard lines at outer corners + mid-edges
       [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => {
-        const bx = cx + sx * (swW * 0.47);
-        const bz = cz + sz * (swD * 0.47);
-        addProp(envGroup, createBollard(), bx, bz, groundY, 0, propScale);
-        addProp(envGroup, createBollard(), bx - sx * 1.8, bz, groundY, 0, propScale * 0.95);
-        addProp(envGroup, createBollard(), bx, bz - sz * 1.8, groundY, 0, propScale * 0.95);
-      });
-      [
-        [0, 1], [0, -1], [1, 0], [-1, 0],
-      ].forEach(([sx, sz]) => {
-        addProp(
-          envGroup,
-          createBollard(),
-          cx + sx * (swW * 0.47),
-          cz + sz * (swD * 0.47),
-          groundY,
-          0,
-          propScale
-        );
+        addProp(envGroup, createBollard(), cx + sx * (swW * 0.47), cz + sz * (swD * 0.47), groundY, 0, propScale);
       });
 
-      // Crosswalks on the four through-roads that ring the center block
       const cellHalfW = (blockW + roadW) * 0.5;
       const cellHalfD = (blockD + roadW) * 0.5;
-      addCrosswalk(envGroup, cx, cz + cellHalfD, 7.2, 5.2, groundY, lineMat, stripeY);
-      addCrosswalk(envGroup, cx, cz - cellHalfD, 7.2, 5.2, groundY, lineMat, stripeY);
-      addCrosswalk(envGroup, cx - cellHalfW, cz, 7.2, 5.2, groundY, lineMat, stripeY);
-      addCrosswalk(envGroup, cx + cellHalfW, cz, 7.2, 5.2, groundY, lineMat, stripeY);
 
-      // Lamps at the four intersections around the center block
       [
         [cellHalfW, cellHalfD],
         [-cellHalfW, cellHalfD],
@@ -4006,73 +4654,41 @@
       });
     }
 
-    function buildCityGrid(envGroup, cx, cz, groundY, heroW, heroD, materials) {
-      const { asphaltMat, sidewalkMat, lineMat, grassTex } = materials;
-      // Narrower streets + wider parcels so roads read as corridors, not square tiles.
-      const roadW = 11;
-      const blockW = 42;
-      const blockD = 42;
+    async function buildCityGrid(envGroup, cx, cz, groundY, heroW, heroD, heroH, materials) {
+      const { asphaltMat, sidewalkMat, grassMat } = materials;
+      // Wider center lot so flank pools sit apart on a broad white apron.
+      const padZ = Math.max(12, Math.min(heroW, heroD) * 0.12);
+      const padX = Math.max(52, Math.min(heroW, heroD) * 0.28);
+      const blockW = heroW + padX;
+      const blockD = heroD + padZ;
+      const roadW = 14; // ~4-lane urban avenue
       const cellW = blockW + roadW;
       const cellD = blockD + roadW;
-      const buildScale = 0.5;
       const gridN = quality.gridN;
-      const propScale = 1.28;
-      const carScale = 1.58;
+      // Street furniture & cars in real meters.
+      const propScale = 1.0;
+      const carScale = 1.05;
+      // Neighbor footprints in absolute meters (mid-rise apartment scale).
+      const neighW = THREE.MathUtils.clamp(Math.min(blockW, blockD) * 0.36, 14, 22);
+      const neighD = THREE.MathUtils.clamp(neighW * 0.88, 12, 20);
       const cityExtent = (gridN + 2) * Math.max(cellW, cellD);
-      initSurroundPrototypes();
+      const towerH = Math.max(heroH, 20);
+      const footMax = Math.max(heroW, heroD);
+      await initSurroundPrototypes();
       const carColors = [0x2a4a6a, 0x8a2a2a, 0xdddddd, 0x2a2a2a, 0x5a6a4a, 0x4a3a6a, 0x6a5a3a, 0x3a5a6a];
-      const blockColors = [0xc4bdb2, 0xa8a296, 0xb9b0a0, 0x9ea89a, 0xbeb5a8, 0x8f9690, 0xada496, 0x7a8a90];
-      const lotW = blockW * buildScale * 0.78;
-      const lotD = blockD * buildScale * 0.78;
       const lamps = [];
       const cars = [];
       const trees = [];
-      const roadY = groundY - 0.012;
-      const stripeY = groundY - 0.003;
+      const roadY = groundY + 0.001;
       const elev = groundElevations(groundY);
 
-      // Keep cars off the plaza / pool lots around the tower (3×3 ring).
       function carHitsPlaza(x, z) {
-        for (let pj = -1; pj <= 1; pj++) {
-          for (let pi = -1; pi <= 1; pi++) {
-            const bcx = cx + pi * cellW;
-            const bcz = cz + pj * cellD;
-            if (Math.abs(x - bcx) < blockW * 0.5 && Math.abs(z - bcz) < blockD * 0.5) {
-              return true;
-            }
-          }
-        }
-        return false;
+        return Math.abs(x - cx) < blockW * 0.55 && Math.abs(z - cz) < blockD * 0.55;
       }
-      const dashedLineOverlayMat = makeDashedLineOverlayMat(cityExtent * 2.2, 0.3);
-      const dashedPadOverlayMat = makeDashedLineOverlayMat(blockW * 0.96, blockD * 0.96);
-      const plazaGrassMat = new THREE.MeshStandardMaterial({
-        map: grassTex,
-        roughness: 0.9,
-        metalness: 0.0,
-        color: 0x7aaa58,
-      });
-      const laneMarkMat = new THREE.MeshStandardMaterial({
-        color: 0xf2f0e6,
-        roughness: 0.92,
-        metalness: 0.0,
-        polygonOffset: true,
-        polygonOffsetFactor: -3,
-        polygonOffsetUnits: -3,
-        depthWrite: false,
-      });
-      const roadEdgeMat = new THREE.MeshStandardMaterial({
-        color: 0xd8d4c8,
-        roughness: 0.9,
-        metalness: 0.0,
-        polygonOffset: true,
-        polygonOffsetFactor: -2,
-        polygonOffsetUnits: -2,
-        depthWrite: false,
-      });
 
-      // Square grass base — must cover road strips at the outermost grid corners
-      // (a circle was too small and left asphalt fingers visible at the horizon).
+      const plazaGrassMat = grassMat.clone();
+      plazaGrassMat.envMapIntensity = DEFAULT_ENV_INTENSITY * 0.7;
+
       const roadHalf = cityExtent * 1.1;
       const gridHalf = (gridN + 1) * Math.max(cellW, cellD);
       const groundHalf = Math.hypot(roadHalf, gridHalf) * 1.08;
@@ -4080,83 +4696,60 @@
 
       const ground = new THREE.Mesh(
         new THREE.PlaneGeometry(groundSpan, groundSpan),
-        new THREE.MeshStandardMaterial({
-          map: grassTex,
-          roughness: 0.92,
-          metalness: 0.0,
-          color: 0x8fb86a,
-        })
+        grassMat.clone()
       );
+      ground.material.envMapIntensity = DEFAULT_ENV_INTENSITY * 0.65;
       ground.rotation.x = -Math.PI / 2;
       ground.position.set(cx, elev.grassBase - 0.006, cz);
       ground.receiveShadow = true;
       envGroup.add(ground);
 
-      // City lots first — each parcel gets a grass base so streets stay visually separate.
       for (let j = -gridN; j <= gridN; j++) {
         for (let i = -gridN; i <= gridN; i++) {
           const blockCx = cx + i * cellW;
           const blockCz = cz + j * cellD;
           const h = cityHash(i, j);
 
-          // Grass parcel under every lot (roads will cut between these).
           envGroup.add(addGroundPlane(blockW * 0.98, blockD * 0.98, plazaGrassMat, blockCx, elev.grassBase, blockCz));
 
+          // Hero tower plaza
           if (i === 0 && j === 0) {
             dressHeroPlaza(
-              envGroup, blockCx, blockCz, groundY, roadY, stripeY,
-              heroW, heroD, roadW, blockW, blockD, sidewalkMat, asphaltMat, lineMat, plazaGrassMat,
+              envGroup, blockCx, blockCz, groundY,
+              heroW, heroD, roadW, blockW, blockD, sidewalkMat, plazaGrassMat,
               lamps, trees, propScale
             );
             continue;
           }
 
-          if (isHeroClearZone(i, j, heroW, heroD, cellW, cellD, blockW, blockD, buildScale)) {
-            // Left & right of the tower → swimming pools instead of lawn plazas
-            if (j === 0 && Math.abs(i) === 1) {
-              dressPoolLot(envGroup, blockCx, blockCz, groundY, blockW, blockD, sidewalkMat, trees, propScale);
-            } else {
-              dressPlazaLot(
-                envGroup, blockCx, blockCz, groundY, roadY, stripeY,
-                blockW, blockD, sidewalkMat, asphaltMat, lineMat, dashedPadOverlayMat, plazaGrassMat,
-                lamps, trees, propScale, { skipTrees: true }
-              );
-            }
-            continue;
-          }
+          // Realistic mid-rise heights (about 4–8 floors), always under the hero.
+          const neighH = THREE.MathUtils.clamp(12 + (h % 13), 12, Math.min(24, towerH * 0.82));
+          const lotScale = 0.92 + (h % 5) * 0.03;
+          const lotW = neighW * lotScale;
+          const lotD = neighD * lotScale;
 
-          // 2nd road ring: landscaped court + taller Brick / Art Deco facing the tower.
-          if (Math.max(Math.abs(i), Math.abs(j)) === 2) {
-            const ringHeight = 30 + (h % 12);
-            dressBuildingLot(
-              envGroup, blockCx, blockCz, groundY, blockW, blockD,
-              lotW * 1.08, lotD * 1.08, ringHeight, h % 2,
-              sidewalkMat, plazaGrassMat, trees, cx, cz, propScale
-            );
-            continue;
-          }
-
-          // Occasional lush pocket park (rarer — avoids empty white slabs).
-          if (h % 14 === 0) {
+          // Occasional pocket park
+          if (h % 15 === 0) {
             dressPlazaLot(
-              envGroup, blockCx, blockCz, groundY, roadY, stripeY,
-              blockW, blockD, sidewalkMat, asphaltMat, lineMat, dashedPadOverlayMat, plazaGrassMat,
+              envGroup, blockCx, blockCz, groundY,
+              blockW, blockD, sidewalkMat, plazaGrassMat,
               lamps, trees, propScale
             );
             continue;
           }
 
-          if (h % 8 === 0) {
-            const subW = blockW * buildScale * 0.4;
-            const subD = blockD * buildScale * 0.4;
-            const gap = 3.8;
-            envGroup.add(addGroundPlane(blockW * 0.78, blockD * 0.78, sidewalkMat, blockCx, elev.pavement, blockCz));
+          // Occasional 2×2 courtyard cluster of smaller flats
+          if (h % 9 === 0) {
+            const subW = lotW * 0.48;
+            const subD = lotD * 0.48;
+            const gap = 3.2;
+            envGroup.add(addGroundPlane(lotW * 1.35, lotD * 1.35, sidewalkMat, blockCx, elev.pavement, blockCz));
             const offsets = [
               [-subW / 2 - gap / 2, -subD / 2 - gap / 2], [subW / 2 + gap / 2, -subD / 2 - gap / 2],
               [-subW / 2 - gap / 2, subD / 2 + gap / 2], [subW / 2 + gap / 2, subD / 2 + gap / 2],
             ];
             offsets.forEach(([ox, oz], idx) => {
-              const bh = 16 + cityHash(i, j, idx + 1) % 10;
+              const bh = THREE.MathUtils.clamp(10 + (cityHash(i, j, idx + 1) % 8), 10, neighH);
               const bx = blockCx + ox;
               const bz = blockCz + oz;
               addProp(
@@ -4171,55 +4764,44 @@
             continue;
           }
 
-          const height = 24 + (h % 14);
           dressBuildingLot(
             envGroup, blockCx, blockCz, groundY, blockW, blockD,
-            lotW, lotD, height, h % 2,
+            lotW, lotD, neighH, h % 2,
             sidewalkMat, plazaGrassMat, trees, cx, cz, propScale
           );
         }
       }
 
-      // Continuous street corridors BETWEEN parcels — asphalt ribbons, not square tiles.
+      // Continuous street corridors BETWEEN parcels.
       const roadSpan = cityExtent * 2.4;
-      const walkW = 1.8;
+      const walkW = 2.0;
       const roadMin = -gridN - 1;
       const roadMax = gridN;
 
       for (let j = roadMin; j <= roadMax; j++) {
         const z = cz + (j + 0.5) * cellD;
-        // Asphalt carriageway
-        envGroup.add(addGroundPlane(roadSpan, roadW, asphaltMat, cx, roadY, z));
-        // Sidewalks sit on the parcel edge (outside asphalt), thin so they don't box the street
+        envGroup.add(addRoadPlane(roadSpan, roadW, asphaltMat, cx, roadY, z, true));
         envGroup.add(addGroundPlane(roadSpan, walkW, sidewalkMat, cx, elev.pavement, z + (roadW + walkW) * 0.5));
         envGroup.add(addGroundPlane(roadSpan, walkW, sidewalkMat, cx, elev.pavement, z - (roadW + walkW) * 0.5));
-        // Thin edge lines + center dashes only
-        addRoadEdgeLines(envGroup, cx, z, stripeY, roadSpan, roadW, true, roadEdgeMat);
-        addRoadCenterDashes(envGroup, cx, z, stripeY + 0.001, roadSpan, true, laneMarkMat);
       }
       for (let i = roadMin; i <= roadMax; i++) {
         const x = cx + (i + 0.5) * cellW;
-        envGroup.add(addGroundPlane(roadW, roadSpan, asphaltMat, x, roadY, cz));
+        envGroup.add(addRoadPlane(roadSpan, roadW, asphaltMat, x, roadY, cz, false));
         envGroup.add(addGroundPlane(walkW, roadSpan, sidewalkMat, x + (roadW + walkW) * 0.5, elev.pavement, cz));
         envGroup.add(addGroundPlane(walkW, roadSpan, sidewalkMat, x - (roadW + walkW) * 0.5, elev.pavement, cz));
-        addRoadEdgeLines(envGroup, x, cz, stripeY, roadSpan, roadW, false, roadEdgeMat);
-        addRoadCenterDashes(envGroup, x, cz, stripeY + 0.001, roadSpan, false, laneMarkMat);
       }
 
-      // Lamps + crosswalks at true intersections (where through-roads cross).
+      // Lamps at intersections.
       for (let j = roadMin; j <= roadMax; j++) {
         for (let i = roadMin; i <= roadMax; i++) {
           const ix = cx + (i + 0.5) * cellW;
           const iz = cz + (j + 0.5) * cellD;
-          // Skip the innermost ring of intersections buried in the plaza clear zone.
           if (Math.max(Math.abs(i + 0.5), Math.abs(j + 0.5)) < 1.1) continue;
           const h = cityHash(i, j, 99);
           if (h % quality.lampEvery === 0) lamps.push([ix, iz, (h % 4) * (Math.PI / 2)]);
-          if (h % 3 === 0) addCrosswalk(envGroup, ix, iz, 5.2, 4.0, groundY, lineMat, stripeY);
         }
       }
 
-      // Cars travel along the continuous through-roads.
       for (let j = roadMin; j <= roadMax; j++) {
         const z = cz + (j + 0.5) * cellD;
         for (let k = -gridN * 2; k <= gridN * 2; k++) {
@@ -4249,13 +4831,12 @@
 
       for (let j = -gridN; j <= gridN; j++) {
         for (let i = -gridN; i <= gridN; i++) {
-          if (isHeroClearZone(i, j, heroW, heroD, cellW, cellD, blockW, blockD, buildScale)) continue;
+          if (i === 0 && j === 0) continue;
           const blockCx = cx + i * cellW;
           const blockCz = cz + j * cellD;
           const h = cityHash(i, j, 20);
-          // On low quality, skip every other block's street dressing.
           if (quality.streetPropEvery > 1 && ((i + j + h) % quality.streetPropEvery) !== 0) continue;
-          const propR = blockW * 0.38;
+          const propR = Math.min(blockW, blockD) * 0.28;
           if (h % 5 === 0) addProp(envGroup, createPlanter(), blockCx - propR, blockCz + propR * 0.6, groundY, 0, propScale);
           if (h % 7 === 1) addProp(envGroup, createTrashBin(), blockCx + propR, blockCz - propR * 0.6, groundY, 1, propScale);
           if (h % 8 === 2) addProp(envGroup, createBench(), blockCx - propR, blockCz, groundY, Math.PI / 2, propScale);
@@ -4276,72 +4857,69 @@
           lamps,
           cars,
           trees: trees.filter(
-            ([tx, tz]) => !isNearTowerFootprint(tx, tz, cx, cz, heroW * 0.5 + 2, heroD * 0.5 + 2, 10)
+            ([tx, tz]) => !isNearTowerFootprint(tx, tz, cx, cz, heroW * 0.5 + 2, heroD * 0.5 + 2, Math.max(8, footMax * 0.12))
           ),
         },
         propScale,
         carScale
       );
 
-      return { cityExtent, groundHalf };
+      return { cityExtent, groundHalf, cellW, cellD, blockW, blockD, roadW, propScale };
     }
 
     // ── Model loading ──
     async function setupEnvironment(object) {
-      const grassTex = await loadTexture(
-        'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r160/examples/textures/terrain/grasslight-big.jpg'
-      );
+      const grassRepeat = quality.low ? [22, 22] : [44, 44];
+
+      const [grassMat, asphaltMat] = await Promise.all([
+        createPbrMaterial('grass', PBR_SURFACE_SETS.grass, { repeat: grassRepeat }),
+        createPbrMaterial('road', PBR_SURFACE_SETS.road, { repeat: [1, 1] }),
+      ]);
+      asphaltMat.fog = false;
+      [asphaltMat.map, asphaltMat.normalMap, asphaltMat.roughnessMap, asphaltMat.aoMap].forEach((tex) => {
+        if (!tex) return;
+        tex.generateMipmaps = false;
+        tex.minFilter = THREE.LinearFilter;
+        tex.needsUpdate = true;
+      });
 
       const box = new THREE.Box3().setFromObject(object);
-        const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
-        const groundY = box.min.y;
-        const cx = center.x;
-        const cz = center.z;
-        const footW = size.x;
-        const footD = size.z;
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      const groundY = box.min.y;
+      const cx = center.x;
+      const cz = center.z;
+      const footW = size.x;
+      const footD = size.z;
+      const heroH = size.y;
 
-        grassTex.wrapS = grassTex.wrapT = THREE.RepeatWrapping;
-        grassTex.repeat.set(quality.low ? 20 : 40, quality.low ? 20 : 40);
-        polishTexture(grassTex, { colorSpace: THREE.SRGBColorSpace });
+      const envGroup = new THREE.Group();
 
-        const envGroup = new THREE.Group();
-
-        const asphaltMat = new THREE.MeshStandardMaterial({
-          color: 0x3c3c3c,
-          roughness: 0.95,
-          metalness: 0.02,
-        });
-        const sidewalkMat = new THREE.MeshStandardMaterial({
-          color: 0xcfc6b4,
-          roughness: 0.9,
-          metalness: 0.02,
-        });
-        const lineMat = new THREE.MeshStandardMaterial({
-          color: 0xe4e0d4,
-          roughness: 0.95,
-          polygonOffset: true,
-          polygonOffsetFactor: -2,
-          polygonOffsetUnits: -2,
-          depthWrite: false,
-        });
-
-        const { cityExtent, groundHalf } = buildCityGrid(envGroup, cx, cz, groundY, footW, footD, {
+      const sidewalkMat = new THREE.MeshStandardMaterial({
+        color: 0xcfc6b4,
+        roughness: 0.88,
+        metalness: 0.02,
+        envMapIntensity: DEFAULT_ENV_INTENSITY * 0.85,
+      });
+      const { cityExtent, groundHalf, cellW, cellD } = await buildCityGrid(
+        envGroup, cx, cz, groundY, footW, footD, heroH, {
           asphaltMat,
           sidewalkMat,
-          curbMat: null,
-          lineMat,
-          grassTex,
-        });
+          grassMat,
+        }
+      );
 
-        // Collapse the entire static city into one mesh per material (draw-call optimization).
-        scene.add(mergeStaticEnvironment(envGroup));
+      // Collapse the entire static city into one mesh per material (draw-call optimization).
+      scene.add(mergeStaticEnvironment(envGroup));
 
-        scene.fog = new THREE.Fog(0xb8d4e8, size.y * 2.5, groundHalf * 1.12);
-        fogBaseNear = scene.fog.near;
-        fogBaseFar = scene.fog.far;
-        applyEnvironment();
-        object.userData.cityExtent = cityExtent;
+      scene.fog = new THREE.Fog(0xb8d4e8, Math.max(heroH * 2.2, 55), groundHalf * 1.08);
+      fogBaseNear = scene.fog.near;
+      fogBaseFar = scene.fog.far;
+      applyEnvironment();
+      object.userData.cityExtent = cityExtent;
+
+      const coverRadius = Math.max(cellW, cellD) * 2.35;
+      fitShadowCamera(cx, cz, groundY, coverRadius, heroH);
     }
 
     function frameModel(object) {
@@ -4349,7 +4927,7 @@
       const center = box.getCenter(new THREE.Vector3());
       const size = box.getSize(new THREE.Vector3());
       const maxDim = Math.max(size.x, size.y, size.z);
-      const dist = maxDim / (2 * Math.tan((camera.fov * Math.PI) / 360)) * 1.35;
+      const dist = maxDim / (2 * Math.tan((camera.fov * Math.PI) / 360)) * 1.08;
 
       controls.target.copy(center);
       camera.position.copy(center).add(new THREE.Vector3(dist * 0.55, dist * 0.42, dist * 0.82));
@@ -4402,33 +4980,178 @@
       if (t >= 1) finishIntroOrbit();
     }
 
+    function getTargetBuildingHeightM() {
+      if (buildingData?.floors?.length) {
+        const totalWeight = buildingData.floors.reduce((s, f) => s + (f.heightWeight ?? 1), 0);
+        return totalWeight * METERS_PER_FLOOR;
+      }
+      const floors = buildingData?.building?.totalFloors || 8;
+      return floors * METERS_PER_FLOOR;
+    }
+
+    // Tripo / unit-normalized meshes → real scene meters. buildingScale stays an artistic multiplier.
+    function applyBuildingWorldScale(object) {
+      object.scale.setScalar(1);
+      object.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(object);
+      const nativeH = Math.max(box.max.y - box.min.y, 1e-6);
+      const targetH = getTargetBuildingHeightM();
+      const unitScale = targetH / nativeH;
+      object.scale.setScalar(unitScale * buildingScale);
+      object.updateMatrixWorld(true);
+      object.userData.unitScale = unitScale;
+      object.userData.worldHeightM = targetH * buildingScale;
+    }
+
+    function stripEmbeddedGround(root) {
+      // bh2 includes a courtyard/ground slab that makes the building look sunk.
+      const rootBox = new THREE.Box3().setFromObject(root);
+      const rh = Math.max(rootBox.max.y - rootBox.min.y, 1e-6);
+      const rf = Math.max(rootBox.max.x - rootBox.min.x, rootBox.max.z - rootBox.min.z, 1e-6);
+
+      root.traverse((mesh) => {
+        if (!mesh.isMesh || !mesh.geometry) return;
+        const mb = new THREE.Box3().setFromObject(mesh);
+        if (mb.isEmpty()) return;
+        const s = mb.getSize(new THREE.Vector3());
+        const centerY = (mb.min.y + mb.max.y) / 2;
+        const isFlat = s.y < rh * 0.14 && (s.x * s.z) > (rf * rf) * 0.12;
+        const inLower = centerY < rootBox.min.y + rh * 0.55;
+        if (isFlat && inLower) {
+          mesh.visible = false;
+          mesh.userData.isEmbeddedGround = true;
+        }
+      });
+    }
+
+    function toneBuildingMaterial(mat) {
+      if (!mat || !(mat.isMeshStandardMaterial || mat.isMeshPhysicalMaterial)) return;
+      const name = (mat.name || '').toLowerCase();
+      const isGlass =
+        name.includes('glass')
+        || ((mat.transparent || mat.opacity < 0.96) && !name.includes('interior'));
+
+      if (isGlass) {
+        mat.roughness = Math.max(mat.roughness ?? 0.35, 0.35);
+        mat.metalness = Math.min(mat.metalness ?? 0.1, 0.1);
+        mat.envMapIntensity = BUILDING_GLASS_ENV_INTENSITY;
+        mat.userData.buildingEnvIntensity = BUILDING_GLASS_ENV_INTENSITY;
+        if (mat.opacity > 0.82) mat.opacity = 0.78;
+        mat.transparent = true;
+      } else {
+        // Packed metal-rough maps often author too much metal / too little roughness.
+        // Keep map detail, but crush the metal factor and IBL response for a dry facade.
+        if (mat.metalnessMap) mat.metalness = Math.min(mat.metalness ?? 1, 0.08);
+        else mat.metalness = Math.min(mat.metalness ?? 0.05, 0.06);
+        if (mat.roughnessMap) mat.roughness = 1;
+        else mat.roughness = Math.max(mat.roughness ?? 0.75, 0.82);
+        mat.envMapIntensity = BUILDING_ENV_INTENSITY;
+        mat.userData.buildingEnvIntensity = BUILDING_ENV_INTENSITY;
+      }
+
+      if (name === 'red_beam' || name.includes('beam')) {
+        mat.emissiveIntensity = Math.min(mat.emissiveIntensity || 0, 0.14);
+        mat.roughness = Math.max(mat.roughness ?? 0.7, 0.72);
+        mat.metalness = Math.min(mat.metalness ?? 0.2, 0.2);
+      }
+      mat.needsUpdate = true;
+    }
+
     async function setupModel(gltf) {
       model = gltf.scene;
+      applyBuildingWorldScale(model);
+      stripEmbeddedGround(model);
+      model.traverse((obj) => {
+        obj.layers.set(BUILDING_LAYER);
+      });
+      highlightGroup.traverse((obj) => obj.layers.set(BUILDING_LAYER));
+      highlightOutlineGroup.traverse((obj) => obj.layers.set(BUILDING_LAYER));
+      highlightGroup.layers.set(BUILDING_LAYER);
+      highlightOutlineGroup.layers.set(BUILDING_LAYER);
+
+      const pbrCache = new Map();
+      await Promise.all(
+        Object.entries(PBR_TEXTURE_SETS).map(async ([name, def]) => {
+          pbrCache.set(name, await createPbrMaterial(name, def));
+        })
+      );
 
       model.traverse((child) => {
-        if (!child.isMesh) return;
+        if (!child.isMesh || !child.visible) return;
         child.castShadow = true;
         child.receiveShadow = true;
 
-        const mats = Array.isArray(child.material) ? child.material : [child.material];
-        mats.forEach((mat) => {
-          if (!mat) return;
-          mat.side = THREE.FrontSide;
-          polishMaterialMaps(mat);
-          if (mat.name === 'Red_Beam') {
-            mat.emissive.set(0xb5935b);
-            mat.emissiveIntensity = 0.28;
+        // Ensure aoMap can sample (glTF often stores AO in UV0; duplicate to uv2 if missing).
+        if (child.geometry && child.geometry.attributes.uv && !child.geometry.attributes.uv2) {
+          child.geometry.setAttribute('uv2', child.geometry.attributes.uv);
+        }
+
+        let mats = Array.isArray(child.material) ? child.material : [child.material];
+        mats = mats.map((mat) => {
+          if (!mat) return mat;
+
+          // Prefer explicit texture-set rebuild when filenames match material name.
+          const replacement = mat.name && pbrCache.get(mat.name);
+          if (replacement) {
+            const clone = replacement.clone();
+            polishMaterialMaps(clone);
+            toneBuildingMaterial(clone);
+            return clone;
           }
-          if (mat.alphaMode === 'BLEND') {
-            mat.opacity = Math.max(mat.opacity ?? 1, 0.85);
-            mat.transparent = true;
+
+          // Upgrade non-PBR materials so HDR IBL + maps work.
+          let std = mat;
+          if (!mat.isMeshStandardMaterial && !mat.isMeshPhysicalMaterial) {
+            std = new THREE.MeshStandardMaterial({
+              name: mat.name,
+              color: mat.color ? mat.color.clone() : new THREE.Color(0xffffff),
+              map: mat.map || null,
+              normalMap: mat.normalMap || null,
+              roughnessMap: mat.roughnessMap || null,
+              metalnessMap: mat.metalnessMap || null,
+              aoMap: mat.aoMap || null,
+              emissiveMap: mat.emissiveMap || null,
+              emissive: mat.emissive ? mat.emissive.clone() : new THREE.Color(0x000000),
+              emissiveIntensity: mat.emissiveIntensity || 0,
+              roughness: mat.roughness != null ? mat.roughness : 0.85,
+              metalness: mat.metalness != null ? mat.metalness : 0.04,
+              transparent: !!mat.transparent,
+              opacity: mat.opacity != null ? mat.opacity : 1,
+              side: THREE.FrontSide,
+              envMapIntensity: BUILDING_ENV_INTENSITY,
+            });
           } else {
-            mat.opacity = 1;
-            mat.transparent = false;
+            std.side = THREE.FrontSide;
+            std.envMapIntensity = BUILDING_ENV_INTENSITY;
           }
-          mat.depthWrite = true;
-          mat.needsUpdate = true;
+
+          polishMaterialMaps(std);
+
+          // If packed metal-rough is present, drive both channels from it.
+          if (std.metalnessMap && !std.roughnessMap) std.roughnessMap = std.metalnessMap;
+          if (std.roughnessMap && !std.metalnessMap) std.metalnessMap = std.roughnessMap;
+          if (std.roughnessMap) {
+            std.roughness = 1;
+            std.metalness = std.metalnessMap ? Math.min(std.metalness ?? 1, 0.08) : std.metalness;
+          }
+          if (std.aoMap) std.aoMapIntensity = 1;
+
+          if (std.name === 'Red_Beam') {
+            std.emissive.set(0xb5935b);
+            std.emissiveIntensity = 0.14;
+          }
+          if (std.alphaMode === 'BLEND' || std.transparent) {
+            std.opacity = Math.max(std.opacity ?? 1, 0.78);
+            std.transparent = true;
+          } else {
+            std.opacity = 1;
+            std.transparent = false;
+          }
+          std.depthWrite = true;
+          toneBuildingMaterial(std);
+          return std;
         });
+        child.material = mats.length === 1 ? mats[0] : mats;
 
         allMeshes.push(child);
         storeOriginalMaterial(child);
@@ -4436,7 +5159,6 @@
 
       scene.add(highlightGroup);
       scene.add(highlightOutlineGroup);
-      model.scale.setScalar(buildingScale);
       scene.add(model);
       alignModelToGround(model);
 
@@ -4453,6 +5175,16 @@
       cloudLayer = createCloudLayer(cloudCenter.x, cloudCenter.z, cloudBox.min.y, cloudExtent);
       scene.add(cloudLayer);
       applyEnvironment();
+
+      window.__listMatNames = () => {
+        const names = new Set();
+        model.traverse((c) => {
+          if (!c.isMesh) return;
+          const mats = Array.isArray(c.material) ? c.material : [c.material];
+          mats.forEach((m) => { if (m?.name) names.add(`${m.name}|map:${!!m.map}|nrm:${!!m.normalMap}|rough:${!!m.roughnessMap}|ao:${!!m.aoMap}`); });
+        });
+        return [...names];
+      };
 
       // Everything that casts shadows is static, so render the shadow map once and freeze it.
       renderer.shadowMap.needsUpdate = true;
@@ -4583,6 +5315,24 @@
     document.getElementById('zoom-reset').addEventListener('click', resetView);
     document.getElementById('toggle-amenities').addEventListener('click', toggleAmenityBar);
     document.getElementById('toggle-env').addEventListener('click', toggleEnvControls);
+    document.getElementById('toggle-theme').addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleThemeMenu();
+    });
+    document.querySelectorAll('#theme-menu .theme-option').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setSceneTheme(btn.dataset.theme);
+        closeThemeMenu();
+      });
+    });
+    document.addEventListener('click', (e) => {
+      const menu = document.getElementById('theme-menu');
+      const toggle = document.getElementById('toggle-theme');
+      if (!menu || !menu.classList.contains('open')) return;
+      if (menu.contains(e.target) || toggle.contains(e.target)) return;
+      closeThemeMenu();
+    });
     document.getElementById('close-amenity-bar').addEventListener('click', hideAmenityBar);
     document.getElementById('close-env-controls').addEventListener('click', hideEnvControls);
 
@@ -4620,13 +5370,15 @@
     // ── Init ──
     async function init() {
       try {
+        setLoadingStatus('Loading HDR sky');
+        await loadDaySkyHdr();
         setLoadingStatus('Loading building data');
         await loadData();
         setLoadingStatus('Loading 3D model');
         await new Promise((resolve, reject) => {
           const loader = new GLTFLoader();
           loader.load(
-            'model/torre_garten_tamano_real_merged.glb',
+            'model/bh2.glb',
             (gltf) => {
               setupModel(gltf).then(resolve).catch(reject);
             },
@@ -4646,6 +5398,25 @@
     }
 
     let lastTime = performance.now();
+    const fpsHud = document.getElementById('fps-hud');
+    let fpsFrames = 0;
+    let fpsLast = performance.now();
+
+    function updateFpsHud(now) {
+      if (!fpsHud) return;
+      fpsFrames++;
+      const elapsed = now - fpsLast;
+      if (elapsed < 400) return;
+      const fps = Math.round((fpsFrames * 1000) / elapsed);
+      const info = renderer.info;
+      const ms = (elapsed / fpsFrames).toFixed(1);
+      fpsHud.textContent =
+        `${fps} FPS  (${ms} ms)\n` +
+        `calls ${info.render.calls}  tris ${info.render.triangles.toLocaleString()}\n` +
+        `geo ${info.memory.geometries}  tex ${info.memory.textures}`;
+      fpsFrames = 0;
+      fpsLast = now;
+    }
 
     function animate() {
       requestAnimationFrame(animate);
@@ -4665,9 +5436,11 @@
 
       updateHighlightAnimation(dt);
       updateClouds(now, dt);
+      updateRain(dt);
       controls.update();
       if (composer) composer.render();
       else renderer.render(scene, camera);
+      updateFpsHud(now);
     }
 
     initEnvControls();
