@@ -5,7 +5,7 @@
 declare(strict_types=1);
 
 define('ADMIN_USER', 'admin');
-define('ADMIN_PASS', 'SkylineAdmin2026');
+define('ADMIN_PASS', 'admin');
 
 define('DATA_FILE', dirname(__DIR__) . DIRECTORY_SEPARATOR . 'building-data.json');
 define('UPLOAD_DIR', dirname(__DIR__) . DIRECTORY_SEPARATOR . 'model' . DIRECTORY_SEPARATOR . 'UnitImages');
