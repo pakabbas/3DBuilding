@@ -372,36 +372,121 @@
       position: absolute;
       inset: 0;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 14px;
-      background: var(--cream);
+      background:
+        radial-gradient(ellipse 80% 55% at 50% 35%, rgba(181, 147, 91, 0.12), transparent 70%),
+        linear-gradient(180deg, #fcf5eb 0%, #f3e8d8 100%);
       color: var(--muted);
       z-index: 20;
-      transition: opacity 0.4s;
+      transition: opacity 0.45s ease, visibility 0.45s ease;
       pointer-events: auto;
-      font-size: 11px;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
     }
-
-    #loading::after {
-      content: '';
-      width: 32px;
-      height: 32px;
-      border: 2px solid var(--border);
-      border-top-color: var(--gold);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
 
     #loading.hidden {
       opacity: 0;
       pointer-events: none;
       visibility: hidden;
+    }
+
+    .loading-card {
+      width: min(420px, calc(100% - 48px));
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .loading-brand {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(28px, 5vw, 36px);
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+
+    .loading-eyebrow {
+      margin-top: -8px;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .loading-status {
+      min-height: 1.4em;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      color: var(--text);
+    }
+
+    .loading-bar-wrap {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .loading-bar-track {
+      width: 100%;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(42, 37, 32, 0.08);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .loading-bar-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--gold) 0%, var(--gold-light) 100%);
+      transition: width 0.25s ease;
+      position: relative;
+    }
+
+    .loading-bar-fill::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+      animation: loadingSheen 1.4s ease-in-out infinite;
+    }
+
+    @keyframes loadingSheen {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    .loading-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      width: 100%;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+
+    .loading-pct {
+      font-variant-numeric: tabular-nums;
+      color: var(--gold);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    .loading-detail {
+      font-size: 10px;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      min-height: 1.2em;
+    }
+
+    @media (max-width: 640px) {
+      .loading-card { gap: 14px; }
+      .loading-brand { letter-spacing: 0.1em; }
     }
 
     #hint {
@@ -1399,7 +1484,23 @@
   <div id="app">
     <div id="viewer-wrap">
       <div id="canvas-container"></div>
-      <div id="loading">Loading building</div>
+      <div id="loading" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-busy="true" aria-label="Loading Skyline Tower">
+        <div class="loading-card">
+          <div class="loading-brand">Skyline Tower</div>
+          <div class="loading-eyebrow">Preparing experience</div>
+          <div class="loading-status" id="loading-status">Starting…</div>
+          <div class="loading-bar-wrap">
+            <div class="loading-bar-track" aria-hidden="true">
+              <div class="loading-bar-fill" id="loading-bar-fill"></div>
+            </div>
+            <div class="loading-meta">
+              <span id="loading-stage">Initializing</span>
+              <span class="loading-pct" id="loading-pct">0%</span>
+            </div>
+          </div>
+          <div class="loading-detail" id="loading-detail"></div>
+        </div>
+      </div>
 
       <div id="hero-copy" class="hidden">
         <p class="hero-eyebrow">Luxury Living Redefined</p>
@@ -1426,20 +1527,20 @@
         <div class="env-section">Lighting</div>
 
         <div class="env-row">
-          <label>Time of day <output id="val-time">14.0</output></label>
-          <input type="range" id="env-time" min="0" max="24" step="0.1" value="14">
+          <label>Time of day <output id="val-time">13.5</output></label>
+          <input type="range" id="env-time" min="0" max="24" step="0.1" value="13.5">
         </div>
         <div class="env-row">
-          <label>Sun intensity <output id="val-sun">1.60</output></label>
-          <input type="range" id="env-sun" min="0" max="3" step="0.05" value="1.6">
+          <label>Sun intensity <output id="val-sun">2.45</output></label>
+          <input type="range" id="env-sun" min="0" max="4" step="0.05" value="2.45">
         </div>
         <div class="env-row">
-          <label>Ambient <output id="val-ambient">0.30</output></label>
-          <input type="range" id="env-ambient" min="0" max="1" step="0.01" value="0.3">
+          <label>Ambient <output id="val-ambient">0.92</output></label>
+          <input type="range" id="env-ambient" min="0" max="1.5" step="0.01" value="0.92">
         </div>
         <div class="env-row">
-          <label>Exposure <output id="val-exposure">1.15</output></label>
-          <input type="range" id="env-exposure" min="0.5" max="2.5" step="0.01" value="1.22">
+          <label>Exposure <output id="val-exposure">1.62</output></label>
+          <input type="range" id="env-exposure" min="0.5" max="2.5" step="0.01" value="1.62">
         </div>
 
         <div class="env-section">Weather</div>
@@ -1682,6 +1783,60 @@
     // ── DOM refs ──
     const container = document.getElementById('canvas-container');
     const loadingEl = document.getElementById('loading');
+    const loadingStatusEl = document.getElementById('loading-status');
+    const loadingFillEl = document.getElementById('loading-bar-fill');
+    const loadingPctEl = document.getElementById('loading-pct');
+    const loadingStageEl = document.getElementById('loading-stage');
+    const loadingDetailEl = document.getElementById('loading-detail');
+
+    // Weighted stages so the big GLB dominates the bar (matches real wait time).
+    const LOAD_STAGES = {
+      sky: { start: 0, end: 8, label: 'Sky' },
+      data: { start: 8, end: 14, label: 'Data' },
+      model: { start: 14, end: 82, label: '3D model' },
+      setup: { start: 82, end: 90, label: 'Materials' },
+      city: { start: 90, end: 97, label: 'City' },
+      finish: { start: 97, end: 100, label: 'Ready' },
+    };
+    let loadProgressPct = 0;
+
+    function formatBytes(n) {
+      if (!Number.isFinite(n) || n <= 0) return '';
+      if (n < 1024) return `${n} B`;
+      if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
+      return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    function setLoadingProgress(pct, { status, stage, detail } = {}) {
+      loadProgressPct = Math.max(loadProgressPct, Math.min(100, pct));
+      const shown = Math.round(loadProgressPct);
+      if (loadingFillEl) loadingFillEl.style.width = `${shown}%`;
+      if (loadingPctEl) loadingPctEl.textContent = `${shown}%`;
+      if (status && loadingStatusEl) loadingStatusEl.textContent = status;
+      if (stage && loadingStageEl) loadingStageEl.textContent = stage;
+      if (detail != null && loadingDetailEl) loadingDetailEl.textContent = detail;
+      if (loadingEl) loadingEl.setAttribute('aria-valuenow', String(shown));
+    }
+
+    function setLoadingStage(stageKey, localPct = 0, { status, detail } = {}) {
+      const stage = LOAD_STAGES[stageKey];
+      if (!stage) {
+        if (status) setLoadingStatus(status);
+        return;
+      }
+      const t = Math.max(0, Math.min(1, localPct));
+      const overall = stage.start + (stage.end - stage.start) * t;
+      setLoadingProgress(overall, {
+        status: status || loadingStatusEl?.textContent,
+        stage: stage.label,
+        detail: detail ?? '',
+      });
+    }
+
+    function setLoadingStatus(text) {
+      if (loadingStatusEl) loadingStatusEl.textContent = text;
+      else if (loadingEl) loadingEl.textContent = text;
+    }
     const floorListEl = document.getElementById('floor-list');
     const unitPanel = document.getElementById('unit-panel');
     const imagesModal = document.getElementById('images-modal');
@@ -1703,16 +1858,24 @@
     const envControls = document.getElementById('env-controls');
     const viewerWrap = document.getElementById('viewer-wrap');
 
-    // ── Quality tier (mobile / low-power devices) ──
+    // ── Quality tier (phones / tablets only — not touchscreen laptops) ──
     const quality = (() => {
-      const coarse = window.matchMedia('(pointer: coarse)').matches;
-      const narrow = Math.min(window.innerWidth, window.innerHeight) <= 768;
-      const uaMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-      const low = coarse || narrow || uaMobile;
+      const ua = navigator.userAgent || '';
+      const finePointer = window.matchMedia('(any-pointer: fine)').matches;
+      // Phones only — bh3 is reserved for these.
+      const isPhone = /Android.+Mobile|iPhone|iPod|Windows Phone/i.test(ua);
+      // Tablets (incl. iPadOS desktop-UA spoof) — lighter rendering, but still bh2.
+      const isTablet = /iPad|Android(?!.*Mobile)|Tablet/i.test(ua)
+        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1 && !finePointer);
+      const isMobileDevice = isPhone || isTablet;
+      // Do NOT treat "(pointer: coarse)" alone as mobile — Windows touch laptops match that.
+      const low = isMobileDevice;
       return {
         low,
+        isPhone,
+        isTablet,
         antialias: !low,
-        // Hard DPR=1 on phones — biggest cheap fill-rate win.
+        // Hard DPR=1 on phones/tablets — biggest cheap fill-rate win.
         maxPixelRatio: low ? 1 : 2,
         shadows: !low,
         shadowMapSize: low ? 512 : 2048,
@@ -1721,8 +1884,8 @@
         useBoostLights: !low,
         simpleSurrounds: low,
         amenityPools: true,
-        // Prefer lighter LOD on mobile; falls back to bh2 if missing.
-        modelUrl: low ? 'model/bh3.glb' : 'model/bh2.glb',
+        // bh3 is phone-only; laptops/desktops/tablets always use the full bh2 model.
+        modelUrl: isPhone ? 'model/bh3.glb' : 'model/bh2.glb',
         modelFallbackUrl: 'model/bh2.glb',
         gridN: low ? 1 : 4,
         cloudCount: low ? 6 : 22,
@@ -1735,6 +1898,9 @@
         rainCount: low ? 400 : 2800,
       };
     })();
+    console.info(
+      `[quality] phone=${quality.isPhone} tablet=${quality.isTablet} low=${quality.low} model=${quality.modelUrl}`
+    );
 
     // ── Three.js setup ──
     const renderer = new THREE.WebGLRenderer({ antialias: quality.antialias });
@@ -1742,7 +1908,7 @@
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.22;
+    renderer.toneMappingExposure = 1.62;
     renderer.shadowMap.enabled = quality.shadows;
     renderer.shadowMap.type = quality.shadows ? THREE.PCFSoftShadowMap : THREE.BasicShadowMap;
     renderer.localClippingEnabled = true;
@@ -1784,32 +1950,33 @@
     let fogBaseFar = 400;
     let hdrEquirect = null;
     let hdrEnvMap = null;
+    let cheapEnvMap = null;
     let pmremGenerator = null;
     let skyDome = null;
     const DEFAULT_ENV_INTENSITY = 1.05;
     // Building surfaces use a lower IBL response so facade materials read matte, not wet/glossy.
     const BUILDING_ENV_INTENSITY = 0.36 * 1.1; // +10% vs prior matte baseline
     const BUILDING_GLASS_ENV_INTENSITY = 0.32;
-    // Split scene lighting: surroundings darker, tower a touch brighter.
-    const SURROUND_LIGHT_MUL = 0.7;  // 30% less on city / ground
-    const BUILDING_LIGHT_MUL = 1.1;  // 10% more on main building
+    // Split scene lighting: city near full daylight, tower a touch brighter.
+    const SURROUND_LIGHT_MUL = 1.0;
+    const BUILDING_LIGHT_MUL = 1.15;  // slight boost on main building
     const BUILDING_BOOST_MUL = BUILDING_LIGHT_MUL - SURROUND_LIGHT_MUL;
     const BUILDING_LAYER = 1;
-    const SURROUND_ENV_MUL = 0.7;
-    // Keep ground albedo dominant — high IBL washes grass into a wet/glass look.
-    const GRASS_ENV_INTENSITY = 0.14;
-    const ROAD_ENV_INTENSITY = 0.35;
+    const SURROUND_ENV_MUL = 1.0;
+    // Near-zero IBL on grass — any env reflection reads as wet glass / water.
+    const GRASS_ENV_INTENSITY = 0.04;
+    const ROAD_ENV_INTENSITY = 0.45;
 
     const PBR_SURFACE_SETS = {
       grass: {
         map: 'model/PBR/grass1/Grass001_1K-JPG_Color.jpg',
         normalMap: 'model/PBR/grass1/Grass001_1K-JPG_NormalGL.jpg',
-        roughnessMap: 'model/PBR/grass1/Grass001_1K-JPG_Roughness.jpg',
+        // No roughnessMap — Grass001 roughness has smooth patches that look like water.
         aoMap: 'model/PBR/grass1/Grass001_1K-JPG_AmbientOcclusion.jpg',
         roughness: 1,
         metalness: 0,
-        normalScale: 1.2,
-        aoMapIntensity: 0.9,
+        normalScale: 0.85,
+        aoMapIntensity: 0.35,
         envMapIntensity: GRASS_ENV_INTENSITY,
       },
       road: {
@@ -1820,7 +1987,7 @@
         roughness: 1,
         metalness: 0.02,
         normalScale: 0.9,
-        aoMapIntensity: 0.75,
+        aoMapIntensity: 0.4,
         envMapIntensity: ROAD_ENV_INTENSITY,
       },
     };
@@ -1893,6 +2060,7 @@
         normalMap,
         metalRoughMap,
         roughnessMap,
+        metalnessMap,
         aoMap,
         emissiveMap,
       ] = await Promise.all([
@@ -1900,6 +2068,7 @@
         def.normalMap ? loadTexture(def.normalMap) : Promise.resolve(null),
         def.metalRoughMap ? loadTexture(def.metalRoughMap) : Promise.resolve(null),
         def.roughnessMap ? loadTexture(def.roughnessMap) : Promise.resolve(null),
+        def.metalnessMap ? loadTexture(def.metalnessMap) : Promise.resolve(null),
         def.aoMap ? loadTexture(def.aoMap) : Promise.resolve(null),
         def.emissiveMap ? loadTexture(def.emissiveMap) : Promise.resolve(null),
       ]);
@@ -1909,6 +2078,7 @@
       if (normalMap) applyTextureRepeat(normalMap, repeat || [1, 1]);
       if (metalRoughMap) applyTextureRepeat(metalRoughMap, repeat || [1, 1]);
       if (roughnessMap) applyTextureRepeat(roughnessMap, repeat || [1, 1]);
+      if (metalnessMap) applyTextureRepeat(metalnessMap, repeat || [1, 1]);
       if (aoMap) applyTextureRepeat(aoMap, repeat || [1, 1]);
 
       const mat = new THREE.MeshStandardMaterial({
@@ -1917,11 +2087,11 @@
         map: map || null,
         normalMap: normalMap || null,
         roughnessMap: roughnessMap || metalRoughMap || null,
-        metalnessMap: metalRoughMap || null,
+        metalnessMap: metalnessMap || metalRoughMap || null,
         aoMap: aoMap || null,
         emissiveMap: emissiveMap || null,
         roughness: def.roughness != null ? def.roughness : (roughnessMap || metalRoughMap ? 1 : 0.75),
-        metalness: def.metalness != null ? def.metalness : (metalRoughMap ? 1 : 0.05),
+        metalness: def.metalness != null ? def.metalness : ((metalnessMap || metalRoughMap) ? 1 : 0.05),
         aoMapIntensity: aoMap ? (def.aoMapIntensity != null ? def.aoMapIntensity : 1) : 0,
         envMapIntensity: def.envMapIntensity != null ? def.envMapIntensity : DEFAULT_ENV_INTENSITY,
         transparent: !!def.transparent,
@@ -1989,7 +2159,7 @@
         const rt = pmremGenerator.fromEquirectangular(iblSource);
         hdrEnvMap = rt.texture;
         scene.environment = hdrEnvMap;
-        scene.environmentIntensity = 1.35;
+        scene.environmentIntensity = 1.55;
         iblSource.dispose();
 
         // Visible sky: equirect background (not clipped by camera.far). DaySky keeps
@@ -2014,7 +2184,7 @@
 
         scene.background = skyMap;
         scene.backgroundBlurriness = 0;
-        scene.backgroundIntensity = 1.1;
+        scene.backgroundIntensity = 1.35;
 
         window.__hdrSkyReady = true;
         window.__getSceneBgType = () => (
@@ -2029,9 +2199,23 @@
       }
     }
 
+    function ensureCheapSkyEnv() {
+      // Lightweight IBL from the gradient sky so glass-check facades don't go black without HDR.
+      if (cheapEnvMap) return cheapEnvMap;
+      if (!skyTex) return null;
+      if (!pmremGenerator) {
+        pmremGenerator = new THREE.PMREMGenerator(renderer);
+        pmremGenerator.compileEquirectangularShader();
+      }
+      skyTex.mapping = THREE.EquirectangularReflectionMapping;
+      const rt = pmremGenerator.fromEquirectangular(skyTex);
+      cheapEnvMap = rt.texture;
+      return cheapEnvMap;
+    }
+
     function setEnvIntensityOnMaterials(intensity) {
-      // Day theme uses ~1.35 as the surroundings baseline; building mats stay matte relative to that.
-      const dayBaseline = 1.35;
+      // Day theme uses ~1.55 as the surroundings baseline; building mats stay matte relative to that.
+      const dayBaseline = 1.55;
       scene.traverse((obj) => {
         if (!obj.isMesh) return;
         const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
@@ -2071,9 +2255,9 @@
     function applySplitLightIntensities({
       sunI, ambientI, hemiI, fillI, glowI = null, glowVisible = false,
     }) {
-      // On mobile, bump ambient slightly to compensate for no HDR IBL / boost lights.
-      const ambientScale = quality.useHdrIbl ? 1 : 1.35;
-      const hemiScale = quality.useHdrIbl ? 1 : 1.2;
+      // On mobile, bump ambient to compensate for no HDR IBL / boost lights.
+      const ambientScale = quality.useHdrIbl ? 1 : 1.55;
+      const hemiScale = quality.useHdrIbl ? 1 : 1.4;
       sun.intensity = sunI * SURROUND_LIGHT_MUL;
       ambientLight.intensity = ambientI * SURROUND_LIGHT_MUL * ambientScale;
       hemiLight.intensity = hemiI * SURROUND_LIGHT_MUL * hemiScale;
@@ -2101,21 +2285,21 @@
     const envState = {
       theme: 'sunny',
       timeOfDay: 13.5,
-      sunIntensity: 1.85,
-      ambientIntensity: 0.38,
-      exposure: 1.28,
-      fogAmount: 0.12,
-      cloudOpacity: 0.45,
+      sunIntensity: 2.45,
+      ambientIntensity: 0.92,
+      exposure: 1.62,
+      fogAmount: 0.06,
+      cloudOpacity: 0.3,
     };
 
     const THEME_PRESETS = {
       sunny: {
         timeOfDay: 13.5,
-        sunIntensity: 1.85,
-        ambientIntensity: 0.38,
-        exposure: 1.28,
-        fogAmount: 0.12,
-        cloudOpacity: 0.45,
+        sunIntensity: 2.45,
+        ambientIntensity: 0.92,
+        exposure: 1.62,
+        fogAmount: 0.06,
+        cloudOpacity: 0.3,
         rain: false,
         skyMode: 'day',
       },
@@ -2288,14 +2472,14 @@
         const warm = Math.pow(1 - elev, 1.4);
         sun.color.setRGB(1, 0.96 - warm * 0.22, 0.88 - warm * 0.38);
         ambientLight.color.setHex(0xffffff);
-        hemiLight.color.setHex(0x87ceeb);
-        hemiLight.groundColor.setRGB(0.35 + elev * 0.02, 0.55 + elev * 0.02, 0.24);
+        hemiLight.color.setHex(0xb8e0f8);
+        hemiLight.groundColor.setRGB(0.48 + elev * 0.04, 0.62 + elev * 0.04, 0.36);
         fillLight.color.setHex(0xffffff);
         applySplitLightIntensities({
-          sunI: sunIntensity * Math.max(0.12, elev),
+          sunI: sunIntensity * Math.max(0.35, elev),
           ambientI: ambientIntensity,
-          hemiI: 0.18 + elev * 0.42,
-          fillI: 0.1 + elev * 0.2,
+          hemiI: 0.55 + elev * 0.55,
+          fillI: 0.4 + elev * 0.35,
           glowVisible: false,
         });
       }
@@ -2307,25 +2491,26 @@
         if (skyDome) skyDome.visible = false;
         scene.background = hdrEquirect;
         scene.backgroundBlurriness = 0;
-        scene.backgroundIntensity = 1.1;
+        scene.backgroundIntensity = 1.35;
         if (hdrEnvMap) scene.environment = hdrEnvMap;
-        scene.environmentIntensity = 1.35;
-        setEnvIntensityOnMaterials(1.35);
+        scene.environmentIntensity = 1.55;
+        setEnvIntensityOnMaterials(1.55);
         if (cloudLayer) cloudLayer.visible = false;
         if (scene.fog) scene.fog = null;
       } else if (skyTex) {
         if (skyDome) skyDome.visible = false;
         scene.background = skyTex;
         scene.backgroundBlurriness = 0;
-        scene.backgroundIntensity = 1;
+        scene.backgroundIntensity = skyMode === 'night' ? 0.85 : 1.25;
         if (quality.useHdrIbl && hdrEnvMap) {
           scene.environment = hdrEnvMap;
-          scene.environmentIntensity = skyMode === 'night' ? 0.22 : 0.45;
-          setEnvIntensityOnMaterials(skyMode === 'night' ? 0.25 : 0.55);
+          scene.environmentIntensity = skyMode === 'night' ? 0.35 : 0.85;
+          setEnvIntensityOnMaterials(skyMode === 'night' ? 0.4 : 1.0);
         } else {
-          scene.environment = null;
-          scene.environmentIntensity = 0;
-          setEnvIntensityOnMaterials(0.2);
+          const env = ensureCheapSkyEnv();
+          scene.environment = env;
+          scene.environmentIntensity = env ? (skyMode === 'night' ? 0.45 : 1.25) : 0;
+          setEnvIntensityOnMaterials(env ? (skyMode === 'night' ? 0.5 : 1.3) : 0.4);
         }
         if (cloudLayer) cloudLayer.visible = true;
         if (!scene.fog && fogBaseFar) {
@@ -2492,13 +2677,13 @@
     controls.maxPolarAngle = Math.PI / 2.05;
     controls.target.set(0, 20, 0);
 
-    const hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x5a8f3c, 0.55);
+    const hemiLight = new THREE.HemisphereLight(0xb8e0f8, 0x7aab55, 0.95);
     hemiLight.layers.enable(BUILDING_LAYER);
     scene.add(hemiLight);
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
     ambientLight.layers.enable(BUILDING_LAYER);
     scene.add(ambientLight);
-    const sun = new THREE.DirectionalLight(0xfff4e0, 1.6);
+    const sun = new THREE.DirectionalLight(0xfff4e0, 2.4);
     sun.position.set(80, 150, 60);
     sun.castShadow = quality.shadows;
     sun.layers.enable(BUILDING_LAYER);
@@ -2515,7 +2700,7 @@
     }
     scene.add(sun);
     scene.add(sun.target);
-    const fillLight = new THREE.DirectionalLight(0xd4e8ff, 0.25);
+    const fillLight = new THREE.DirectionalLight(0xd4e8ff, 0.65);
     fillLight.position.set(-50, 40, -70);
     fillLight.layers.enable(BUILDING_LAYER);
     scene.add(fillLight);
@@ -2739,10 +2924,6 @@
       });
     }
 
-    function setLoadingStatus(text) {
-      loadingEl.textContent = text;
-    }
-
     function loadTexture(url) {
       return new Promise((resolve, reject) => {
         new THREE.TextureLoader().load(url, resolve, undefined, reject);
@@ -2750,7 +2931,9 @@
     }
 
     function beginExperience() {
+      setLoadingStage('finish', 1, { status: 'Ready', detail: '' });
       loadingEl.classList.add('hidden');
+      loadingEl.setAttribute('aria-busy', 'false');
       setHeroVisible(true);
       startIntroOrbit();
       scheduleAmenityBarShow(7000);
@@ -3820,7 +4003,8 @@
       return group;
     }
 
-    // ── Surrounding buildings (cached prototypes, shared materials) ──
+    // ── Surrounding buildings: Sample 2 (Industrial Loft) + Sample 3 (Art Deco) ──
+    // Flat color walls only — no canvas / PBR wall maps.
     const SURROUND_STYLES = ['industrial-loft', 'art-deco'];
     let surroundMats = null;
     let surroundPrototypes = null;
@@ -3828,48 +4012,36 @@
     function getSurroundMats() {
       if (surroundMats) return surroundMats;
 
+      const envI = DEFAULT_ENV_INTENSITY * SURROUND_ENV_MUL;
       const std = (color, roughness = 0.85, metalness = 0.04) =>
         new THREE.MeshStandardMaterial({
           color,
           roughness,
           metalness,
-          envMapIntensity: DEFAULT_ENV_INTENSITY * SURROUND_ENV_MUL,
+          envMapIntensity: envI,
+        });
+      const glass = (color = 0x7aa8b8, opacity = 0.55) =>
+        new THREE.MeshStandardMaterial({
+          color,
+          roughness: 0.08,
+          metalness: 0.55,
+          transparent: true,
+          opacity,
+          envMapIntensity: envI,
         });
 
-      // Flat colors only for now — wall PBR textures temporarily disabled.
       surroundMats = {
         wall: std(0xb8b0a4, 0.88, 0.04),
-        brick: std(0x8b5a4a, 0.92, 0.02),
-        upper: std(0xf2ece4, 0.88, 0.02),
+        brick: std(0x9a5848, 0.92, 0.02),
+        painted: std(0xd8cfc2, 0.88, 0.02),
+        stone: std(0x8a8580, 0.9),
         bodyStone: std(0xd8cfc0, 0.82, 0.03),
-        stone: std(0xe8e2d8, 0.9, 0.02),
-        parapet: std(0xd8d2c8, 0.88, 0.02),
-        base: std(0xcfc9c0, 0.88, 0.12),
+        parapet: std(0x6a6460, 0.88),
+        base: std(0x9a5848, 0.9, 0.04),
+        upper: std(0xd8cfc2, 0.88, 0.02),
         rail: std(0x2a2a2a, 0.55, 0.45),
-        glass: (() => {
-          const m = new THREE.MeshStandardMaterial({
-            color: 0x6a7e90,
-            roughness: 0.48,
-            metalness: 0.08,
-            transparent: true,
-            opacity: 0.72,
-            envMapIntensity: 0.28,
-          });
-          m.userData.surfaceEnvIntensity = 0.28;
-          return m;
-        })(),
-        loftGlass: (() => {
-          const m = new THREE.MeshStandardMaterial({
-            color: 0x7aa8b8,
-            roughness: 0.42,
-            metalness: 0.1,
-            transparent: true,
-            opacity: 0.58,
-            envMapIntensity: 0.3,
-          });
-          m.userData.surfaceEnvIntensity = 0.3;
-          return m;
-        })(),
+        glass: glass(0x7aa8b8, 0.55),
+        loftGlass: glass(0x4a6070, 0.45),
         frame: std(0xf0ebe2, 0.75, 0.02),
         metal: std(0x2a2e32, 0.4, 0.65),
         rust: std(0x8a4a32, 0.7, 0.25),
@@ -3885,7 +4057,7 @@
       const mesh = new THREE.Mesh(geometry, material);
       mesh.position.set(x, y, z);
       mesh.rotation.y = rotY;
-      mesh.castShadow = castShadow;
+      mesh.castShadow = castShadow && quality.shadows;
       mesh.receiveShadow = true;
       group.add(mesh);
       return mesh;
@@ -3894,11 +4066,11 @@
     function surroundWindow(group, mats, x, y, z, rotY, w, h) {
       const depth = 0.12;
       surroundMesh(group, new THREE.BoxGeometry(w + 0.14, h + 0.14, depth), mats.frame, x, y, z, rotY, false);
-      const glass = surroundMesh(group, new THREE.BoxGeometry(w, h, depth * 0.35), mats.glass, x, y, z, rotY, false);
-      if (rotY === 0) glass.position.z += depth * 0.25;
-      if (rotY === Math.PI) glass.position.z -= depth * 0.25;
-      if (rotY === Math.PI / 2) glass.position.x += depth * 0.25;
-      if (rotY === -Math.PI / 2) glass.position.x -= depth * 0.25;
+      const pane = surroundMesh(group, new THREE.BoxGeometry(w, h, depth * 0.35), mats.glass, x, y, z, rotY, false);
+      if (rotY === 0) pane.position.z += depth * 0.25;
+      if (rotY === Math.PI) pane.position.z -= depth * 0.25;
+      if (rotY === Math.PI / 2) pane.position.x += depth * 0.25;
+      if (rotY === -Math.PI / 2) pane.position.x -= depth * 0.25;
     }
 
     function surroundFaceGrid(group, mats, face, width, depth, height, rows, yBase, margin, winW, winH, cols) {
@@ -3919,30 +4091,28 @@
       }
     }
 
-    function buildSurroundIndustrial(mats, w, d, h) {
-      // Sample 2 — Industrial Loft: warehouse base, factory windows, fire stairs, rooftop tank.
+    // Sample 2 — Industrial Loft (from sample.html), flat wall colors.
+    function buildSurroundIndustrial(mats, w = 11, d = 10, h = 15) {
       const group = new THREE.Group();
-      const baseH = h * 0.38;
-      const loftH = h * 0.62;
-      surroundMesh(group, new THREE.BoxGeometry(w, baseH, d), mats.brick, 0, baseH / 2, 0);
-      surroundMesh(group, new THREE.BoxGeometry(w, loftH, d), mats.upper, 0, baseH + loftH / 2, 0);
-      surroundMesh(group, new THREE.BoxGeometry(w + 0.1, 0.35, d + 0.1), mats.rust, 0, baseH, 0, 0, false);
-      surroundMesh(group, new THREE.BoxGeometry(w * 0.55, 0.16, 1.9), mats.metal, 0, baseH, d / 2 + 0.9, 0, false);
+      surroundMesh(group, new THREE.BoxGeometry(w, h * 0.38, d), mats.brick, 0, (h * 0.38) / 2, 0);
+      surroundMesh(group, new THREE.BoxGeometry(w, h * 0.62, d), mats.painted, 0, h * 0.38 + (h * 0.62) / 2, 0);
+      surroundMesh(group, new THREE.BoxGeometry(w + 0.1, 0.35, d + 0.1), mats.rust, 0, h * 0.38, 0, 0, false);
+      surroundMesh(group, new THREE.BoxGeometry(w * 0.55, 0.16, 1.9), mats.metal, 0, h * 0.38, d / 2 + 0.9, 0, false);
 
       for (let r = 0; r < 3; r++) {
         for (let c = 0; c < 3; c++) {
-          const x = (-w * 0.29) + c * (w * 0.29);
-          const y = baseH + 1.6 + r * Math.max(2.4, loftH / 3.4);
-          surroundMesh(group, new THREE.BoxGeometry(w * 0.22, loftH * 0.17, 0.1), mats.darkFrame, x, y, d / 2 + 0.07, 0, false);
-          surroundMesh(group, new THREE.BoxGeometry(w * 0.2, loftH * 0.15, 0.06), mats.loftGlass, x, y, d / 2 + 0.12, 0, false);
-          surroundMesh(group, new THREE.BoxGeometry(0.06, loftH * 0.15, 0.06), mats.darkFrame, x, y, d / 2 + 0.14, 0, false);
-          surroundMesh(group, new THREE.BoxGeometry(w * 0.2, 0.06, 0.06), mats.darkFrame, x, y, d / 2 + 0.14, 0, false);
+          const x = -3.2 + c * 3.2;
+          const y = 5.4 + r * 2.9;
+          surroundMesh(group, new THREE.BoxGeometry(2.5, 2.55, 0.1), mats.darkFrame, x, y, d / 2 + 0.07, 0, false);
+          surroundMesh(group, new THREE.BoxGeometry(2.2, 2.25, 0.06), mats.glass, x, y, d / 2 + 0.12, 0, false);
+          surroundMesh(group, new THREE.BoxGeometry(0.06, 2.25, 0.06), mats.darkFrame, x, y, d / 2 + 0.14, 0, false);
+          surroundMesh(group, new THREE.BoxGeometry(2.2, 0.06, 0.06), mats.darkFrame, x, y, d / 2 + 0.14, 0, false);
         }
       }
 
       for (let i = 0; i < 2; i++) {
-        surroundMesh(group, new THREE.BoxGeometry(0.1, 2.8, 2.2), mats.metal, w / 2 + 0.06, 1.5, -d * 0.22 + i * (d * 0.44), 0, false);
-        surroundMesh(group, new THREE.BoxGeometry(0.08, 2.4, 1.9), mats.glass, w / 2 + 0.1, 1.5, -d * 0.22 + i * (d * 0.44), 0, false);
+        surroundMesh(group, new THREE.BoxGeometry(0.1, 2.8, 2.2), mats.metal, w / 2 + 0.06, 1.5, -2.2 + i * 4.4, 0, false);
+        surroundMesh(group, new THREE.BoxGeometry(0.08, 2.4, 1.9), mats.loftGlass, w / 2 + 0.1, 1.5, -2.2 + i * 4.4, 0, false);
       }
 
       for (let i = 0; i < 4; i++) {
@@ -3952,75 +4122,55 @@
         surroundMesh(group, new THREE.BoxGeometry(0.08, 2.6, 0.08), mats.metal, -w / 2 - 0.55, y + 1.3, -1.1, 0, false);
       }
 
-      surroundMesh(group, new THREE.CylinderGeometry(1.1, 1.1, 1.8, 14), mats.rust, w * 0.25, h + 0.9, -d * 0.2);
-      surroundMesh(group, new THREE.CylinderGeometry(1.15, 1.15, 0.12, 14), mats.metal, w * 0.25, h + 1.85, -d * 0.2, 0, false);
-      surroundMesh(group, new THREE.BoxGeometry(0.9, 2.4, 0.9), mats.brick, -w * 0.25, h + 1.2, d * 0.15);
+      surroundMesh(group, new THREE.CylinderGeometry(1.1, 1.1, 1.8, 16), mats.rust, w * 0.25, h + 0.9, -d * 0.2, 0, false);
+      surroundMesh(group, new THREE.CylinderGeometry(1.15, 1.15, 0.12, 16), mats.metal, w * 0.25, h + 1.85, -d * 0.2, 0, false);
+      surroundMesh(group, new THREE.BoxGeometry(0.9, 2.4, 0.9), mats.brick, -w * 0.25, h + 1.2, d * 0.15, 0, false);
+
       group.userData.baseSize = { w, d, h };
+      group.userData.styleId = 'industrial-loft';
       group.userData.styleName = 'Industrial Loft';
       return group;
     }
 
-    function buildSurroundArtDeco(mats, w, d, h) {
-      // Sample 3 — Art Deco Classic: stepped limestone, gold bands, vertical ribs.
+    // Sample 3 — Art Deco Classic (from sample.html), flat wall colors.
+    function buildSurroundArtDeco(mats, w = 11, d = 10, h = 19) {
       const group = new THREE.Group();
       surroundMesh(group, new THREE.BoxGeometry(w, h * 0.72, d), mats.bodyStone, 0, (h * 0.72) / 2, 0);
       surroundMesh(group, new THREE.BoxGeometry(w * 0.82, h * 0.14, d * 0.82), mats.bodyStone, 0, h * 0.72 + (h * 0.14) / 2, 0);
       surroundMesh(group, new THREE.BoxGeometry(w * 0.62, h * 0.14, d * 0.62), mats.bodyStone, 0, h * 0.86 + (h * 0.14) / 2, 0);
+
       for (let i = -2; i <= 2; i++) {
         surroundMesh(group, new THREE.BoxGeometry(0.22, h * 0.68, 0.18), mats.rib, i * 2.0, h * 0.34, d / 2 + 0.08, 0, false);
       }
+
       surroundMesh(group, new THREE.BoxGeometry(w + 0.1, 0.28, d + 0.1), mats.gold, 0, h * 0.72, 0, 0, false);
       surroundMesh(group, new THREE.BoxGeometry(w * 0.84, 0.22, d * 0.84), mats.gold, 0, h * 0.86, 0, 0, false);
       surroundMesh(group, new THREE.BoxGeometry(w * 0.64, 0.35, d * 0.64), mats.dark, 0, h + 0.18, 0, 0, false);
-      surroundFaceGrid(group, mats, 'front', w, d, h * 0.68, 5, 2.0, 1.0, 1.25, 1.55, 4);
-      surroundFaceGrid(group, mats, 'left', w, d, h * 0.68, 4, 2.2, 1.2, 1.05, 1.3, 3);
-      surroundFaceGrid(group, mats, 'right', w, d, h * 0.68, 4, 2.2, 1.2, 1.05, 1.3, 3);
+
+      surroundFaceGrid(group, mats, 'front', w, d, h * 0.68, 5, 2.2, 1.2, 0.95, 1.15, 4);
+      surroundFaceGrid(group, mats, 'back', w, d, h * 0.68, 5, 2.2, 1.2, 0.95, 1.15, 4);
+      surroundFaceGrid(group, mats, 'left', w, d, h * 0.68, 4, 2.2, 1.2, 0.9, 1.1, 3);
+      surroundFaceGrid(group, mats, 'right', w, d, h * 0.68, 4, 2.2, 1.2, 0.9, 1.1, 3);
+
       group.userData.baseSize = { w, d, h };
+      group.userData.styleId = 'art-deco';
       group.userData.styleName = 'Art Deco Classic';
       return group;
     }
 
-    function buildSurroundSimple(mats, w, d, h, wallMat) {
-      // Mobile LOD: single massing box + a couple of flush window planes (no dense grids).
-      const group = new THREE.Group();
-      surroundMesh(group, new THREE.BoxGeometry(w, h, d), wallMat, 0, h / 2, 0, 0, quality.shadows);
-      const winW = w * 0.22;
-      const winH = h * 0.12;
-      for (let r = 0; r < 3; r++) {
-        for (let c = 0; c < 3; c++) {
-          const x = -w * 0.28 + c * (w * 0.28);
-          const y = h * 0.28 + r * (h * 0.22);
-          surroundMesh(group, new THREE.PlaneGeometry(winW, winH), mats.glass, x, y, d / 2 + 0.02, 0, false);
-        }
-      }
-      group.userData.baseSize = { w, d, h };
-      group.userData.styleName = 'Simple Massing';
-      return group;
-    }
-
-    async function initSurroundPrototypes() {
+    function initSurroundPrototypes() {
       if (surroundPrototypes) return surroundPrototypes;
       const mats = getSurroundMats();
-      if (quality.simpleSurrounds) {
-        surroundPrototypes = [
-          buildSurroundSimple(mats, 11, 10, 15, mats.brick),
-          buildSurroundSimple(mats, 11, 10, 18, mats.bodyStone),
-        ];
-      } else {
-        // Sample 2 (Industrial Loft) + Sample 3 (Art Deco Classic) only.
-        surroundPrototypes = [
-          buildSurroundIndustrial(mats, 11, 10, 15),
-          buildSurroundArtDeco(mats, 11, 10, 24),
-        ];
-      }
+      surroundPrototypes = [
+        buildSurroundIndustrial(mats, 11, 10, 15),
+        buildSurroundArtDeco(mats, 11, 10, 19),
+      ];
       return surroundPrototypes;
     }
 
     function cloneSurroundBuilding(styleIndex, width, depth, height) {
-      if (!surroundPrototypes) {
-        throw new Error('Surround prototypes not initialized — call initSurroundPrototypes() first.');
-      }
-      const proto = surroundPrototypes[styleIndex % surroundPrototypes.length];
+      const prototypes = initSurroundPrototypes();
+      const proto = prototypes[styleIndex % prototypes.length];
       const { w, d, h } = proto.userData.baseSize;
       const building = proto.clone(true);
       building.scale.set(width / w, height / h, depth / d);
@@ -4052,7 +4202,7 @@
       };
     }
 
-    // Sidewalk pad + grass collar + tower-facing Industrial / Mediterranean building.
+    // Sidewalk pad + grass collar + tower-facing Industrial / Art Deco building.
     function dressBuildingLot(envGroup, x, z, groundY, blockW, blockD, lotW, lotD, height, style, sidewalkMat, grassMat, trees, towerCx, towerCz, propScale) {
       const elev = groundElevations(groundY);
       const courtW = Math.min(lotW * 1.28, blockW * 0.55);
@@ -4089,14 +4239,12 @@
     function getBlockBuildingMats(wallColor) {
       let entry = blockBuildingMatCache.get(wallColor);
       if (!entry) {
-        const wallMat = surroundMats?.wall
-          ? (() => {
-              const mat = surroundMats.wall.clone();
-              mat.name = 'block-wall';
-              mat.color.setHex(wallColor);
-              return mat;
-            })()
-          : new THREE.MeshStandardMaterial({ color: wallColor, roughness: 0.88, metalness: 0.04 });
+        const wallMat = new THREE.MeshStandardMaterial({
+          color: wallColor,
+          roughness: 0.88,
+          metalness: 0.04,
+          envMapIntensity: DEFAULT_ENV_INTENSITY * SURROUND_ENV_MUL,
+        });
         entry = {
           wallMat,
           winMat: blockBuildingMatCache.get('win')?.winMat
@@ -4655,6 +4803,8 @@
             m.userData.surfaceEnvIntensity = GRASS_ENV_INTENSITY;
             m.metalness = 0;
             m.roughness = 1;
+            m.roughnessMap = null;
+            m.metalnessMap = null;
             return m;
           })()
         : new THREE.MeshStandardMaterial({
@@ -4704,10 +4854,10 @@
       addProp(envGroup, createBench(), px - 1.2, pz - poolD * 0.55, groundY, 0, propScale * 0.85);
     }
 
-    function dressHeroPlaza(envGroup, cx, cz, groundY, heroW, heroD, roadW, blockW, blockD, sidewalkMat, grassMat, lamps, trees, propScale) {
+    function dressHeroPlaza(envGroup, cx, cz, groundY, heroW, heroD, roadW, blockW, blockD, plazaBaseMat, grassMat, lamps, trees, propScale) {
       const elev = groundElevations(groundY);
       const margin = Math.max(8, Math.min(heroW, heroD) * 0.12);
-      // Wide white stone apron so pools sit clearly apart from the tower.
+      // Dark matte stone apron so the tower base doesn't wash out under daylight.
       const swW = Math.min(blockW * 0.98, Math.max(heroW + margin * 2.4, blockW * 0.94));
       const swD = Math.min(blockD * 0.96, Math.max(heroD + margin, blockD * 0.9));
       const midW = Math.max(8, heroW * 0.88);
@@ -4717,14 +4867,14 @@
       const innerW = Math.max(5, heroW * 0.58);
       const innerD = Math.max(5, heroD * 0.48);
 
-      envGroup.add(addGroundPlane(swW, swD, sidewalkMat, cx, elev.pavement, cz));
+      envGroup.add(addGroundPlane(swW, swD, plazaBaseMat, cx, elev.pavement, cz));
       envGroup.add(addGroundPlane(midW, midD, grassMat, cx, elev.grassLawn, cz));
       envGroup.add(addGroundPlane(lawnW, lawnD, grassMat, cx, elev.grassLawn, cz));
-      envGroup.add(addGroundPlane(innerW, innerD, sidewalkMat, cx, elev.trim, cz));
+      envGroup.add(addGroundPlane(innerW, innerD, plazaBaseMat, cx, elev.trim, cz));
 
       const pathW = 3.2;
-      envGroup.add(addGroundPlane(pathW, (swD - lawnD) * 0.48, sidewalkMat, cx, elev.path - 0.004, cz + (lawnD + swD) * 0.22));
-      envGroup.add(addGroundPlane(pathW, (swD - lawnD) * 0.48, sidewalkMat, cx, elev.path - 0.004, cz - (lawnD + swD) * 0.22));
+      envGroup.add(addGroundPlane(pathW, (swD - lawnD) * 0.48, plazaBaseMat, cx, elev.path - 0.004, cz + (lawnD + swD) * 0.22));
+      envGroup.add(addGroundPlane(pathW, (swD - lawnD) * 0.48, plazaBaseMat, cx, elev.path - 0.004, cz - (lawnD + swD) * 0.22));
 
       // Amenity pools left/right — skipped on mobile for fill-rate / transparency cost.
       if (quality.amenityPools) {
@@ -4762,8 +4912,8 @@
     }
 
     async function buildCityGrid(envGroup, cx, cz, groundY, heroW, heroD, heroH, materials) {
-      const { asphaltMat, sidewalkMat, grassMat } = materials;
-      // Wider center lot so flank pools sit apart on a broad white apron.
+      const { asphaltMat, sidewalkMat, grassMat, plazaBaseMat } = materials;
+      // Wider center lot so flank pools sit apart on a broad apron.
       const padZ = Math.max(12, Math.min(heroW, heroD) * 0.12);
       const padX = Math.max(52, Math.min(heroW, heroD) * 0.28);
       const blockW = heroW + padX;
@@ -4800,6 +4950,8 @@
       plazaGrassMat.envMapIntensity = GRASS_ENV_INTENSITY;
       plazaGrassMat.metalness = 0;
       plazaGrassMat.roughness = 1;
+      plazaGrassMat.roughnessMap = null;
+      plazaGrassMat.metalnessMap = null;
 
       const roadHalf = cityExtent * 1.1;
       const gridHalf = (gridN + 1) * Math.max(cellW, cellD);
@@ -4831,7 +4983,7 @@
           if (i === 0 && j === 0) {
             dressHeroPlaza(
               envGroup, blockCx, blockCz, groundY,
-              heroW, heroD, roadW, blockW, blockD, sidewalkMat, plazaGrassMat,
+              heroW, heroD, roadW, blockW, blockD, plazaBaseMat || sidewalkMat, plazaGrassMat,
               lamps, trees, propScale
             );
             continue;
@@ -4992,9 +5144,18 @@
       ]);
       grassMat.metalness = 0;
       grassMat.roughness = 1;
+      grassMat.roughnessMap = null;
+      grassMat.metalnessMap = null;
+      grassMat.aoMapIntensity = 0.35;
+      if (grassMat.normalScale) grassMat.normalScale.set(0.85, 0.85);
+      grassMat.color.setRGB(1.28, 1.32, 1.15);
       grassMat.envMapIntensity = GRASS_ENV_INTENSITY;
       grassMat.userData.surfaceEnvIntensity = GRASS_ENV_INTENSITY;
       asphaltMat.fog = false;
+      asphaltMat.aoMapIntensity = 0.4;
+      asphaltMat.color.setRGB(1.25, 1.25, 1.28);
+      asphaltMat.envMapIntensity = ROAD_ENV_INTENSITY;
+      asphaltMat.userData.surfaceEnvIntensity = ROAD_ENV_INTENSITY;
       [asphaltMat.map, asphaltMat.normalMap, asphaltMat.roughnessMap, asphaltMat.aoMap].forEach((tex) => {
         if (!tex) return;
         tex.generateMipmaps = false;
@@ -5015,16 +5176,28 @@
       const envGroup = new THREE.Group();
 
       const sidewalkMat = new THREE.MeshStandardMaterial({
-        color: 0xcfc6b4,
-        roughness: 0.88,
+        color: 0xd4cbb8,
+        roughness: 0.92,
         metalness: 0.02,
-        envMapIntensity: DEFAULT_ENV_INTENSITY * 0.85,
+        envMapIntensity: 0.2,
       });
+      sidewalkMat.userData.surfaceEnvIntensity = 0.2;
+
+      // Dark matte plinth around the tower — low IBL so sun doesn't bleach it.
+      const plazaBaseMat = new THREE.MeshStandardMaterial({
+        color: 0x6a645c,
+        roughness: 0.96,
+        metalness: 0,
+        envMapIntensity: 0.06,
+      });
+      plazaBaseMat.userData.surfaceEnvIntensity = 0.06;
+
       const { cityExtent, groundHalf, cellW, cellD } = await buildCityGrid(
         envGroup, cx, cz, groundY, footW, footD, heroH, {
           asphaltMat,
           sidewalkMat,
           grassMat,
+          plazaBaseMat,
         }
       );
 
@@ -5177,6 +5350,7 @@
     }
 
     async function setupModel(gltf) {
+      setLoadingStage('setup', 0.35, { status: 'Applying materials', detail: 'Building PBR maps' });
       model = gltf.scene;
       applyBuildingWorldScale(model);
       stripEmbeddedGround(model);
@@ -5194,6 +5368,7 @@
           pbrCache.set(name, await createPbrMaterial(name, def));
         })
       );
+      setLoadingStage('setup', 0.75, { status: 'Shading building', detail: 'Meshes & materials' });
 
       model.traverse((child) => {
         if (!child.isMesh || !child.visible) return;
@@ -5281,12 +5456,13 @@
       scene.add(model);
       alignModelToGround(model);
 
-      setLoadingStatus('Building surroundings');
+      setLoadingStage('city', 0.15, { status: 'Building surroundings', detail: 'Streets, plazas & neighbors' });
       await setupEnvironment(model);
+      setLoadingStage('city', 1, { status: 'Surroundings ready' });
       computeFloorSlices();
       frameModel(model);
 
-      setLoadingStatus('Finishing scene');
+      setLoadingStage('finish', 0.4, { status: 'Finishing scene', detail: 'Lighting & camera' });
       if (cloudLayer) scene.remove(cloudLayer);
       const cloudBox = new THREE.Box3().setFromObject(model);
       const cloudCenter = cloudBox.getCenter(new THREE.Vector3());
@@ -5495,11 +5671,27 @@
         const loader = new GLTFLoader();
         loader.load(
           url,
-          resolve,
+          (gltf) => {
+            setLoadingStage('model', 1, {
+              status: 'Model loaded',
+              detail: 'Preparing materials…',
+            });
+            resolve(gltf);
+          },
           (progress) => {
-            if (progress.total) {
-              const pct = Math.round((progress.loaded / progress.total) * 100);
-              setLoadingStatus(`Loading 3D model ${pct}%`);
+            if (progress.total > 0) {
+              const local = progress.loaded / progress.total;
+              const pct = Math.round(local * 100);
+              setLoadingStage('model', local, {
+                status: quality.isPhone ? 'Loading 3D model (phone)' : 'Loading 3D model',
+                detail: `${formatBytes(progress.loaded)} / ${formatBytes(progress.total)} · ${pct}%`,
+              });
+            } else if (progress.loaded > 0) {
+              // Some servers omit Content-Length — show bytes received.
+              setLoadingStage('model', 0.35, {
+                status: 'Loading 3D model',
+                detail: `${formatBytes(progress.loaded)} received…`,
+              });
             }
           },
           reject
@@ -5509,26 +5701,46 @@
 
     async function init() {
       try {
-        setLoadingStatus(quality.useHdrIbl ? 'Loading HDR sky' : 'Preparing sky');
+        loadingEl.setAttribute('aria-busy', 'true');
+        loadingEl.setAttribute('aria-valuemin', '0');
+        loadingEl.setAttribute('aria-valuemax', '100');
+        setLoadingStage('sky', 0.05, {
+          status: quality.useHdrIbl ? 'Loading HDR sky' : 'Preparing sky',
+          detail: quality.useHdrIbl ? 'High dynamic range environment' : 'Gradient sky',
+        });
         await loadDaySkyHdr();
-        setLoadingStatus('Loading building data');
+        setLoadingStage('sky', 1, { status: 'Sky ready' });
+
+        setLoadingStage('data', 0.2, { status: 'Loading building data', detail: 'Floors & units' });
         await loadData();
-        setLoadingStatus(quality.low ? 'Loading 3D model (mobile)' : 'Loading 3D model');
+        setLoadingStage('data', 1, { status: 'Building data ready' });
+
+        setLoadingStage('model', 0, {
+          status: quality.isPhone ? 'Loading 3D model (phone)' : 'Loading 3D model',
+          detail: 'Large model — please wait',
+        });
         let gltf;
         try {
           gltf = await loadGltf(quality.modelUrl);
         } catch (primaryErr) {
           if (quality.modelUrl !== quality.modelFallbackUrl) {
             console.warn(`Primary model failed (${quality.modelUrl}), falling back to ${quality.modelFallbackUrl}`, primaryErr);
-            setLoadingStatus('Loading fallback 3D model');
+            setLoadingStage('model', 0, {
+              status: 'Loading fallback 3D model',
+              detail: 'Retrying with alternate asset',
+            });
             gltf = await loadGltf(quality.modelFallbackUrl);
           } else {
             throw primaryErr;
           }
         }
+        setLoadingStage('setup', 0.2, { status: 'Applying materials', detail: 'PBR textures & lighting' });
         await setupModel(gltf);
       } catch (err) {
-        loadingEl.textContent = 'Failed to load model.';
+        if (loadingStatusEl) loadingStatusEl.textContent = 'Failed to load model.';
+        if (loadingDetailEl) loadingDetailEl.textContent = 'Check the console for details.';
+        if (loadingFillEl) loadingFillEl.style.background = 'var(--danger)';
+        loadingEl.setAttribute('aria-busy', 'false');
         console.error(err);
       }
     }
@@ -5547,7 +5759,7 @@
       const info = renderer.info;
       const ms = (elapsed / fpsFrames).toFixed(1);
       fpsHud.textContent =
-        `${fps} FPS  (${ms} ms)  ${quality.low ? 'MOBILE' : 'DESKTOP'}\n` +
+        `${fps} FPS  (${ms} ms)  ${quality.isPhone ? 'PHONE' : quality.isTablet ? 'TABLET' : 'DESKTOP'}\n` +
         `calls ${info.render.calls}  tris ${info.render.triangles.toLocaleString()}\n` +
         `geo ${info.memory.geometries}  tex ${info.memory.textures}`;
       fpsFrames = 0;
