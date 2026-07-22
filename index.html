@@ -1359,7 +1359,7 @@
         </div>
         <div class="env-row">
           <label>Exposure <output id="val-exposure">1.15</output></label>
-          <input type="range" id="env-exposure" min="0.5" max="2.5" step="0.01" value="1.15">
+          <input type="range" id="env-exposure" min="0.5" max="2.5" step="0.01" value="1.22">
         </div>
 
         <div class="env-section">Weather</div>
@@ -1511,6 +1511,10 @@
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
     import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+    import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
 
     // ── State ──
     let buildingData = null;
@@ -1601,8 +1605,10 @@
       return {
         low,
         antialias: !low,
-        maxPixelRatio: low ? (narrow ? 1 : 1.5) : 2,
+        // Keep desktop sharp; phones stay lighter but not overly soft.
+        maxPixelRatio: low ? (narrow ? 1.25 : 1.5) : 2,
         shadowMapSize: low ? 1024 : 2048,
+        useFxaa: !low,
         gridN: low ? 2 : 4,
         cloudCount: low ? 10 : 22,
         // Higher = fewer street props / cars / lamps on low quality.
@@ -1619,11 +1625,35 @@
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 1.22;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.localClippingEnabled = true;
     container.appendChild(renderer.domElement);
+
+    const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
+
+    function polishTexture(tex, { colorSpace = null } = {}) {
+      if (!tex || tex.isRenderTargetTexture) return;
+      if (colorSpace) tex.colorSpace = colorSpace;
+      tex.generateMipmaps = true;
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      tex.anisotropy = maxAnisotropy;
+      tex.needsUpdate = true;
+    }
+
+    function polishMaterialMaps(mat) {
+      if (!mat) return;
+      const colorMaps = ['map', 'emissiveMap'];
+      const dataMaps = ['normalMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'bumpMap', 'displacementMap'];
+      colorMaps.forEach((key) => {
+        if (mat[key]) polishTexture(mat[key], { colorSpace: THREE.SRGBColorSpace });
+      });
+      dataMaps.forEach((key) => {
+        if (mat[key]) polishTexture(mat[key]);
+      });
+    }
 
     const scene = new THREE.Scene();
 
@@ -1637,7 +1667,7 @@
       timeOfDay: 14,
       sunIntensity: 1.6,
       ambientIntensity: 0.3,
-      exposure: 1.15,
+      exposure: 1.22,
       fogAmount: 0.20,
       cloudOpacity: 0.68,
     };
@@ -1849,6 +1879,21 @@
     fillLight.position.set(-50, 40, -70);
     scene.add(fillLight);
 
+    // Desktop: light FXAA pass to soften silhouette jaggies without changing the GLB.
+    let composer = null;
+    let fxaaPass = null;
+    if (quality.useFxaa) {
+      composer = new EffectComposer(renderer);
+      composer.addPass(new RenderPass(scene, camera));
+      fxaaPass = new ShaderPass(FXAAShader);
+      const pr = renderer.getPixelRatio();
+      fxaaPass.material.uniforms.resolution.value.set(
+        1 / (container.clientWidth * pr),
+        1 / (container.clientHeight * pr)
+      );
+      composer.addPass(fxaaPass);
+    }
+
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
     let cloudLayer = null;
@@ -1884,7 +1929,15 @@
     }
 
     function createCloudCluster(mat) {
-      return new THREE.Mesh(new THREE.PlaneGeometry(34, 15), mat);
+      // Three intersecting planes read as volume from any horizontal viewing angle.
+      const group = new THREE.Group();
+      [0, Math.PI / 3, (2 * Math.PI) / 3].forEach((ry) => {
+        const plane = new THREE.Mesh(new THREE.PlaneGeometry(34, 15), mat);
+        plane.rotation.y = ry;
+        plane.rotation.x = -0.06;
+        group.add(plane);
+      });
+      return group;
     }
 
     function createCloudLayer(cx, cz, groundY, extent) {
@@ -1910,7 +1963,6 @@
           groundY + 48 + (i % 4) * 12 + (i % 3) * 5,
           cz + Math.sin(angle) * dist
         );
-        cluster.rotation.y = angle + Math.PI / 2;
         const s = 1.35 + (i % 4) * 0.38;
         cluster.scale.set(s, s * 0.88, s);
         cluster.userData.driftX = 0.4 + (i % 5) * 0.15;
@@ -1925,9 +1977,15 @@
     function updateClouds(time, dt) {
       if (!cloudLayer) return;
       const t = time * 0.001;
+      const camX = camera.position.x;
+      const camZ = camera.position.z;
       cloudLayer.children.forEach((cluster) => {
         cluster.position.x += Math.sin(t * cluster.userData.driftX + cluster.userData.phase) * dt * 1.2;
         cluster.position.z += Math.cos(t * cluster.userData.driftZ + cluster.userData.phase) * dt * 0.9;
+        // Keep clouds upright but always face the camera horizontally.
+        const dx = camX - cluster.position.x;
+        const dz = camZ - cluster.position.z;
+        cluster.rotation.y = Math.atan2(dx, dz);
       });
     }
 
@@ -2964,8 +3022,10 @@
       surroundMesh(group, new THREE.BoxGeometry(w, h, d), mats.brick, 0, h / 2, 0);
       surroundMesh(group, new THREE.BoxGeometry(w + 0.08, 1.1, d + 0.08), mats.stone, 0, 0.55, 0, 0, false);
       surroundMesh(group, new THREE.BoxGeometry(w + 0.12, 0.55, d + 0.12), mats.parapet, 0, h + 0.28, 0, 0, false);
-      surroundFaceGrid(group, mats, 'front', w, d, h, 3, 2.0, 1.4, 1.05, 1.35, 3);
-      surroundFaceGrid(group, mats, 'back', w, d, h, 3, 2.0, 1.4, 1.05, 1.35, 3);
+      // Primary (larger) windows on front — buildings are rotated to face the tower.
+      surroundFaceGrid(group, mats, 'front', w, d, h, 5, 1.9, 1.05, 1.45, 1.85, 4);
+      surroundFaceGrid(group, mats, 'left', w, d, h, 4, 2.0, 1.3, 1.15, 1.5, 3);
+      surroundFaceGrid(group, mats, 'right', w, d, h, 4, 2.0, 1.3, 1.15, 1.5, 3);
       for (let i = 0; i < 3; i++) {
         const y = 2.5 + i * 3.2;
         surroundMesh(group, new THREE.BoxGeometry(0.06, 0.06, 1.8), mats.rail, w / 2 + 0.35, y, 0.2, 0, false);
@@ -3011,8 +3071,10 @@
       surroundMesh(group, new THREE.BoxGeometry(w + 0.1, 0.28, d + 0.1), mats.gold, 0, h * 0.72, 0, 0, false);
       surroundMesh(group, new THREE.BoxGeometry(w * 0.84, 0.22, d * 0.84), mats.gold, 0, h * 0.86, 0, 0, false);
       surroundMesh(group, new THREE.BoxGeometry(w * 0.64, 0.35, d * 0.64), mats.dark, 0, h + 0.18, 0, 0, false);
-      surroundFaceGrid(group, mats, 'front', w, d, h * 0.68, 4, 2.2, 1.2, 0.95, 1.15, 4);
-      surroundFaceGrid(group, mats, 'back', w, d, h * 0.68, 4, 2.2, 1.2, 0.95, 1.15, 4);
+      // Front windows face the tower after placement rotation; sides get a lighter grid.
+      surroundFaceGrid(group, mats, 'front', w, d, h * 0.68, 5, 2.0, 1.0, 1.25, 1.55, 4);
+      surroundFaceGrid(group, mats, 'left', w, d, h * 0.68, 4, 2.2, 1.2, 1.05, 1.3, 3);
+      surroundFaceGrid(group, mats, 'right', w, d, h * 0.68, 4, 2.2, 1.2, 1.05, 1.3, 3);
       group.userData.baseSize = { w, d, h };
       return group;
     }
@@ -3020,10 +3082,10 @@
     function initSurroundPrototypes() {
       if (surroundPrototypes) return surroundPrototypes;
       const mats = getSurroundMats();
+      // Sample 1 (Brick Residential) + Sample 3 (Art Deco Classic) only.
       surroundPrototypes = [
-        buildSurroundBrick(mats, 10, 10, 16),
-        buildSurroundIndustrial(mats, 11, 10, 15),
-        buildSurroundArtDeco(mats, 11, 10, 19),
+        buildSurroundBrick(mats, 10, 10, 20),
+        buildSurroundArtDeco(mats, 11, 10, 24),
       ];
       return surroundPrototypes;
     }
@@ -3035,6 +3097,63 @@
       const building = proto.clone(true);
       building.scale.set(width / w, height / h, depth / d);
       return building;
+    }
+
+    // Rotate so the building's front (+Z) faces the tower, snapped to the street grid.
+    function rotationFacingTower(x, z, towerX, towerZ) {
+      const dx = towerX - x;
+      const dz = towerZ - z;
+      if (Math.abs(dx) >= Math.abs(dz)) {
+        return dx >= 0 ? Math.PI / 2 : -Math.PI / 2;
+      }
+      return dz >= 0 ? 0 : Math.PI;
+    }
+
+    function isNearTowerFootprint(x, z, towerCx, towerCz, halfW, halfD, margin = 8) {
+      return Math.abs(x - towerCx) < halfW + margin && Math.abs(z - towerCz) < halfD + margin;
+    }
+
+    // Layered ground heights — keep pavement clearly above grass to avoid Z-fighting.
+    function groundElevations(groundY) {
+      return {
+        grassBase: groundY - 0.018,
+        pavement: groundY + 0.010,
+        grassLawn: groundY + 0.022,
+        path: groundY + 0.040,
+        trim: groundY + 0.052,
+      };
+    }
+
+    // Sidewalk pad + grass collar + tower-facing Brick/Art Deco building.
+    function dressBuildingLot(envGroup, x, z, groundY, blockW, blockD, lotW, lotD, height, style, sidewalkMat, grassMat, trees, towerCx, towerCz, propScale) {
+      const elev = groundElevations(groundY);
+      const courtW = Math.min(lotW * 1.32, blockW * 0.72);
+      const courtD = Math.min(lotD * 1.32, blockD * 0.72);
+      envGroup.add(addGroundPlane(courtW, courtD, sidewalkMat, x, elev.pavement, z));
+      // Narrow planting strip near the street-facing edge
+      const bed = Math.min(lotW, lotD) * 0.16;
+      envGroup.add(addGroundPlane(lotW + bed * 2, bed * 0.5, grassMat, x, elev.grassLawn, z + lotD * 0.4));
+      envGroup.add(addGroundPlane(lotW + bed * 2, bed * 0.5, grassMat, x, elev.grassLawn, z - lotD * 0.4));
+
+      addProp(
+        envGroup,
+        cloneSurroundBuilding(style, lotW, lotD, height),
+        x,
+        z,
+        groundY,
+        rotationFacingTower(x, z, towerCx, towerCz)
+      );
+
+      const e = Math.min(courtW, courtD) * 0.38;
+      [
+        [-e, -e], [e, -e], [-e, e], [e, e],
+      ].forEach(([ox, oz], idx) => {
+        trees.push([x + ox, z + oz, idx * 0.55, 0.82 + (idx % 3) * 0.05]);
+      });
+      if (propScale) {
+        addProp(envGroup, createPlanter(), x - lotW * 0.38, z + lotD * 0.48, groundY, 0, propScale * 0.85);
+        addProp(envGroup, createPlanter(), x + lotW * 0.38, z + lotD * 0.48, groundY, 0.4, propScale * 0.85);
+      }
     }
 
     const blockBuildingMatCache = new Map();
@@ -3107,13 +3226,14 @@
       c.width = 256;
       c.height = 128;
       const ctx = c.getContext('2d');
-      const lineH = Math.max(2, Math.round((0.16 / widthMeters) * 128));
+      ctx.clearRect(0, 0, 256, 128);
+      const lineH = Math.max(2, Math.round((0.16 / Math.max(widthMeters, 0.2)) * 128));
       ctx.fillStyle = '#e8e8e8';
       ctx.fillRect(0, 64 - lineH / 2, Math.round(256 * 0.4), lineH);
       const tex = new THREE.CanvasTexture(c);
       tex.colorSpace = THREE.SRGBColorSpace;
       tex.wrapS = THREE.RepeatWrapping;
-      tex.repeat.set(lengthMeters / 5, 1);
+      tex.repeat.set(Math.max(1, lengthMeters / 5), 1);
       return new THREE.MeshStandardMaterial({
         map: tex,
         transparent: true,
@@ -3125,6 +3245,31 @@
         polygonOffsetFactor: -2,
         polygonOffsetUnits: -2,
       });
+    }
+
+    // Physical dashes along a road centerline (avoids full-width "tile" overlays).
+    function addRoadCenterDashes(group, cx, cz, y, length, alongX, mat) {
+      const dashLen = 2.4;
+      const gap = 2.2;
+      const half = length * 0.5;
+      for (let d = -half; d < half - dashLen; d += dashLen + gap) {
+        if (alongX) {
+          group.add(addGroundPlane(dashLen, 0.28, mat, cx + d + dashLen * 0.5, y, cz));
+        } else {
+          group.add(addGroundPlane(0.28, dashLen, mat, cx, y, cz + d + dashLen * 0.5));
+        }
+      }
+    }
+
+    function addRoadEdgeLines(group, cx, cz, y, length, roadW, alongX, mat) {
+      const inset = roadW * 0.42;
+      if (alongX) {
+        group.add(addGroundPlane(length, 0.14, mat, cx, y, cz + inset));
+        group.add(addGroundPlane(length, 0.14, mat, cx, y, cz - inset));
+      } else {
+        group.add(addGroundPlane(0.14, length, mat, cx + inset, y, cz));
+        group.add(addGroundPlane(0.14, length, mat, cx - inset, y, cz));
+      }
     }
 
     function makeTreeBarkTexture() {
@@ -3646,8 +3791,9 @@
       });
 
       // Outer sidewalk + pool deck
-      envGroup.add(addGroundPlane(padW, padD, sidewalkMat, blockCx, groundY - 0.006, blockCz));
-      envGroup.add(addGroundPlane(deckW, deckD, deckMat, blockCx, groundY + 0.012, blockCz));
+      const elev = groundElevations(groundY);
+      envGroup.add(addGroundPlane(padW, padD, sidewalkMat, blockCx, elev.pavement, blockCz));
+      envGroup.add(addGroundPlane(deckW, deckD, deckMat, blockCx, elev.path - 0.006, blockCz));
 
       // Raised stone rim
       envGroup.add(addGroundPlane(poolW + rimPad * 2, poolD + rimPad * 2, rimMat, blockCx, rimY, blockCz));
@@ -3709,17 +3855,8 @@
         envGroup.add(step);
       }
 
-      // Corner trees only — keep deck clear
-      const edge = Math.min(deckW, deckD) * 0.42;
-      [
-        [blockCx - edge, blockCz - edge],
-        [blockCx + edge, blockCz - edge],
-        [blockCx - edge, blockCz + edge],
-        [blockCx + edge, blockCz + edge],
-      ].forEach(([tx, tz], idx) => {
-        trees.push([tx, tz, idx * 0.6, 0.88]);
-      });
-
+      // Corner trees only — keep deck clear (pools beside tower: no trees)
+      // (trees removed from pool lots near the tower)
       // Loungers / planters along the long edges — no poles in the water
       addProp(envGroup, createPlanter(), blockCx - poolW * 0.62, blockCz - poolD * 0.55, groundY, 0, propScale * 0.95);
       addProp(envGroup, createPlanter(), blockCx + poolW * 0.62, blockCz - poolD * 0.55, groundY, 0, propScale * 0.95);
@@ -3729,109 +3866,141 @@
       addProp(envGroup, createBench(), blockCx - poolW * 0.15, blockCz - poolD * 0.72, groundY, 0, propScale * 0.85);
     }
 
-    function dressPlazaLot(envGroup, blockCx, blockCz, groundY, roadY, stripeY, blockW, blockD, sidewalkMat, asphaltMat, lineMat, dashedPadOverlayMat, grassMat, lamps, trees, propScale) {
-      const padW = blockW * 0.92;
-      const padD = blockD * 0.92;
-      const walkW = blockW * 0.78;
-      const walkD = blockD * 0.78;
-      const greenW = blockW * 0.42;
-      const greenD = blockD * 0.42;
+    function dressPlazaLot(envGroup, blockCx, blockCz, groundY, roadY, stripeY, blockW, blockD, sidewalkMat, asphaltMat, lineMat, dashedPadOverlayMat, grassMat, lamps, trees, propScale, { skipTrees = false } = {}) {
+      const elev = groundElevations(groundY);
+      const padW = blockW * 0.9;
+      const padD = blockD * 0.9;
+      const greenW = blockW * 0.55;
+      const greenD = blockD * 0.55;
+      const pathW = blockW * 0.16;
 
-      // Outer plaza sidewalk
-      envGroup.add(addGroundPlane(padW, padD, sidewalkMat, blockCx, groundY - 0.006, blockCz));
-      // Soft inner lawn
-      envGroup.add(addGroundPlane(greenW, greenD, grassMat, blockCx, groundY + 0.01, blockCz));
-      // Subtle path crossing the lawn (raised to avoid z-fighting with grass)
-      envGroup.add(addGroundPlane(greenW * 0.22, greenD * 0.92, sidewalkMat, blockCx, groundY + 0.04, blockCz));
-      envGroup.add(addGroundPlane(greenW * 0.92, greenD * 0.22, sidewalkMat, blockCx, groundY + 0.04, blockCz));
+      // Soft stone court (less chalky full-block white)
+      envGroup.add(addGroundPlane(padW, padD, sidewalkMat, blockCx, elev.pavement, blockCz));
+      // Generous central lawn
+      envGroup.add(addGroundPlane(greenW, greenD, grassMat, blockCx, elev.grassLawn, blockCz));
+      // Cross paths
+      envGroup.add(addGroundPlane(pathW, greenD * 0.95, sidewalkMat, blockCx, elev.path, blockCz));
+      envGroup.add(addGroundPlane(greenW * 0.95, pathW, sidewalkMat, blockCx, elev.path, blockCz));
+      // Corner lawn pockets — same height as central lawn to avoid green-on-green flicker
+      const pocket = greenW * 0.22;
+      const po = greenW * 0.28;
+      [
+        [-po, -po], [po, -po], [-po, po], [po, po],
+      ].forEach(([ox, oz]) => {
+        envGroup.add(addGroundPlane(pocket, pocket, grassMat, blockCx + ox, elev.grassLawn, blockCz + oz));
+      });
 
-      const edge = Math.min(walkW, walkD) * 0.38;
+      const edge = Math.min(padW, padD) * 0.38;
       const treeSpots = [
         [blockCx - edge, blockCz - edge],
         [blockCx + edge, blockCz - edge],
         [blockCx - edge, blockCz + edge],
         [blockCx + edge, blockCz + edge],
-        [blockCx - edge * 0.15, blockCz - edge],
-        [blockCx + edge * 0.15, blockCz + edge],
+        [blockCx - edge * 0.2, blockCz - edge],
+        [blockCx + edge * 0.2, blockCz + edge],
+        [blockCx - edge, blockCz],
+        [blockCx + edge, blockCz],
       ];
-      treeSpots.forEach(([tx, tz], idx) => {
-        trees.push([tx, tz, idx * 0.55, 0.92 + (idx % 3) * 0.05]);
-      });
+      if (!skipTrees) {
+        treeSpots.forEach(([tx, tz], idx) => {
+          trees.push([tx, tz, idx * 0.45, 0.95 + (idx % 4) * 0.04]);
+        });
+      }
 
-      addProp(envGroup, createPlanter(), blockCx - edge * 0.55, blockCz, groundY, 0, propScale);
-      addProp(envGroup, createPlanter(), blockCx + edge * 0.55, blockCz, groundY, Math.PI / 4, propScale);
-      addProp(envGroup, createBench(), blockCx, blockCz + edge * 0.55, groundY, Math.PI, propScale * 0.95);
-      addProp(envGroup, createBollard(), blockCx - edge * 0.9, blockCz - edge * 0.35, groundY, 0, propScale);
-      addProp(envGroup, createBollard(), blockCx + edge * 0.9, blockCz - edge * 0.35, groundY, 0, propScale);
-      addProp(envGroup, createBollard(), blockCx - edge * 0.9, blockCz + edge * 0.35, groundY, 0, propScale);
-      addProp(envGroup, createBollard(), blockCx + edge * 0.9, blockCz + edge * 0.35, groundY, 0, propScale);
+      addProp(envGroup, createPlanter(), blockCx - edge * 0.5, blockCz, groundY, 0, propScale);
+      addProp(envGroup, createPlanter(), blockCx + edge * 0.5, blockCz, groundY, Math.PI / 5, propScale);
+      addProp(envGroup, createPlanter(), blockCx, blockCz - edge * 0.5, groundY, 0.2, propScale * 0.9);
+      addProp(envGroup, createBench(), blockCx, blockCz + edge * 0.52, groundY, Math.PI, propScale * 0.95);
+      addProp(envGroup, createBench(), blockCx - edge * 0.5, blockCz + edge * 0.15, groundY, Math.PI / 2, propScale * 0.9);
+      addProp(envGroup, createBollard(), blockCx - edge * 0.88, blockCz - edge * 0.35, groundY, 0, propScale);
+      addProp(envGroup, createBollard(), blockCx + edge * 0.88, blockCz - edge * 0.35, groundY, 0, propScale);
+      addProp(envGroup, createBollard(), blockCx - edge * 0.88, blockCz + edge * 0.35, groundY, 0, propScale);
+      addProp(envGroup, createBollard(), blockCx + edge * 0.88, blockCz + edge * 0.35, groundY, 0, propScale);
     }
 
-    function dressHeroPlaza(envGroup, cx, cz, groundY, roadY, stripeY, heroW, heroD, roadW, sidewalkMat, asphaltMat, lineMat, grassMat, lamps, trees, propScale) {
-      // Wide ceremonial base so trees sit well clear of the tower
-      const margin = Math.max(28, Math.min(heroW, heroD) * 0.55);
-      const swW = heroW + margin;
-      const swD = heroD + margin;
-      const lawnW = Math.max(10, heroW * 0.42);
-      const lawnD = Math.max(10, heroD * 0.42);
+    function dressHeroPlaza(envGroup, cx, cz, groundY, roadY, stripeY, heroW, heroD, roadW, blockW, blockD, sidewalkMat, asphaltMat, lineMat, grassMat, lamps, trees, propScale) {
+      const elev = groundElevations(groundY);
+      // Keep the ceremonial plaza inside the center city block so through-roads stay clear.
+      const margin = Math.max(10, Math.min(heroW, heroD) * 0.22);
+      const swW = Math.min(heroW + margin, blockW * 0.94);
+      const swD = Math.min(heroD + margin, blockD * 0.94);
+      const midW = Math.max(10, swW * 0.78);
+      const midD = Math.max(10, swD * 0.78);
+      const lawnW = Math.max(8, swW * 0.55);
+      const lawnD = Math.max(8, swD * 0.55);
+      const innerW = Math.max(6, swW * 0.32);
+      const innerD = Math.max(6, swD * 0.32);
 
-      // Wide ceremonial sidewalk around the tower
-      envGroup.add(addGroundPlane(swW, swD, sidewalkMat, cx, groundY - 0.005, cz));
-      // Soft lawn band near the tower footprint (raised above sidewalk)
-      envGroup.add(addGroundPlane(lawnW, lawnD, grassMat, cx, groundY + 0.03, cz));
+      // Outer stone court
+      envGroup.add(addGroundPlane(swW, swD, sidewalkMat, cx, elev.pavement, cz));
+      // Mid lawn ring
+      envGroup.add(addGroundPlane(midW, midD, grassMat, cx, elev.grassLawn, cz));
+      // Inner promenade
+      envGroup.add(addGroundPlane(lawnW * 1.15, lawnD * 1.15, sidewalkMat, cx, elev.path - 0.012, cz));
+      // Soft lawn near tower footprint
+      envGroup.add(addGroundPlane(lawnW, lawnD, grassMat, cx, elev.grassLawn, cz));
+      // Tight stone band against the tower base
+      envGroup.add(addGroundPlane(innerW, innerD, sidewalkMat, cx, elev.trim, cz));
 
-      // Tree allee along the outer plaza edge (away from the building)
-      const ringX = swW * 0.46;
-      const ringZ = swD * 0.46;
-      const treeRing = [
-        [-ringX, -ringZ], [0, -ringZ], [ringX, -ringZ],
-        [-ringX, 0], [ringX, 0],
-        [-ringX, ringZ], [0, ringZ], [ringX, ringZ],
-        [-ringX * 0.55, -ringZ], [ringX * 0.55, -ringZ],
-        [-ringX * 0.55, ringZ], [ringX * 0.55, ringZ],
-        [-ringX, -ringZ * 0.55], [-ringX, ringZ * 0.55],
-        [ringX, -ringZ * 0.55], [ringX, ringZ * 0.55],
-      ];
-      treeRing.forEach(([ox, oz], idx) => {
-        trees.push([cx + ox, cz + oz, idx * 0.4, 1.0 + (idx % 4) * 0.04]);
-      });
+      // Approach paths from all four roads into the plaza
+      const pathW = 3.2;
+      envGroup.add(addGroundPlane(pathW, (swD - lawnD) * 0.48, sidewalkMat, cx, elev.path - 0.004, cz + (lawnD + swD) * 0.22));
+      envGroup.add(addGroundPlane(pathW, (swD - lawnD) * 0.48, sidewalkMat, cx, elev.path - 0.004, cz - (lawnD + swD) * 0.22));
+      envGroup.add(addGroundPlane((swW - lawnW) * 0.48, pathW, sidewalkMat, cx + (lawnW + swW) * 0.22, elev.path - 0.004, cz));
+      envGroup.add(addGroundPlane((swW - lawnW) * 0.48, pathW, sidewalkMat, cx - (lawnW + swW) * 0.22, elev.path - 0.004, cz));
 
-      // Planters & seating mid-way on the plaza (still outside the lawn)
-      const seatZ = (lawnD + swD) * 0.28;
-      const seatX = (lawnW + swW) * 0.28;
+      // No trees on the tower plaza — they were blocking the ground floor.
+      // Seating + planters on the mid court
+      const seatZ = (lawnD + swD) * 0.26;
+      const seatX = (lawnW + swW) * 0.26;
       [
         [0, seatZ, Math.PI],
         [0, -seatZ, 0],
         [seatX, 0, -Math.PI / 2],
         [-seatX, 0, Math.PI / 2],
+        [seatX * 0.7, seatZ * 0.7, Math.PI * 0.75],
+        [-seatX * 0.7, -seatZ * 0.7, Math.PI * 0.25],
       ].forEach(([ox, oz, rot], idx) => {
         addProp(envGroup, createBench(), cx + ox, cz + oz, groundY, rot, propScale);
-        if (idx % 2 === 0) {
-          addProp(envGroup, createPlanter(), cx + ox * 0.85, cz + oz * 0.85, groundY, rot, propScale * 1.05);
-        }
+        addProp(envGroup, createPlanter(), cx + ox * 0.82, cz + oz * 0.82, groundY, rot, propScale * (0.95 + (idx % 3) * 0.05));
       });
 
-      // Bollard line at outer sidewalk corners
+      // Bollard lines at outer corners + mid-edges
       [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => {
-        const bx = cx + sx * (swW * 0.48);
-        const bz = cz + sz * (swD * 0.48);
+        const bx = cx + sx * (swW * 0.47);
+        const bz = cz + sz * (swD * 0.47);
         addProp(envGroup, createBollard(), bx, bz, groundY, 0, propScale);
-        addProp(envGroup, createBollard(), bx - sx * 1.6, bz, groundY, 0, propScale * 0.95);
-        addProp(envGroup, createBollard(), bx, bz - sz * 1.6, groundY, 0, propScale * 0.95);
+        addProp(envGroup, createBollard(), bx - sx * 1.8, bz, groundY, 0, propScale * 0.95);
+        addProp(envGroup, createBollard(), bx, bz - sz * 1.8, groundY, 0, propScale * 0.95);
+      });
+      [
+        [0, 1], [0, -1], [1, 0], [-1, 0],
+      ].forEach(([sx, sz]) => {
+        addProp(
+          envGroup,
+          createBollard(),
+          cx + sx * (swW * 0.47),
+          cz + sz * (swD * 0.47),
+          groundY,
+          0,
+          propScale
+        );
       });
 
-      // Crosswalks on all four approaches
-      addCrosswalk(envGroup, cx, cz + swD / 2 + roadW / 2, 6.4, 4.6, groundY, lineMat, stripeY);
-      addCrosswalk(envGroup, cx, cz - swD / 2 - roadW / 2, 6.4, 4.6, groundY, lineMat, stripeY);
-      addCrosswalk(envGroup, cx - swW / 2 - roadW / 2, cz, 6.4, 4.6, groundY, lineMat, stripeY);
-      addCrosswalk(envGroup, cx + swW / 2 + roadW / 2, cz, 6.4, 4.6, groundY, lineMat, stripeY);
+      // Crosswalks on the four through-roads that ring the center block
+      const cellHalfW = (blockW + roadW) * 0.5;
+      const cellHalfD = (blockD + roadW) * 0.5;
+      addCrosswalk(envGroup, cx, cz + cellHalfD, 7.2, 5.2, groundY, lineMat, stripeY);
+      addCrosswalk(envGroup, cx, cz - cellHalfD, 7.2, 5.2, groundY, lineMat, stripeY);
+      addCrosswalk(envGroup, cx - cellHalfW, cz, 7.2, 5.2, groundY, lineMat, stripeY);
+      addCrosswalk(envGroup, cx + cellHalfW, cz, 7.2, 5.2, groundY, lineMat, stripeY);
 
-      // Extra lamps framing the plaza corners
+      // Lamps at the four intersections around the center block
       [
-        [swW / 2 + roadW * 0.15, swD / 2 + roadW * 0.15],
-        [-swW / 2 - roadW * 0.15, swD / 2 + roadW * 0.15],
-        [swW / 2 + roadW * 0.15, -swD / 2 - roadW * 0.15],
-        [-swW / 2 - roadW * 0.15, -swD / 2 - roadW * 0.15],
+        [cellHalfW, cellHalfD],
+        [-cellHalfW, cellHalfD],
+        [cellHalfW, -cellHalfD],
+        [-cellHalfW, -cellHalfD],
       ].forEach(([ox, oz], idx) => {
         lamps.push([cx + ox, cz + oz, (idx % 4) * (Math.PI / 2)]);
       });
@@ -3839,12 +4008,13 @@
 
     function buildCityGrid(envGroup, cx, cz, groundY, heroW, heroD, materials) {
       const { asphaltMat, sidewalkMat, lineMat, grassTex } = materials;
-      const roadW = 20;
-      const blockW = 34;
-      const blockD = 34;
+      // Narrower streets + wider parcels so roads read as corridors, not square tiles.
+      const roadW = 11;
+      const blockW = 42;
+      const blockD = 42;
       const cellW = blockW + roadW;
       const cellD = blockD + roadW;
-      const buildScale = 0.4;
+      const buildScale = 0.5;
       const gridN = quality.gridN;
       const propScale = 1.28;
       const carScale = 1.58;
@@ -3852,13 +4022,14 @@
       initSurroundPrototypes();
       const carColors = [0x2a4a6a, 0x8a2a2a, 0xdddddd, 0x2a2a2a, 0x5a6a4a, 0x4a3a6a, 0x6a5a3a, 0x3a5a6a];
       const blockColors = [0xc4bdb2, 0xa8a296, 0xb9b0a0, 0x9ea89a, 0xbeb5a8, 0x8f9690, 0xada496, 0x7a8a90];
-      const lotW = blockW * buildScale * 0.82;
-      const lotD = blockD * buildScale * 0.82;
+      const lotW = blockW * buildScale * 0.78;
+      const lotD = blockD * buildScale * 0.78;
       const lamps = [];
       const cars = [];
       const trees = [];
       const roadY = groundY - 0.012;
       const stripeY = groundY - 0.003;
+      const elev = groundElevations(groundY);
 
       // Keep cars off the plaza / pool lots around the tower (3×3 ring).
       function carHitsPlaza(x, z) {
@@ -3873,13 +4044,31 @@
         }
         return false;
       }
-      const dashedLineOverlayMat = makeDashedLineOverlayMat(cityExtent * 2.2, roadW);
+      const dashedLineOverlayMat = makeDashedLineOverlayMat(cityExtent * 2.2, 0.3);
       const dashedPadOverlayMat = makeDashedLineOverlayMat(blockW * 0.96, blockD * 0.96);
       const plazaGrassMat = new THREE.MeshStandardMaterial({
         map: grassTex,
         roughness: 0.9,
         metalness: 0.0,
-        color: 0x8fbf5c,
+        color: 0x7aaa58,
+      });
+      const laneMarkMat = new THREE.MeshStandardMaterial({
+        color: 0xf2f0e6,
+        roughness: 0.92,
+        metalness: 0.0,
+        polygonOffset: true,
+        polygonOffsetFactor: -3,
+        polygonOffsetUnits: -3,
+        depthWrite: false,
+      });
+      const roadEdgeMat = new THREE.MeshStandardMaterial({
+        color: 0xd8d4c8,
+        roughness: 0.9,
+        metalness: 0.0,
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+        polygonOffsetUnits: -2,
+        depthWrite: false,
       });
 
       // Square grass base — must cover road strips at the outermost grid corners
@@ -3895,36 +4084,28 @@
           map: grassTex,
           roughness: 0.92,
           metalness: 0.0,
-          color: 0xa8c878,
+          color: 0x8fb86a,
         })
       );
       ground.rotation.x = -Math.PI / 2;
-      ground.position.set(cx, groundY - 0.02, cz);
+      ground.position.set(cx, elev.grassBase - 0.006, cz);
       ground.receiveShadow = true;
       envGroup.add(ground);
 
-      for (let j = -gridN - 1; j <= gridN + 1; j++) {
-        const z = cz + j * cellD;
-        envGroup.add(addGroundPlane(cityExtent * 2.2, roadW, asphaltMat, cx, roadY, z));
-        if (j % 2 === 0) {
-          envGroup.add(addGroundPlane(cityExtent * 2.2, roadW, dashedLineOverlayMat, cx, stripeY, z));
-        }
-      }
-      for (let i = -gridN - 1; i <= gridN + 1; i++) {
-        const x = cx + i * cellW;
-        envGroup.add(addGroundPlane(roadW, cityExtent * 2.2, asphaltMat, x, roadY, cz));
-      }
-
+      // City lots first — each parcel gets a grass base so streets stay visually separate.
       for (let j = -gridN; j <= gridN; j++) {
         for (let i = -gridN; i <= gridN; i++) {
           const blockCx = cx + i * cellW;
           const blockCz = cz + j * cellD;
           const h = cityHash(i, j);
 
+          // Grass parcel under every lot (roads will cut between these).
+          envGroup.add(addGroundPlane(blockW * 0.98, blockD * 0.98, plazaGrassMat, blockCx, elev.grassBase, blockCz));
+
           if (i === 0 && j === 0) {
             dressHeroPlaza(
               envGroup, blockCx, blockCz, groundY, roadY, stripeY,
-              heroW, heroD, roadW, sidewalkMat, asphaltMat, lineMat, plazaGrassMat,
+              heroW, heroD, roadW, blockW, blockD, sidewalkMat, asphaltMat, lineMat, plazaGrassMat,
               lamps, trees, propScale
             );
             continue;
@@ -3938,89 +4119,112 @@
               dressPlazaLot(
                 envGroup, blockCx, blockCz, groundY, roadY, stripeY,
                 blockW, blockD, sidewalkMat, asphaltMat, lineMat, dashedPadOverlayMat, plazaGrassMat,
-                lamps, trees, propScale
+                lamps, trees, propScale, { skipTrees: true }
               );
             }
             continue;
           }
 
-          if (h % 9 === 0) {
-            envGroup.add(addGroundPlane(blockW * 0.78, blockD * 0.78, sidewalkMat, blockCx, groundY - 0.006, blockCz));
-            const parkR = blockW * 0.22;
-            const spots = [
-              [blockCx - parkR, blockCz - parkR], [blockCx + parkR, blockCz - parkR],
-              [blockCx - parkR, blockCz + parkR], [blockCx + parkR, blockCz + parkR],
-              [blockCx, blockCz],
-            ];
-            spots.forEach(([tx, tz], idx) => {
-              trees.push([tx, tz, idx * 0.7, 0.7 + (h % 5) * 0.04]);
-            });
-            if (h % 18 === 0) addProp(envGroup, createBench(), blockCx, blockCz + parkR, groundY, 0, propScale);
+          // 2nd road ring: landscaped court + taller Brick / Art Deco facing the tower.
+          if (Math.max(Math.abs(i), Math.abs(j)) === 2) {
+            const ringHeight = 30 + (h % 12);
+            dressBuildingLot(
+              envGroup, blockCx, blockCz, groundY, blockW, blockD,
+              lotW * 1.08, lotD * 1.08, ringHeight, h % 2,
+              sidewalkMat, plazaGrassMat, trees, cx, cz, propScale
+            );
             continue;
           }
 
-          if (cityHash(i, j, 31) % 3 === 0) {
-            envGroup.add(addGroundPlane(blockW * 0.72, blockD * 0.72, sidewalkMat, blockCx, groundY - 0.006, blockCz));
-            if (cityHash(i, j, 32) % 2 === 0) {
-              trees.push([blockCx, blockCz, h * 0.1, 0.88]);
-            }
+          // Occasional lush pocket park (rarer — avoids empty white slabs).
+          if (h % 14 === 0) {
+            dressPlazaLot(
+              envGroup, blockCx, blockCz, groundY, roadY, stripeY,
+              blockW, blockD, sidewalkMat, asphaltMat, lineMat, dashedPadOverlayMat, plazaGrassMat,
+              lamps, trees, propScale
+            );
             continue;
           }
 
           if (h % 8 === 0) {
-            const subW = blockW * buildScale * 0.42;
-            const subD = blockD * buildScale * 0.42;
-            const gap = 4.6;
+            const subW = blockW * buildScale * 0.4;
+            const subD = blockD * buildScale * 0.4;
+            const gap = 3.8;
+            envGroup.add(addGroundPlane(blockW * 0.78, blockD * 0.78, sidewalkMat, blockCx, elev.pavement, blockCz));
             const offsets = [
               [-subW / 2 - gap / 2, -subD / 2 - gap / 2], [subW / 2 + gap / 2, -subD / 2 - gap / 2],
               [-subW / 2 - gap / 2, subD / 2 + gap / 2], [subW / 2 + gap / 2, subD / 2 + gap / 2],
             ];
             offsets.forEach(([ox, oz], idx) => {
-              const bh = 7 + cityHash(i, j, idx + 1) % 8;
+              const bh = 16 + cityHash(i, j, idx + 1) % 10;
+              const bx = blockCx + ox;
+              const bz = blockCz + oz;
               addProp(
                 envGroup,
-                createBlockBuilding(subW, subD, bh, blockColors[cityHash(i, j, idx) % blockColors.length]),
-                blockCx + ox,
-                blockCz + oz,
+                cloneSurroundBuilding(cityHash(i, j, idx) % 2, subW, subD, bh),
+                bx,
+                bz,
                 groundY,
-                (cityHash(i, j, idx) % 4) * (Math.PI / 2)
+                rotationFacingTower(bx, bz, cx, cz)
               );
             });
             continue;
           }
 
-          const height = 14 + (h % 8);
-          const blockDist = Math.abs(i) + Math.abs(j);
-          const building = blockDist <= 5
-            ? cloneSurroundBuilding(h % 3, lotW, lotD, height)
-            : createBlockBuilding(lotW, lotD, 8 + (h % 6), blockColors[h % blockColors.length]);
-          addProp(
-            envGroup,
-            building,
-            blockCx,
-            blockCz,
-            groundY,
-            (h % 4) * (Math.PI / 2)
+          const height = 24 + (h % 14);
+          dressBuildingLot(
+            envGroup, blockCx, blockCz, groundY, blockW, blockD,
+            lotW, lotD, height, h % 2,
+            sidewalkMat, plazaGrassMat, trees, cx, cz, propScale
           );
         }
       }
 
-      for (let j = -gridN - 1; j <= gridN + 1; j++) {
-        for (let i = -gridN - 1; i <= gridN + 1; i++) {
-          if (isPlazaRing(i, j)) continue; // no lamps in plaza / pool centers
-          const ix = cx + i * cellW;
-          const iz = cz + j * cellD;
+      // Continuous street corridors BETWEEN parcels — asphalt ribbons, not square tiles.
+      const roadSpan = cityExtent * 2.4;
+      const walkW = 1.8;
+      const roadMin = -gridN - 1;
+      const roadMax = gridN;
+
+      for (let j = roadMin; j <= roadMax; j++) {
+        const z = cz + (j + 0.5) * cellD;
+        // Asphalt carriageway
+        envGroup.add(addGroundPlane(roadSpan, roadW, asphaltMat, cx, roadY, z));
+        // Sidewalks sit on the parcel edge (outside asphalt), thin so they don't box the street
+        envGroup.add(addGroundPlane(roadSpan, walkW, sidewalkMat, cx, elev.pavement, z + (roadW + walkW) * 0.5));
+        envGroup.add(addGroundPlane(roadSpan, walkW, sidewalkMat, cx, elev.pavement, z - (roadW + walkW) * 0.5));
+        // Thin edge lines + center dashes only
+        addRoadEdgeLines(envGroup, cx, z, stripeY, roadSpan, roadW, true, roadEdgeMat);
+        addRoadCenterDashes(envGroup, cx, z, stripeY + 0.001, roadSpan, true, laneMarkMat);
+      }
+      for (let i = roadMin; i <= roadMax; i++) {
+        const x = cx + (i + 0.5) * cellW;
+        envGroup.add(addGroundPlane(roadW, roadSpan, asphaltMat, x, roadY, cz));
+        envGroup.add(addGroundPlane(walkW, roadSpan, sidewalkMat, x + (roadW + walkW) * 0.5, elev.pavement, cz));
+        envGroup.add(addGroundPlane(walkW, roadSpan, sidewalkMat, x - (roadW + walkW) * 0.5, elev.pavement, cz));
+        addRoadEdgeLines(envGroup, x, cz, stripeY, roadSpan, roadW, false, roadEdgeMat);
+        addRoadCenterDashes(envGroup, x, cz, stripeY + 0.001, roadSpan, false, laneMarkMat);
+      }
+
+      // Lamps + crosswalks at true intersections (where through-roads cross).
+      for (let j = roadMin; j <= roadMax; j++) {
+        for (let i = roadMin; i <= roadMax; i++) {
+          const ix = cx + (i + 0.5) * cellW;
+          const iz = cz + (j + 0.5) * cellD;
+          // Skip the innermost ring of intersections buried in the plaza clear zone.
+          if (Math.max(Math.abs(i + 0.5), Math.abs(j + 0.5)) < 1.1) continue;
           const h = cityHash(i, j, 99);
           if (h % quality.lampEvery === 0) lamps.push([ix, iz, (h % 4) * (Math.PI / 2)]);
-          if (h % 4 === 0) addCrosswalk(envGroup, ix, iz, 4.8, 3.6, groundY, lineMat, stripeY);
+          if (h % 3 === 0) addCrosswalk(envGroup, ix, iz, 5.2, 4.0, groundY, lineMat, stripeY);
         }
       }
 
-      for (let j = -gridN - 1; j <= gridN + 1; j++) {
-        const z = cz + j * cellD;
+      // Cars travel along the continuous through-roads.
+      for (let j = roadMin; j <= roadMax; j++) {
+        const z = cz + (j + 0.5) * cellD;
         for (let k = -gridN * 2; k <= gridN * 2; k++) {
           if (cityHash(k, j, 7) % quality.carEvery !== 0) continue;
-          const x = cx + k * (roadW + 6.5);
+          const x = cx + k * (roadW + 7.5);
           const yOff = roadW * 0.22;
           if (!carHitsPlaza(x, z + yOff)) {
             cars.push([x, z + yOff, Math.PI / 2, carColors[cityHash(k, j, 3) % carColors.length]]);
@@ -4031,11 +4235,11 @@
         }
       }
 
-      for (let i = -gridN - 1; i <= gridN + 1; i++) {
-        const x = cx + i * cellW;
+      for (let i = roadMin; i <= roadMax; i++) {
+        const x = cx + (i + 0.5) * cellW;
         for (let k = -gridN * 2; k <= gridN * 2; k++) {
           if (cityHash(i, k, 11) % quality.carSideEvery !== 0) continue;
-          const z = cz + k * (roadW + 6.5);
+          const z = cz + k * (roadW + 7.5);
           const xOff = roadW * 0.22;
           if (!carHitsPlaza(x + xOff, z)) {
             cars.push([x + xOff, z, 0, carColors[cityHash(i, k, 5) % carColors.length]]);
@@ -4065,7 +4269,19 @@
         }
       }
 
-      buildInstancedProps(envGroup, groundY, { lamps, cars, trees }, propScale, carScale);
+      buildInstancedProps(
+        envGroup,
+        groundY,
+        {
+          lamps,
+          cars,
+          trees: trees.filter(
+            ([tx, tz]) => !isNearTowerFootprint(tx, tz, cx, cz, heroW * 0.5 + 2, heroD * 0.5 + 2, 10)
+          ),
+        },
+        propScale,
+        carScale
+      );
 
       return { cityExtent, groundHalf };
     }
@@ -4087,22 +4303,22 @@
 
         grassTex.wrapS = grassTex.wrapT = THREE.RepeatWrapping;
         grassTex.repeat.set(quality.low ? 20 : 40, quality.low ? 20 : 40);
-        grassTex.colorSpace = THREE.SRGBColorSpace;
+        polishTexture(grassTex, { colorSpace: THREE.SRGBColorSpace });
 
         const envGroup = new THREE.Group();
 
         const asphaltMat = new THREE.MeshStandardMaterial({
-          color: 0x3a3a3a,
-          roughness: 0.93,
-          metalness: 0.04,
+          color: 0x3c3c3c,
+          roughness: 0.95,
+          metalness: 0.02,
         });
         const sidewalkMat = new THREE.MeshStandardMaterial({
-          color: 0xc8c2b6,
-          roughness: 0.86,
+          color: 0xcfc6b4,
+          roughness: 0.9,
           metalness: 0.02,
         });
         const lineMat = new THREE.MeshStandardMaterial({
-          color: 0xe8e8e8,
+          color: 0xe4e0d4,
           roughness: 0.95,
           polygonOffset: true,
           polygonOffsetFactor: -2,
@@ -4198,8 +4414,7 @@
         mats.forEach((mat) => {
           if (!mat) return;
           mat.side = THREE.FrontSide;
-          if (mat.map) mat.map.colorSpace = THREE.SRGBColorSpace;
-          if (mat.emissiveMap) mat.emissiveMap.colorSpace = THREE.SRGBColorSpace;
+          polishMaterialMaps(mat);
           if (mat.name === 'Red_Beam') {
             mat.emissive.set(0xb5935b);
             mat.emissiveIntensity = 0.28;
@@ -4392,6 +4607,13 @@
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
+      if (composer) {
+        composer.setSize(w, h);
+        const pr = renderer.getPixelRatio();
+        if (fxaaPass) {
+          fxaaPass.material.uniforms.resolution.value.set(1 / (w * pr), 1 / (h * pr));
+        }
+      }
     }
     window.addEventListener('resize', onResize);
 
@@ -4444,7 +4666,8 @@
       updateHighlightAnimation(dt);
       updateClouds(now, dt);
       controls.update();
-      renderer.render(scene, camera);
+      if (composer) composer.render();
+      else renderer.render(scene, camera);
     }
 
     initEnvControls();

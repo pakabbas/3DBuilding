@@ -199,6 +199,65 @@
       pointer-events: none;
       user-select: none;
       white-space: nowrap;
+      z-index: 6;
+    }
+
+    #view-stats {
+      position: absolute;
+      left: 12px;
+      bottom: 12px;
+      z-index: 7;
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font: 11px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color: var(--muted);
+      pointer-events: none;
+      user-select: none;
+      min-width: 132px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    }
+
+    #view-stats .fps {
+      color: var(--text);
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 2px;
+    }
+
+    #cam-controls {
+      position: absolute;
+      right: 12px;
+      bottom: 12px;
+      z-index: 7;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    #cam-controls button {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--text);
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    #cam-controls button:hover {
+      background: #fff;
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    #cam-controls button:active {
+      transform: scale(0.96);
     }
 
     /* Unit detail panel */
@@ -412,6 +471,16 @@
       #unit-panel.visible { transform: translateY(0); }
 
       #hint { display: none; }
+
+      #cam-controls {
+        bottom: 84px;
+        right: 16px;
+      }
+
+      #view-stats {
+        bottom: 16px;
+        left: 12px;
+      }
     }
   </style>
 </head>
@@ -420,7 +489,21 @@
     <div id="viewer-wrap">
       <div id="canvas-container"></div>
       <div id="loading">Loading building…</div>
-      <div id="hint">Double-click a floor on the model · Drag to rotate · Scroll to zoom</div>
+      <div id="hint">Click a unit on the model · Drag to rotate · Scroll to zoom</div>
+
+      <div id="view-stats" aria-hidden="true">
+        <div class="fps" id="stat-fps">— FPS</div>
+        <div id="stat-ms">— ms</div>
+        <div id="stat-tris">Tris —</div>
+        <div id="stat-calls">Calls —</div>
+        <div id="stat-dist">Dist —</div>
+      </div>
+
+      <div id="cam-controls">
+        <button type="button" id="cam-zoom-in" title="Zoom in" aria-label="Zoom in">+</button>
+        <button type="button" id="cam-zoom-out" title="Zoom out" aria-label="Zoom out">−</button>
+        <button type="button" id="cam-reset" title="Reset camera" aria-label="Reset camera">⟲</button>
+      </div>
 
       <div id="unit-panel">
         <button class="close-btn" id="close-unit" aria-label="Close">×</button>
@@ -483,11 +566,12 @@
     let selectedFloorId = null;
     let selectedUnitId = null;
     let model = null;
+    let worldModel = null;
     const allMeshes = [];
     const originalMaterials = new Map();
     const floorSlices = [];
     const highlightGroup = new THREE.Group();
-    const clipPlanes = [
+    let clipPlanes = [
       new THREE.Plane(new THREE.Vector3(0, 1, 0), 0),
       new THREE.Plane(new THREE.Vector3(0, -1, 0), 0),
     ];
@@ -503,6 +587,11 @@
       toPos: new THREE.Vector3(),
     };
     const floorHighlight = { floorId: null, blend: 0, targetBlend: 0 };
+    const defaultCamera = {
+      pos: new THREE.Vector3(),
+      target: new THREE.Vector3(),
+      ready: false,
+    };
 
     const container = document.getElementById('canvas-container');
     const loadingEl = document.getElementById('loading');
@@ -511,6 +600,11 @@
     const sidebar = document.getElementById('sidebar');
     const sidebarToggle = document.getElementById('sidebar-toggle');
     const overlay = document.getElementById('overlay');
+    const statFps = document.getElementById('stat-fps');
+    const statMs = document.getElementById('stat-ms');
+    const statTris = document.getElementById('stat-tris');
+    const statCalls = document.getElementById('stat-calls');
+    const statDist = document.getElementById('stat-dist');
 
     // ── Three.js setup ──
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -547,7 +641,7 @@
 
     // ── Data loading ──
     async function loadData() {
-      const res = await fetch('building-data-tower.json');
+      const res = await fetch('building-data-tower.json', { cache: 'no-store' });
       buildingData = await res.json();
       document.getElementById('building-name').textContent = buildingData.building.name;
       document.getElementById('building-tagline').textContent =
@@ -614,7 +708,7 @@
       selectedUnitId = null;
       unitPanel.classList.remove('visible');
       updateSidebarUI();
-      setHighlightTargets(floorId);
+      setHighlightTargets(floorId, null);
       zoomToFloor(floorId);
       scrollFloorIntoView(floorId);
       if (options.from3D && window.innerWidth <= 768) openSidebar();
@@ -624,8 +718,9 @@
       selectedFloorId = floorId;
       selectedUnitId = unitId;
       updateSidebarUI();
-      setHighlightTargets(floorId);
-      zoomToFloor(floorId);
+      setHighlightTargets(floorId, unitId);
+      zoomToUnit(floorId, unitId);
+      scrollFloorIntoView(floorId);
       showUnitDetail(floorId, unitId);
       if (window.innerWidth <= 768) closeSidebar();
     }
@@ -679,64 +774,191 @@
       mat.needsUpdate = true;
     }
 
+    function buildYHistogram(box, bins = 96) {
+      const hist = new Array(bins).fill(0);
+      const h = Math.max(1e-6, box.max.y - box.min.y);
+      const v = new THREE.Vector3();
+      allMeshes.forEach((mesh) => {
+        const pos = mesh.geometry?.attributes?.position;
+        if (!pos) return;
+        mesh.updateWorldMatrix(true, false);
+        const step = Math.max(1, Math.ceil(pos.count / 6000));
+        for (let i = 0; i < pos.count; i += step) {
+          v.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld);
+          const t = (v.y - box.min.y) / h;
+          const b = Math.min(bins - 1, Math.max(0, Math.floor(t * bins)));
+          hist[b]++;
+        }
+      });
+      return hist;
+    }
+
+    function detectFloorBoundaries(box, floorCount) {
+      const bins = 96;
+      const hist = buildYHistogram(box, bins);
+      const h = box.max.y - box.min.y;
+      const smoothed = hist.map((_, i) => {
+        const a = hist[Math.max(0, i - 1)];
+        const b = hist[i];
+        const c = hist[Math.min(bins - 1, i + 1)];
+        return (a + b + c) / 3;
+      });
+      const median = smoothed.slice().sort((a, b) => a - b)[Math.floor(bins / 2)] || 1;
+
+      const peaks = [];
+      for (let i = 2; i < bins - 2; i++) {
+        const v = smoothed[i];
+        if (v > smoothed[i - 1] && v >= smoothed[i + 1] && v > median * 1.1) {
+          peaks.push(i);
+        }
+      }
+
+      // Peaks along the residential shaft (exclude roof ornaments).
+      const shaft = peaks.filter((i) => i / bins >= 0.05 && i / bins <= 0.86);
+      const binToY = (b) => box.min.y + (b / bins) * h;
+
+      const y0 = box.min.y + h * 0.005;
+      let y1;
+      if (shaft.length >= 2) {
+        y1 = binToY(shaft[shaft.length - 1] + 1);
+      } else {
+        y1 = box.min.y + h * 0.85;
+      }
+
+      // All floors share height equally (Ground same as Floor 1–9).
+      const usable = Math.max(h * 0.2, y1 - y0);
+      const bounds = [y0];
+      const floorH = usable / floorCount;
+      for (let i = 1; i <= floorCount; i++) {
+        bounds.push(y0 + floorH * i);
+      }
+      return bounds;
+    }
+
     function computeFloorSlices() {
-      if (!model) return;
+      if (!model || !buildingData) return;
       const box = new THREE.Box3().setFromObject(model);
-      const totalH = box.max.y - box.min.y;
-      const totalWeight = buildingData.floors.reduce((s, f) => s + f.heightWeight, 0);
-      let y = box.min.y;
+      const floors = buildingData.floors;
+      const bounds = detectFloorBoundaries(box, floors.length);
+
       floorSlices.length = 0;
-      buildingData.floors.forEach((floor) => {
-        const h = totalH * floor.heightWeight / totalWeight;
+      floors.forEach((floor, index) => {
+        const yMin = bounds[index];
+        const yMax = bounds[index + 1];
+        const sliceH = yMax - yMin;
         floorSlices.push({
           id: floor.id,
-          yMin: y,
-          yMax: y + h,
-          center: new THREE.Vector3((box.min.x + box.max.x) / 2, y + h / 2, (box.min.z + box.max.z) / 2),
-          size: new THREE.Vector3(box.max.x - box.min.x, h, box.max.z - box.min.z),
+          yMin,
+          yMax,
+          center: new THREE.Vector3((box.min.x + box.max.x) / 2, yMin + sliceH / 2, (box.min.z + box.max.z) / 2),
+          size: new THREE.Vector3(box.max.x - box.min.x, sliceH, box.max.z - box.min.z),
         });
-        y += h;
       });
     }
 
-    function setClipPlanes(yMin, yMax) {
-      clipPlanes[0].set(new THREE.Vector3(0, 1, 0), -yMin);
-      clipPlanes[1].set(new THREE.Vector3(0, -1, 0), yMax);
+    function getSliceBox(slice) {
+      return new THREE.Box3(
+        new THREE.Vector3(slice.center.x - slice.size.x / 2, slice.yMin, slice.center.z - slice.size.z / 2),
+        new THREE.Vector3(slice.center.x + slice.size.x / 2, slice.yMax, slice.center.z + slice.size.z / 2)
+      );
     }
 
-    function rebuildHighlightMeshes(floorId) {
+    function getUnitIndex(floorId, unitId) {
+      const floor = buildingData.floors.find((f) => f.id === floorId);
+      if (!floor) return -1;
+      return floor.units.findIndex((u) => u.id === unitId);
+    }
+
+    function getUnitBounds(slice, unitIndex, unitCount) {
+      const box = getSliceBox(slice);
+      const center = box.getCenter(new THREE.Vector3());
+      const unitBox = new THREE.Box3();
+
+      if (unitCount <= 2) {
+        if (unitIndex <= 0) {
+          unitBox.set(
+            new THREE.Vector3(center.x, slice.yMin, box.min.z),
+            new THREE.Vector3(box.max.x, slice.yMax, box.max.z)
+          );
+        } else {
+          unitBox.set(
+            new THREE.Vector3(box.min.x, slice.yMin, box.min.z),
+            new THREE.Vector3(center.x, slice.yMax, box.max.z)
+          );
+        }
+        return unitBox;
+      }
+
+      const east = unitIndex === 0 || unitIndex === 2;
+      const north = unitIndex === 0 || unitIndex === 1;
+      unitBox.set(
+        new THREE.Vector3(east ? center.x : box.min.x, slice.yMin, north ? center.z : box.min.z),
+        new THREE.Vector3(east ? box.max.x : center.x, slice.yMax, north ? box.max.z : center.z)
+      );
+      return unitBox;
+    }
+
+    function buildClipPlanes(yMin, yMax, unitBox = null) {
+      const planes = [
+        new THREE.Plane(new THREE.Vector3(0, 1, 0), -yMin),
+        new THREE.Plane(new THREE.Vector3(0, -1, 0), yMax),
+      ];
+      if (unitBox) {
+        planes.push(new THREE.Plane(new THREE.Vector3(1, 0, 0), -unitBox.min.x));
+        planes.push(new THREE.Plane(new THREE.Vector3(-1, 0, 0), unitBox.max.x));
+        planes.push(new THREE.Plane(new THREE.Vector3(0, 0, 1), -unitBox.min.z));
+        planes.push(new THREE.Plane(new THREE.Vector3(0, 0, -1), unitBox.max.z));
+      }
+      return planes;
+    }
+
+    function rebuildHighlightMeshes(floorId, unitId = null) {
       highlightGroup.clear();
       if (!floorId) return;
       const slice = floorSlices.find((s) => s.id === floorId);
       if (!slice) return;
-      setClipPlanes(slice.yMin, slice.yMax);
+
+      const floor = buildingData.floors.find((f) => f.id === floorId);
+      let unitBox = null;
+      if (unitId && floor) {
+        const unitIndex = getUnitIndex(floorId, unitId);
+        if (unitIndex >= 0) unitBox = getUnitBounds(slice, unitIndex, floor.units.length);
+      }
+      clipPlanes = buildClipPlanes(slice.yMin, slice.yMax, unitBox);
+      const hlPlanes = worldModel ? [...clipPlanes, buildingBaseClip] : clipPlanes;
 
       allMeshes.forEach((mesh) => {
-        const hl = mesh.clone();
-        hl.traverse((child) => {
-          if (!child.isMesh) return;
-          child.material = new THREE.MeshStandardMaterial({
-            color: 0x5599ff,
-            emissive: 0x2563eb,
-            emissiveIntensity: 0.35,
-            metalness: 0.05,
-            roughness: 0.55,
-            clippingPlanes: clipPlanes,
-            clipIntersection: false,
-            side: THREE.DoubleSide,
-            transparent: true,
-            opacity: 0.88,
-            depthWrite: false,
-          });
+        const meshBox = new THREE.Box3().setFromObject(mesh);
+        if (meshBox.max.y < slice.yMin - 0.01 || meshBox.min.y > slice.yMax + 0.01) return;
+
+        mesh.updateWorldMatrix(true, false);
+        const hl = mesh.clone(false);
+        hl.material = new THREE.MeshStandardMaterial({
+          color: 0x5599ff,
+          emissive: 0x2563eb,
+          emissiveIntensity: 0.35,
+          metalness: 0.05,
+          roughness: 0.55,
+          clippingPlanes: hlPlanes,
+          clipIntersection: false,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.88,
+          depthWrite: false,
         });
+        hl.castShadow = false;
+        hl.receiveShadow = false;
+        hl.matrix.copy(mesh.matrixWorld);
+        hl.matrixAutoUpdate = false;
+        hl.renderOrder = 3;
         highlightGroup.add(hl);
       });
     }
 
-    function setHighlightTargets(floorId) {
+    function setHighlightTargets(floorId, unitId = null) {
       floorHighlight.floorId = floorId;
       floorHighlight.targetBlend = floorId ? 1 : 0;
-      rebuildHighlightMeshes(floorId);
+      rebuildHighlightMeshes(floorId, unitId);
     }
 
     function updateHighlightAnimation(dt) {
@@ -751,7 +973,7 @@
         mats.forEach((mat, i) => {
           const orig = origMats[i];
           if (!mat || !orig) return;
-          mat.clippingPlanes = null;
+          mat.clippingPlanes = worldModel ? [buildingBaseClip] : null;
           mat.color.copy(orig.color).lerp(DIM, b * 0.35);
           mat.emissive.set(0x000000);
           mat.emissiveIntensity = 0;
@@ -784,15 +1006,21 @@
       return { center: slice.center.clone(), size: slice.size.clone() };
     }
 
-    function zoomToFloor(floorId) {
-      const focus = getFloorFocusPoint(floorId);
-      if (!focus) return;
+    function getUnitFocusPoint(floorId, unitId) {
+      const slice = floorSlices.find((s) => s.id === floorId);
+      const floor = buildingData.floors.find((f) => f.id === floorId);
+      if (!slice || !floor) return null;
+      const unitIndex = getUnitIndex(floorId, unitId);
+      if (unitIndex < 0) return null;
+      const unitBox = getUnitBounds(slice, unitIndex, floor.units.length);
+      return {
+        center: unitBox.getCenter(new THREE.Vector3()),
+        size: unitBox.getSize(new THREE.Vector3()),
+        floorCenter: slice.center.clone(),
+      };
+    }
 
-      const { center, size } = focus;
-      const maxDim = Math.max(size.x, size.y, size.z);
-      const dist = maxDim / (2 * Math.tan((camera.fov * Math.PI) / 360)) * 2.8;
-      const offset = new THREE.Vector3(dist * 0.55, dist * 0.28, dist * 0.55);
-
+    function animateCameraTo(center, offset) {
       cameraAnim.fromTarget.copy(controls.target);
       cameraAnim.toTarget.copy(center);
       cameraAnim.fromPos.copy(camera.position);
@@ -801,16 +1029,86 @@
       cameraAnim.active = true;
     }
 
+    function zoomToFloor(floorId) {
+      const focus = getFloorFocusPoint(floorId);
+      if (!focus) return;
+
+      const { center, size } = focus;
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const dist = maxDim / (2 * Math.tan((camera.fov * Math.PI) / 360)) * 2.8;
+      animateCameraTo(center, new THREE.Vector3(dist * 0.55, dist * 0.28, dist * 0.55));
+    }
+
+    function zoomToUnit(floorId, unitId) {
+      const focus = getUnitFocusPoint(floorId, unitId);
+      if (!focus) {
+        zoomToFloor(floorId);
+        return;
+      }
+
+      const { center, size, floorCenter } = focus;
+      // Stand outside the unit so its facade faces the camera.
+      const outward = new THREE.Vector3(center.x - floorCenter.x, 0, center.z - floorCenter.z);
+      if (outward.lengthSq() < 0.0001) outward.set(1, 0, 1);
+      outward.normalize();
+
+      const face = Math.max(size.x, size.z);
+      const dist = face / (2 * Math.tan((camera.fov * Math.PI) / 360)) * 0.72;
+      const offset = outward.multiplyScalar(dist);
+      // Raise camera using footprint size (floor height is thin on this model)
+      offset.y = face * 0.22;
+
+      animateCameraTo(center, offset);
+    }
+
     function resolveFloorFromHit(hit) {
       const y = hit.point.y;
+      if (!floorSlices.length) return null;
+      if (y < floorSlices[0].yMin) return floorSlices[0].id;
+      if (y > floorSlices[floorSlices.length - 1].yMax) return floorSlices[floorSlices.length - 1].id;
       for (const slice of floorSlices) {
         if (y >= slice.yMin && y <= slice.yMax) return slice.id;
       }
-      return null;
+      // Nearest slice (handles seam gaps)
+      let best = floorSlices[0];
+      let bestDist = Infinity;
+      for (const slice of floorSlices) {
+        const mid = (slice.yMin + slice.yMax) / 2;
+        const d = Math.abs(y - mid);
+        if (d < bestDist) {
+          bestDist = d;
+          best = slice;
+        }
+      }
+      return best.id;
     }
 
-    // ── Raycaster double-click ──
-    function onDoubleClick(event) {
+    function resolveUnitFromHit(hit) {
+      const floorId = resolveFloorFromHit(hit);
+      if (!floorId) return null;
+      const floor = buildingData.floors.find((f) => f.id === floorId);
+      const slice = floorSlices.find((s) => s.id === floorId);
+      if (!floor?.units?.length || !slice) return null;
+
+      const center = getSliceBox(slice).getCenter(new THREE.Vector3());
+      let unitIndex;
+      if (floor.units.length <= 2) {
+        unitIndex = hit.point.x >= center.x ? 0 : 1;
+      } else {
+        const east = hit.point.x >= center.x;
+        const north = hit.point.z >= center.z;
+        unitIndex = east ? (north ? 0 : 2) : (north ? 1 : 3);
+      }
+
+      const unit = floor.units[unitIndex];
+      if (!unit) return null;
+      return { floorId, unitId: unit.id };
+    }
+
+    // ── Raycaster click (ignore orbit drags) ──
+    const pickGesture = { x: 0, y: 0, active: false };
+
+    function onBuildingClick(event) {
       if (event.target !== renderer.domElement) return;
       const rect = renderer.domElement.getBoundingClientRect();
       pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -820,37 +1118,33 @@
       const hits = raycaster.intersectObjects(allMeshes, false);
       if (!hits.length) return;
 
-      const floorId = resolveFloorFromHit(hits[0]);
-      if (!floorId) return;
-      selectFloor(floorId, { from3D: true, force: true });
+      const resolved = resolveUnitFromHit(hits[0]);
+      if (!resolved) return;
+      selectUnit(resolved.floorId, resolved.unitId);
     }
 
-    renderer.domElement.addEventListener('dblclick', onDoubleClick);
+    renderer.domElement.addEventListener('pointerdown', (event) => {
+      if (event.button !== 0) return;
+      pickGesture.x = event.clientX;
+      pickGesture.y = event.clientY;
+      pickGesture.active = true;
+    });
+
+    renderer.domElement.addEventListener('pointerup', (event) => {
+      if (!pickGesture.active || event.button !== 0) return;
+      pickGesture.active = false;
+      const dx = event.clientX - pickGesture.x;
+      const dy = event.clientY - pickGesture.y;
+      if (dx * dx + dy * dy > 36) return;
+      onBuildingClick(event);
+    });
 
     // ── Model loading ──
-    function frameModel(object) {
-      const box = new THREE.Box3().setFromObject(object);
-      const center = box.getCenter(new THREE.Vector3());
-      const size = box.getSize(new THREE.Vector3());
-      const maxDim = Math.max(size.x, size.y, size.z);
-      const dist = maxDim / (2 * Math.tan((camera.fov * Math.PI) / 360)) * 1.4;
-
-      controls.target.copy(center);
-      camera.position.copy(center).add(new THREE.Vector3(dist * 0.7, dist * 0.45, dist * 0.7));
-      camera.near = maxDim / 200;
-      camera.far = maxDim * 20;
-      camera.updateProjectionMatrix();
-      controls.update();
-    }
-
-    function setupModel(gltf) {
-      model = gltf.scene;
-
-      model.traverse((child) => {
+    function prepareGltfMaterials(root) {
+      root.traverse((child) => {
         if (!child.isMesh) return;
         child.castShadow = false;
         child.receiveShadow = false;
-
         const mats = Array.isArray(child.material) ? child.material : [child.material];
         mats.forEach((mat) => {
           if (!mat) return;
@@ -859,16 +1153,276 @@
           if (mat.emissiveMap) mat.emissiveMap.colorSpace = THREE.SRGBColorSpace;
           ensureOpaqueMaterial(mat);
         });
+      });
+    }
 
+    function alignToGround(object) {
+      object.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(object);
+      object.position.y += -box.min.y;
+      object.updateMatrixWorld(true);
+    }
+
+    function getObjectCenterXZ(object) {
+      const box = new THREE.Box3().setFromObject(object);
+      const c = box.getCenter(new THREE.Vector3());
+      return new THREE.Vector3(c.x, 0, c.z);
+    }
+
+    function frameModel(object) {
+      const box = new THREE.Box3().setFromObject(object);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      // Frame building with surrounding city context (reads smaller in scene)
+      const dist = maxDim / (2 * Math.tan((camera.fov * Math.PI) / 360)) * 1.55;
+
+      controls.target.copy(center);
+      camera.position.copy(center).add(new THREE.Vector3(dist * 0.9, dist * 0.36, dist * 0.9));
+      camera.near = Math.max(maxDim / 500, 0.01);
+      const worldSpan = worldModel
+        ? new THREE.Box3().setFromObject(worldModel).getSize(new THREE.Vector3()).length()
+        : maxDim * 20;
+      camera.far = Math.max(maxDim * 40, worldSpan * 2);
+      camera.updateProjectionMatrix();
+      controls.update();
+
+      defaultCamera.pos.copy(camera.position);
+      defaultCamera.target.copy(controls.target);
+      defaultCamera.ready = true;
+    }
+
+    function zoomCamera(factor) {
+      cameraAnim.active = false;
+      const offset = camera.position.clone().sub(controls.target);
+      offset.multiplyScalar(factor);
+      const next = controls.target.clone().add(offset);
+      camera.position.copy(next);
+      controls.update();
+    }
+
+    function resetCamera() {
+      if (!defaultCamera.ready) return;
+      animateCameraTo(
+        defaultCamera.target.clone(),
+        defaultCamera.pos.clone().sub(defaultCamera.target)
+      );
+      selectedFloorId = null;
+      selectedUnitId = null;
+      unitPanel.classList.remove('visible');
+      updateSidebarUI();
+      setHighlightTargets(null, null);
+    }
+
+    document.getElementById('cam-zoom-in').addEventListener('click', () => zoomCamera(0.82));
+    document.getElementById('cam-zoom-out').addEventListener('click', () => zoomCamera(1.22));
+    document.getElementById('cam-reset').addEventListener('click', resetCamera);
+
+    function stripEmbeddedGround(root) {
+      // bh2 includes a courtyard/ground slab that makes the building look sunk.
+      // Hide large flat meshes in the lower half so stilts can sit on the world.
+      const rootBox = new THREE.Box3().setFromObject(root);
+      const rh = Math.max(rootBox.max.y - rootBox.min.y, 1e-6);
+      const rf = Math.max(rootBox.max.x - rootBox.min.x, rootBox.max.z - rootBox.min.z, 1e-6);
+
+      root.traverse((mesh) => {
+        if (!mesh.isMesh || !mesh.geometry) return;
+        const mb = new THREE.Box3().setFromObject(mesh);
+        if (mb.isEmpty()) return;
+        const s = mb.getSize(new THREE.Vector3());
+        const centerY = (mb.min.y + mb.max.y) / 2;
+        const isFlat = s.y < rh * 0.14 && (s.x * s.z) > (rf * rf) * 0.12;
+        const inLower = centerY < rootBox.min.y + rh * 0.55;
+        if (isFlat && inLower) {
+          mesh.visible = false;
+          // Keep out of picking/highlight lists if already added later
+          mesh.userData.isEmbeddedGround = true;
+        }
+      });
+    }
+
+    function setupModel(gltf) {
+      model = gltf.scene;
+      prepareGltfMaterials(model);
+      stripEmbeddedGround(model);
+
+      model.traverse((child) => {
+        if (!child.isMesh || !child.visible) return;
         allMeshes.push(child);
         storeOriginalMaterial(child);
       });
 
-      model.add(highlightGroup);
+      alignToGround(model);
+      const c = getObjectCenterXZ(model);
+      model.position.x -= c.x;
+      model.position.z -= c.z;
+      model.updateMatrixWorld(true);
+
       scene.add(model);
-      frameModel(model);
+      scene.add(highlightGroup);
+    }
+
+    function getWorldSurfaceY(x, z) {
+      if (!worldModel) return 0;
+      const wBox = new THREE.Box3().setFromObject(worldModel);
+      const span = Math.max(wBox.max.y - wBox.min.y, 1);
+      const origin = new THREE.Vector3(x, wBox.max.y + span, z);
+      const dir = new THREE.Vector3(0, -1, 0);
+      const rc = new THREE.Raycaster(origin, dir, 0, span * 3);
+
+      const meshes = [];
+      worldModel.traverse((child) => {
+        if (child.isMesh) meshes.push(child);
+      });
+      // Use real mesh raycast for placement (picking stays disabled afterward)
+      meshes.forEach((m) => { m.raycast = THREE.Mesh.prototype.raycast; });
+      const hits = rc.intersectObjects(meshes, false);
+      meshes.forEach((m) => { m.raycast = () => {}; });
+
+      return hits.length ? hits[0].point.y : (wBox.min.y + wBox.max.y) * 0.5;
+    }
+
+    function sampleWorldSurfaceY(x, z, radius) {
+      const pts = [
+        [0, 0],
+        [radius, 0],
+        [-radius, 0],
+        [0, radius],
+        [0, -radius],
+        [radius * 0.7, radius * 0.7],
+        [-radius * 0.7, radius * 0.7],
+        [radius * 0.7, -radius * 0.7],
+        [-radius * 0.7, -radius * 0.7],
+      ];
+      let maxY = -Infinity;
+      pts.forEach(([dx, dz]) => {
+        maxY = Math.max(maxY, getWorldSurfaceY(x + dx, z + dz));
+      });
+      return Number.isFinite(maxY) ? maxY : 0;
+    }
+
+    function sampleGroundHeight(x, z, radius) {
+      if (!worldModel) return 0;
+      const wBox = new THREE.Box3().setFromObject(worldModel);
+      const worldH = Math.max(wBox.max.y - wBox.min.y, 1e-6);
+      // Only treat the lower band of the city as "ground" (ignore towers)
+      const groundMaxY = wBox.min.y + worldH * 0.75;
+
+      const ys = [];
+      const v = new THREE.Vector3();
+      const n = new THREE.Vector3();
+      const normalMatrix = new THREE.Matrix3();
+
+      worldModel.traverse((mesh) => {
+        if (!mesh.isMesh || !mesh.geometry?.attributes?.position) return;
+        const pos = mesh.geometry.attributes.position;
+        const nor = mesh.geometry.attributes.normal;
+        mesh.updateWorldMatrix(true, false);
+        normalMatrix.getNormalMatrix(mesh.matrixWorld);
+        const step = Math.max(1, Math.ceil(pos.count / 8000));
+        for (let i = 0; i < pos.count; i += step) {
+          v.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld);
+          if (Math.abs(v.x - x) > radius || Math.abs(v.z - z) > radius) continue;
+          if (v.y < wBox.min.y - 0.01 || v.y > groundMaxY) continue;
+          if (nor) {
+            n.fromBufferAttribute(nor, i).applyMatrix3(normalMatrix).normalize();
+            if (n.y < 0.45) continue; // mostly upward-facing = ground
+          }
+          ys.push(v.y);
+        }
+      });
+
+      if (!ys.length) return sampleWorldSurfaceY(x, z, radius);
+
+      // Highest ground-like point nearby (top of slab / grass)
+      return Math.max(...ys);
+    }
+
+    const buildingBaseClip = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+    function applyBuildingBaseClip(surfaceY) {
+      buildingBaseClip.set(new THREE.Vector3(0, 1, 0), -surfaceY);
+      if (!model) return;
+      model.traverse((child) => {
+        if (!child.isMesh) return;
+        const mats = Array.isArray(child.material) ? child.material : [child.material];
+        mats.forEach((mat) => {
+          if (!mat) return;
+          mat.clippingPlanes = [buildingBaseClip];
+          mat.clipIntersection = false;
+          mat.needsUpdate = true;
+        });
+      });
+    }
+
+    function fitBuildingIntoWorld() {
+      if (!model || !worldModel) return;
+
+      const wBox = new THREE.Box3().setFromObject(worldModel);
+      const wCenter = wBox.getCenter(new THREE.Vector3());
+      const wFoot = Math.max(wBox.max.x - wBox.min.x, wBox.max.z - wBox.min.z, 1e-6);
+
+      let bBox = new THREE.Box3().setFromObject(model);
+      let bFoot = Math.max(bBox.max.x - bBox.min.x, bBox.max.z - bBox.min.z, 1e-6);
+
+      // Smaller plot in the city
+      const targetFoot = wFoot * 0.06;
+      model.scale.multiplyScalar(targetFoot / bFoot);
+      model.updateMatrixWorld(true);
+
+      bBox = new THREE.Box3().setFromObject(model);
+      const bCenter = bBox.getCenter(new THREE.Vector3());
+      model.position.x += wCenter.x - bCenter.x;
+      model.position.z += wCenter.z - bCenter.z;
+      model.updateMatrixWorld(true);
+
+      bBox = new THREE.Box3().setFromObject(model);
+      const cx = (bBox.min.x + bBox.max.x) / 2;
+      const cz = (bBox.min.z + bBox.max.z) / 2;
+      const footR = Math.max(bBox.max.x - bBox.min.x, bBox.max.z - bBox.min.z) * 0.6;
+
+      const groundY = sampleGroundHeight(cx, cz, footR * 2);
+      const rayY = sampleWorldSurfaceY(cx, cz, footR * 2.5);
+      const surfaceY = Math.max(groundY, rayY);
+      const bHeight = Math.max(1e-6, bBox.max.y - bBox.min.y);
+
+      // Baked courtyard slab sits above stilts inside the mesh.
+      // Clip away that lower volume, then seat the remaining mass on the world.
+      const buried = bHeight * 0.42;
+      model.position.y += surfaceY - bBox.min.y - buried;
+      model.updateMatrixWorld(true);
+      applyBuildingBaseClip(surfaceY - bHeight * 0.001);
+
       computeFloorSlices();
-      loadingEl.classList.add('hidden');
+    }
+
+    function setupWorld(gltf) {
+      worldModel = gltf.scene;
+      prepareGltfMaterials(worldModel);
+
+      // Visual only — never used for unit picking
+      worldModel.traverse((child) => {
+        if (child.isMesh) child.raycast = () => {};
+      });
+
+      alignToGround(worldModel);
+
+      // Center world on origin (building will be fitted into it next)
+      const wCenter = getObjectCenterXZ(worldModel);
+      worldModel.position.x -= wCenter.x;
+      worldModel.position.z -= wCenter.z;
+      worldModel.updateMatrixWorld(true);
+
+      worldModel.renderOrder = -1;
+      scene.add(worldModel);
+
+      fitBuildingIntoWorld();
+    }
+
+    function loadGltf(loader, url) {
+      return new Promise((resolve, reject) => {
+        loader.load(url, resolve, undefined, reject);
+      });
     }
 
     // ── Mobile sidebar ──
@@ -892,6 +1446,8 @@
       unitPanel.classList.remove('visible');
       selectedUnitId = null;
       updateSidebarUI();
+      if (selectedFloorId) setHighlightTargets(selectedFloorId, null);
+      else setHighlightTargets(null, null);
     });
 
     // ── Resize ──
@@ -908,13 +1464,32 @@
     async function init() {
       await loadData();
       const loader = new GLTFLoader();
-      loader.load('model/skyscraper_tower.glb', setupModel, undefined, (err) => {
+      loadingEl.textContent = 'Loading building…';
+      try {
+        const buildingGltf = await loadGltf(loader, 'model/bh2.glb');
+        setupModel(buildingGltf);
+
+        loadingEl.textContent = 'Loading surroundings…';
+        try {
+          const worldGltf = await loadGltf(loader, 'model/world2.glb');
+          setupWorld(worldGltf);
+        } catch (worldErr) {
+          console.warn('World model failed to load:', worldErr);
+          computeFloorSlices();
+        }
+
+        frameModel(model);
+        loadingEl.classList.add('hidden');
+      } catch (err) {
         loadingEl.textContent = 'Failed to load model.';
         console.error(err);
-      });
+      }
     }
 
     let lastTime = performance.now();
+    let fpsFrames = 0;
+    let fpsLast = performance.now();
+    let fpsValue = 0;
 
     function animate() {
       requestAnimationFrame(animate);
@@ -933,6 +1508,21 @@
       updateHighlightAnimation(dt);
       controls.update();
       renderer.render(scene, camera);
+
+      fpsFrames += 1;
+      const fpsElapsed = now - fpsLast;
+      if (fpsElapsed >= 500) {
+        fpsValue = Math.round((fpsFrames * 1000) / fpsElapsed);
+        fpsFrames = 0;
+        fpsLast = now;
+        const info = renderer.info;
+        const dist = camera.position.distanceTo(controls.target);
+        statFps.textContent = `${fpsValue} FPS`;
+        statMs.textContent = `${(1000 / Math.max(fpsValue, 1)).toFixed(1)} ms`;
+        statTris.textContent = `Tris ${info.render.triangles.toLocaleString()}`;
+        statCalls.textContent = `Calls ${info.render.calls}`;
+        statDist.textContent = `Dist ${dist.toFixed(2)}`;
+      }
     }
 
     init();
