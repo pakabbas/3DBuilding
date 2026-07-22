@@ -1859,7 +1859,7 @@
     const envControls = document.getElementById('env-controls');
     const viewerWrap = document.getElementById('viewer-wrap');
 
-    // ── Quality tier (real phones only for bh3 — never IDE webviews / laptops) ──
+    // ── Quality tier (phones/tablets: lower rendering cost; same model for all) ──
     const quality = (() => {
       const ua = navigator.userAgent || '';
       const finePointer = window.matchMedia('(any-pointer: fine)').matches;
@@ -1870,9 +1870,9 @@
       // Desktop OS markers — Cursor/Electron webviews often spoof Mobile UA on Windows/Mac.
       const desktopOs = /Windows NT|CrOS|Linux x86_64|X11/i.test(ua)
         || (/Macintosh|Mac OS X/i.test(ua) && !/iPhone|iPad|iPod/i.test(ua));
-      // bh3 only for real phones: mobile UA, no mouse/trackpad, no desktop OS, small screen.
+      // Real phones only for low-tier rendering — never IDE webviews / laptops.
       const isPhone = phoneUa && !finePointer && !hoverFine && !desktopOs && shortSide > 0 && shortSide < 700;
-      // Tablets (incl. iPadOS desktop-UA spoof) — lighter rendering, but still bh2.
+      // Tablets (incl. iPadOS desktop-UA spoof) — lighter rendering, same model.
       const isTablet = !isPhone && (
         /iPad|Android(?!.*Mobile)|Tablet/i.test(ua)
         || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1 && !finePointer)
@@ -1894,9 +1894,9 @@
         useBoostLights: !low,
         simpleSurrounds: low,
         amenityPools: true,
-        // Desktop: meshopt-compressed bh (same mesh as bh2, much smaller). Phones keep bh3 LOD.
-        modelUrl: isPhone ? 'model/bh3.glb' : 'model/bh.glb',
-        modelFallbackUrl: 'model/bh2.glb',
+        // Single meshopt-compressed tower for all devices (smaller than old bh2/bh3 split).
+        modelUrl: 'model/bh.glb',
+        modelFallbackUrl: 'model/bh.glb',
         gridN: low ? 1 : 4,
         cloudCount: low ? 6 : 22,
         // Higher = fewer street props / cars / lamps on low quality.
@@ -5766,7 +5766,7 @@
               const local = progress.loaded / progress.total;
               const pct = Math.round(local * 100);
               setLoadingStage('model', local, {
-                status: quality.isPhone ? 'Loading 3D model (phone)' : 'Loading 3D model',
+                status: 'Loading 3D model',
                 detail: `${formatBytes(progress.loaded)} / ${formatBytes(progress.total)} · ${pct}%`,
               });
             } else if (progress.loaded > 0) {
@@ -5799,7 +5799,7 @@
         setLoadingStage('data', 1, { status: 'Building data ready' });
 
         setLoadingStage('model', 0, {
-          status: quality.isPhone ? 'Loading 3D model (phone)' : 'Loading 3D model',
+          status: 'Loading 3D model',
           detail: quality.modelUrl,
         });
         let gltf;
