@@ -1705,8 +1705,8 @@
   <script type="importmap">
   {
     "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
     }
   }
   </script>
@@ -1759,6 +1759,7 @@
       toTarget: new THREE.Vector3(),
       fromPos: new THREE.Vector3(),
       toPos: new THREE.Vector3(),
+      onComplete: null,
     };
     const homeView = {
       saved: false,
@@ -1769,12 +1770,14 @@
       active: false,
       played: false,
       startTime: 0,
-      duration: 5000,
-      startAngle: 0,
-      deltaAngle: -0.42,
+      duration: 9000,
       radius: 0,
-      height: 0,
+      startY: 0,
+      endY: 0,
+      endAngle: 0,
       center: new THREE.Vector3(),
+      homePos: new THREE.Vector3(),
+      homeTarget: new THREE.Vector3(),
     };
     const siteOffset = new THREE.Vector3(0, 0, 0);
     // Artistic multiplier only — Tripo GLBs are unit-normalized and converted to meters separately.
@@ -1964,6 +1967,14 @@
     let cheapEnvMap = null;
     let pmremGenerator = null;
     let skyDome = null;
+    // Spin DaySky 180° so the cloudy half faces the default camera start view.
+    const SKY_YAW = Math.PI;
+
+    function applySkyOrientation() {
+      if (scene.backgroundRotation) scene.backgroundRotation.y = SKY_YAW;
+      if (scene.environmentRotation) scene.environmentRotation.y = SKY_YAW;
+    }
+
     const DEFAULT_ENV_INTENSITY = 1.05;
     // Building surfaces use a lower IBL response so facade materials read matte, not wet/glossy.
     const BUILDING_ENV_INTENSITY = 0.36 * 1.1; // +10% vs prior matte baseline
@@ -2171,6 +2182,7 @@
         hdrEnvMap = rt.texture;
         scene.environment = hdrEnvMap;
         scene.environmentIntensity = 1.35;
+        applySkyOrientation();
         iblSource.dispose();
 
         // Visible sky: equirect background (not clipped by camera.far). DaySky keeps
@@ -2196,6 +2208,7 @@
         scene.background = skyMap;
         scene.backgroundBlurriness = 0;
         scene.backgroundIntensity = 1.5;
+        applySkyOrientation();
 
         window.__hdrSkyReady = true;
         window.__getSceneBgType = () => (
@@ -2505,6 +2518,7 @@
         scene.backgroundIntensity = 1.5;
         if (hdrEnvMap) scene.environment = hdrEnvMap;
         scene.environmentIntensity = 1.35;
+        applySkyOrientation();
         setEnvIntensityOnMaterials(1.35);
         if (cloudLayer) cloudLayer.visible = false;
         if (scene.fog) scene.fog = null;
@@ -3776,6 +3790,18 @@
       return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
     }
 
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
+    }
+
+    function easeInOutQuint(t) {
+      return t < 0.5 ? 16 * t * t * t * t * t : 1 - Math.pow(-2 * t + 2, 5) / 2;
+    }
+
+    function lerpNum(a, b, t) {
+      return a + (b - a) * t;
+    }
+
     function getUnitFocusPoint(floorId, unitId) {
       const slice = floorSlices.find((s) => s.id === floorId);
       if (!slice) return null;
@@ -3798,6 +3824,17 @@
         };
       }
       return { center: slice.center.clone(), size: slice.size.clone() };
+    }
+
+    function startCameraAnim(toPos, toTarget, { duration = 1400, onComplete = null } = {}) {
+      cameraAnim.fromTarget.copy(controls.target);
+      cameraAnim.toTarget.copy(toTarget);
+      cameraAnim.fromPos.copy(camera.position);
+      cameraAnim.toPos.copy(toPos);
+      cameraAnim.duration = duration;
+      cameraAnim.onComplete = onComplete;
+      cameraAnim.startTime = performance.now();
+      cameraAnim.active = true;
     }
 
     function zoomToFloor(floorId, unitId = null) {
@@ -3828,26 +3865,33 @@
         oz /= radial;
 
         const pullBack = Math.max(dist * 0.95, Math.max(oval.rx, oval.rz) * 1.35);
-        const elev = Math.max(size.y * 0.35, dist * 0.16);
+        const elev = Math.max(size.y * 0.28, dist * 0.12);
         toPos = new THREE.Vector3(
           facade.x + ox * pullBack,
           center.y + elev,
           facade.z + oz * pullBack
         );
-        // Look at the mid-curve of this unit, slightly inward so the arc fills the view.
-        const lookIn = Math.max(oval.rx, oval.rz) * 0.22;
+        const lookIn = Math.max(oval.rx, oval.rz) * 0.16;
         target.set(facade.x - ox * lookIn, center.y, facade.z - oz * lookIn);
-      } else {
-        const offset = new THREE.Vector3(dist * 0.5, Math.max(dist * 0.32, size.y * 1.8), dist * 0.5);
-        toPos = target.clone().add(offset);
+
+        // Phase 1: arrive in front of the curve. Phase 2: slowly dolly 30% closer.
+        const framedPos = toPos.clone();
+        const framedTarget = target.clone();
+        const closerPos = framedTarget.clone().add(
+          framedPos.clone().sub(framedTarget).multiplyScalar(0.7)
+        );
+        startCameraAnim(framedPos, framedTarget, {
+          duration: 1000,
+          onComplete: () => {
+            startCameraAnim(closerPos, framedTarget, { duration: 1500 });
+          },
+        });
+        return;
       }
 
-      cameraAnim.fromTarget.copy(controls.target);
-      cameraAnim.toTarget.copy(target);
-      cameraAnim.fromPos.copy(camera.position);
-      cameraAnim.toPos.copy(toPos);
-      cameraAnim.startTime = performance.now();
-      cameraAnim.active = true;
+      const offset = new THREE.Vector3(dist * 0.5, Math.max(dist * 0.32, size.y * 1.8), dist * 0.5);
+      toPos = target.clone().add(offset);
+      startCameraAnim(toPos, target, { duration: 1400 });
     }
 
     function resolveFloorFromHit(hit) {
@@ -4088,43 +4132,51 @@
     function getSurroundMats() {
       if (surroundMats) return surroundMats;
 
-      const envI = DEFAULT_ENV_INTENSITY * SURROUND_ENV_MUL;
-      const std = (color, roughness = 0.85, metalness = 0.04) =>
-        new THREE.MeshStandardMaterial({
+      // Keep surround IBL low — bright creams + high envMapIntensity read as LED panels.
+      const envI = 0.18;
+      const std = (color, roughness = 0.92, metalness = 0.02) => {
+        const mat = new THREE.MeshStandardMaterial({
           color,
           roughness,
           metalness,
           envMapIntensity: envI,
         });
-      const glass = (color = 0x7aa8b8, opacity = 0.55) =>
-        new THREE.MeshStandardMaterial({
+        mat.userData.surfaceEnvIntensity = envI;
+        return mat;
+      };
+      const glass = (color = 0x5a7088, opacity = 0.42) => {
+        const mat = new THREE.MeshStandardMaterial({
           color,
-          roughness: 0.08,
-          metalness: 0.55,
+          roughness: 0.35,
+          metalness: 0.12,
           transparent: true,
           opacity,
-          envMapIntensity: envI,
+          envMapIntensity: 0.28,
         });
+        mat.userData.surfaceEnvIntensity = 0.28;
+        return mat;
+      };
 
       surroundMats = {
-        wall: std(0xb8b0a4, 0.88, 0.04),
-        brick: std(0x9a5848, 0.92, 0.02),
-        painted: std(0xd8cfc2, 0.88, 0.02),
-        stone: std(0x8a8580, 0.9),
-        bodyStone: std(0xd8cfc0, 0.82, 0.03),
-        parapet: std(0x6a6460, 0.88),
-        base: std(0x9a5848, 0.9, 0.04),
-        upper: std(0xd8cfc2, 0.88, 0.02),
-        rail: std(0x2a2a2a, 0.55, 0.45),
-        glass: glass(0x7aa8b8, 0.55),
-        loftGlass: glass(0x4a6070, 0.45),
-        frame: std(0xf0ebe2, 0.75, 0.02),
-        metal: std(0x2a2e32, 0.4, 0.65),
-        rust: std(0x8a4a32, 0.7, 0.25),
-        darkFrame: std(0x1a1c1e, 0.45, 0.5),
-        gold: std(0xb5935b, 0.45, 0.35),
-        dark: std(0x3a3530, 0.7, 0.15),
-        rib: std(0xcfc4b4, 0.78),
+        wall: std(0xa39c90, 0.94, 0.02),
+        brick: std(0x8a5040, 0.95, 0.02),
+        // Soft warm grey instead of near-white — stays matte in daylight.
+        painted: std(0xb0a89c, 0.96, 0.01),
+        stone: std(0x8a8580, 0.94),
+        bodyStone: std(0xb2aaa0, 0.95, 0.02),
+        parapet: std(0x6a6460, 0.92),
+        base: std(0x8a5040, 0.94, 0.02),
+        upper: std(0xb0a89c, 0.96, 0.01),
+        rail: std(0x2a2a2a, 0.7, 0.35),
+        glass: glass(0x5a7088, 0.42),
+        loftGlass: glass(0x4a6070, 0.38),
+        frame: std(0xc8c0b4, 0.9, 0.02),
+        metal: std(0x2a2e32, 0.55, 0.45),
+        rust: std(0x8a4a32, 0.82, 0.18),
+        darkFrame: std(0x1a1c1e, 0.65, 0.35),
+        gold: std(0xa08050, 0.62, 0.22),
+        dark: std(0x3a3530, 0.85, 0.1),
+        rib: std(0xa69e92, 0.94, 0.02),
       };
       return surroundMats;
     }
@@ -4849,29 +4901,96 @@
     }
 
     function addSideAmenityPool(envGroup, px, pz, groundY, propScale, grassMat = null) {
-      // Compact residential amenity pool (~8×18m) for tower left/right flanks.
-      const poolW = 8;
-      const poolD = 18;
-      const deckW = 14;
-      const deckD = 24;
-      const rimPad = 0.9;
-      const waterY = groundY + 0.08;
-      const rimY = groundY + 0.045;
+      // Residential amenity pool — tiled basin, stone coping, layered water, soft deck.
+      const poolW = 8.2;
+      const poolD = 17.5;
+      const depth = 1.35;
+      const deckW = 15;
+      const deckD = 25;
+      const copeW = 0.55;
       const elev = groundElevations(groundY);
+      const deckY = elev.path - 0.004;
+      const copeY = groundY + 0.07;
+      const waterY = groundY + 0.02;
+      const floorY = groundY - depth;
 
-      const deckMat = new THREE.MeshStandardMaterial({ color: 0xe6dcc8, roughness: 0.86, metalness: 0.02 });
-      const rimMat = new THREE.MeshStandardMaterial({ color: 0xf7f3ec, roughness: 0.55, metalness: 0.08 });
-      const basinMat = new THREE.MeshStandardMaterial({ color: 0x1f5f7a, roughness: 0.45, metalness: 0.1 });
-      const waterMat = new THREE.MeshStandardMaterial({
-        color: 0x3aa8d0,
-        roughness: 0.22,
-        metalness: 0.12,
-        transparent: true,
-        opacity: 0.78,
-        depthWrite: false,
-        envMapIntensity: 0.35,
+      const deckMat = new THREE.MeshStandardMaterial({
+        color: 0xb8a890,
+        roughness: 0.92,
+        metalness: 0.02,
+        envMapIntensity: 0.12,
       });
-      const laneMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85 });
+      deckMat.userData.surfaceEnvIntensity = 0.12;
+      const copeMat = new THREE.MeshStandardMaterial({
+        color: 0x9a958c,
+        roughness: 0.88,
+        metalness: 0.03,
+        envMapIntensity: 0.1,
+      });
+      copeMat.userData.surfaceEnvIntensity = 0.1;
+      const tileMat = new THREE.MeshStandardMaterial({
+        color: 0x6eb0c4,
+        roughness: 0.55,
+        metalness: 0.04,
+        envMapIntensity: 0.22,
+      });
+      tileMat.userData.surfaceEnvIntensity = 0.22;
+      const tileDeepMat = new THREE.MeshStandardMaterial({
+        color: 0x2a6a82,
+        roughness: 0.62,
+        metalness: 0.04,
+        envMapIntensity: 0.18,
+      });
+      tileDeepMat.userData.surfaceEnvIntensity = 0.18;
+      const laneMat = new THREE.MeshStandardMaterial({
+        color: 0xd8e8f0,
+        roughness: 0.7,
+        metalness: 0.02,
+        envMapIntensity: 0.1,
+      });
+      const metalMat = new THREE.MeshStandardMaterial({
+        color: 0x6a7078,
+        roughness: 0.45,
+        metalness: 0.55,
+        envMapIntensity: 0.25,
+      });
+      const grateMat = new THREE.MeshStandardMaterial({
+        color: 0x3a4048,
+        roughness: 0.55,
+        metalness: 0.4,
+        envMapIntensity: 0.2,
+      });
+
+      // Water: physical when desktop, simpler standard on low tier.
+      let waterMat;
+      if (!quality.low && THREE.MeshPhysicalMaterial) {
+        waterMat = new THREE.MeshPhysicalMaterial({
+          color: 0x1f7a96,
+          roughness: 0.12,
+          metalness: 0,
+          transmission: 0.55,
+          thickness: 1.1,
+          ior: 1.333,
+          transparent: true,
+          opacity: 0.85,
+          clearcoat: 0.55,
+          clearcoatRoughness: 0.18,
+          envMapIntensity: 0.55,
+          depthWrite: false,
+        });
+      } else {
+        waterMat = new THREE.MeshStandardMaterial({
+          color: 0x2a88a8,
+          roughness: 0.18,
+          metalness: 0.05,
+          transparent: true,
+          opacity: 0.72,
+          envMapIntensity: 0.4,
+          depthWrite: false,
+        });
+      }
+      waterMat.userData.surfaceEnvIntensity = waterMat.envMapIntensity;
+
       const lawnMat = grassMat
         ? (() => {
             const m = grassMat.clone();
@@ -4890,44 +5009,148 @@
             envMapIntensity: GRASS_ENV_INTENSITY,
           });
 
-      envGroup.add(addGroundPlane(deckW + 4, deckD + 4, lawnMat, px, elev.grassLawn, pz));
-      envGroup.add(addGroundPlane(deckW, deckD, deckMat, px, elev.path - 0.006, pz));
-      envGroup.add(addGroundPlane(poolW + rimPad * 2, poolD + rimPad * 2, rimMat, px, rimY, pz));
+      // Lawn collar + stone deck
+      envGroup.add(addGroundPlane(deckW + 5, deckD + 5, lawnMat, px, elev.grassLawn, pz));
+      envGroup.add(addGroundPlane(deckW, deckD, deckMat, px, deckY, pz));
 
-      const wallH = 0.4;
-      const wallT = 0.2;
+      // Coping ring (stone lip around pool)
+      const outerW = poolW + copeW * 2;
+      const outerD = poolD + copeW * 2;
       [
-        [0, (poolD + wallT) / 2, poolW + wallT * 2, wallT],
-        [0, -(poolD + wallT) / 2, poolW + wallT * 2, wallT],
-        [(poolW + wallT) / 2, 0, wallT, poolD],
-        [-(poolW + wallT) / 2, 0, wallT, poolD],
+        [0, (poolD + copeW) / 2, outerW, copeW],
+        [0, -(poolD + copeW) / 2, outerW, copeW],
+        [(poolW + copeW) / 2, 0, copeW, poolD],
+        [-(poolW + copeW) / 2, 0, copeW, poolD],
       ].forEach(([ox, oz, w, d]) => {
-        const wall = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, d), rimMat);
-        wall.position.set(px + ox, groundY + wallH * 0.15, pz + oz);
-        wall.castShadow = quality.shadows;
+        const cope = new THREE.Mesh(new THREE.BoxGeometry(w, 0.12, d), copeMat);
+        cope.position.set(px + ox, copeY, pz + oz);
+        cope.castShadow = quality.shadows;
+        cope.receiveShadow = true;
+        envGroup.add(cope);
+      });
+
+      // Tiled basin floor (deeper blue) + side walls
+      const floor = new THREE.Mesh(new THREE.BoxGeometry(poolW, 0.12, poolD), tileDeepMat);
+      floor.position.set(px, floorY + 0.06, pz);
+      floor.receiveShadow = true;
+      envGroup.add(floor);
+
+      const wallH = depth + 0.08;
+      [
+        [0, poolD / 2 - 0.06, poolW, 0.12],
+        [0, -poolD / 2 + 0.06, poolW, 0.12],
+        [poolW / 2 - 0.06, 0, 0.12, poolD - 0.24],
+        [-poolW / 2 + 0.06, 0, 0.12, poolD - 0.24],
+      ].forEach(([ox, oz, w, d]) => {
+        const wall = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, d), tileMat);
+        wall.position.set(px + ox, floorY + wallH / 2, pz + oz);
         wall.receiveShadow = true;
         envGroup.add(wall);
       });
 
-      const basin = new THREE.Mesh(new THREE.BoxGeometry(poolW, 0.2, poolD), basinMat);
-      basin.position.set(px, groundY - 0.18, pz);
-      basin.receiveShadow = true;
-      envGroup.add(basin);
-      envGroup.add(addGroundPlane(poolW * 0.97, poolD * 0.97, waterMat, px, waterY, pz));
-
+      // Lane markers on floor
       for (let i = 0; i < 4; i++) {
         const lx = px - poolW * 0.32 + (i / 3) * poolW * 0.64;
-        const lane = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.015, poolD * 0.8), laneMat);
-        lane.position.set(lx, groundY - 0.08, pz);
+        const lane = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.02, poolD * 0.78), laneMat);
+        lane.position.set(lx, floorY + 0.13, pz);
         envGroup.add(lane);
       }
 
-      addProp(envGroup, createPlanter(), px - deckW * 0.38, pz - deckD * 0.4, groundY, 0, propScale * 0.9);
-      addProp(envGroup, createPlanter(), px + deckW * 0.38, pz - deckD * 0.4, groundY, 0.3, propScale * 0.9);
-      addProp(envGroup, createPlanter(), px - deckW * 0.38, pz + deckD * 0.4, groundY, 0.2, propScale * 0.9);
-      addProp(envGroup, createPlanter(), px + deckW * 0.38, pz + deckD * 0.4, groundY, 0.5, propScale * 0.9);
-      addProp(envGroup, createBench(), px + 1.2, pz + poolD * 0.55, groundY, Math.PI, propScale * 0.85);
-      addProp(envGroup, createBench(), px - 1.2, pz - poolD * 0.55, groundY, 0, propScale * 0.85);
+      // Center drain grate
+      const grate = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.03, 0.55), grateMat);
+      grate.position.set(px, floorY + 0.14, pz);
+      envGroup.add(grate);
+
+      // Entry steps (shallow end toward -Z)
+      for (let s = 0; s < 3; s++) {
+        const step = new THREE.Mesh(
+          new THREE.BoxGeometry(poolW * 0.42, 0.14, 0.55),
+          tileMat
+        );
+        step.position.set(
+          px,
+          floorY + 0.2 + s * 0.32,
+          pz - poolD / 2 + 0.55 + s * 0.5
+        );
+        step.receiveShadow = true;
+        envGroup.add(step);
+      }
+
+      // Stainless ladder at deep end
+      const ladderX = px + poolW * 0.32;
+      const ladderZ = pz + poolD / 2 - 0.15;
+      [[-0.22, 0], [0.22, 0]].forEach(([ox]) => {
+        const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.55, 8), metalMat);
+        rail.position.set(ladderX + ox, groundY + 0.55, ladderZ);
+        rail.castShadow = quality.shadows;
+        envGroup.add(rail);
+      });
+      for (let r = 0; r < 4; r++) {
+        const rung = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.48, 6), metalMat);
+        rung.rotation.z = Math.PI / 2;
+        rung.position.set(ladderX, groundY - 0.15 + r * 0.35, ladderZ - 0.05);
+        envGroup.add(rung);
+      }
+
+      // Underwater accent lights (subtle wall niches)
+      [
+        [-poolW * 0.48, 0, Math.PI / 2],
+        [poolW * 0.48, 0, Math.PI / 2],
+        [0, -poolD * 0.42, 0],
+        [0, poolD * 0.42, 0],
+      ].forEach(([ox, oz, rotY]) => {
+        const lamp = new THREE.Mesh(
+          new THREE.BoxGeometry(0.28, 0.18, 0.04),
+          new THREE.MeshStandardMaterial({
+            color: 0xb8d8e8,
+            emissive: 0x4a90a8,
+            emissiveIntensity: 0.4,
+            roughness: 0.45,
+            metalness: 0.15,
+          })
+        );
+        lamp.position.set(px + ox, floorY + depth * 0.42, pz + oz);
+        lamp.rotation.y = rotY;
+        envGroup.add(lamp);
+      });
+
+      // Water surface — inset slightly inside coping
+      const water = new THREE.Mesh(
+        new THREE.BoxGeometry(poolW * 0.985, 0.06, poolD * 0.985),
+        waterMat
+      );
+      water.position.set(px, waterY, pz);
+      water.renderOrder = 2;
+      envGroup.add(water);
+
+      // Soft submerged tint volume (adds depth without transmission cost on low)
+      if (quality.low) {
+        const volume = new THREE.Mesh(
+          new THREE.BoxGeometry(poolW * 0.96, depth * 0.7, poolD * 0.96),
+          new THREE.MeshStandardMaterial({
+            color: 0x1a5a72,
+            transparent: true,
+            opacity: 0.28,
+            roughness: 1,
+            metalness: 0,
+            depthWrite: false,
+          })
+        );
+        volume.position.set(px, floorY + depth * 0.45, pz);
+        envGroup.add(volume);
+      }
+
+      // Deck furniture
+      addProp(envGroup, createPlanter(), px - deckW * 0.4, pz - deckD * 0.4, groundY, 0, propScale * 0.9);
+      addProp(envGroup, createPlanter(), px + deckW * 0.4, pz - deckD * 0.4, groundY, 0.3, propScale * 0.9);
+      addProp(envGroup, createPlanter(), px - deckW * 0.4, pz + deckD * 0.4, groundY, 0.2, propScale * 0.9);
+      addProp(envGroup, createPlanter(), px + deckW * 0.4, pz + deckD * 0.4, groundY, 0.5, propScale * 0.9);
+      addProp(envGroup, createBench(), px + 2.2, pz + poolD * 0.52, groundY, Math.PI, propScale * 0.85);
+      addProp(envGroup, createBench(), px - 2.2, pz + poolD * 0.52, groundY, Math.PI, propScale * 0.85);
+      addProp(envGroup, createBench(), px + 2.2, pz - poolD * 0.52, groundY, 0, propScale * 0.85);
+      addProp(envGroup, createBench(), px - 2.2, pz - poolD * 0.52, groundY, 0, propScale * 0.85);
+      addProp(envGroup, createBollard(), px - deckW * 0.42, pz, groundY, 0, propScale);
+      addProp(envGroup, createBollard(), px + deckW * 0.42, pz, groundY, 0, propScale);
     }
 
     function dressHeroPlaza(envGroup, cx, cz, groundY, heroW, heroD, roadW, blockW, blockD, plazaBaseMat, grassMat, lamps, trees, propScale) {
@@ -5301,41 +5524,92 @@
       const center = box.getCenter(new THREE.Vector3());
       const size = box.getSize(new THREE.Vector3());
       const maxDim = Math.max(size.x, size.y, size.z);
-      const dist = maxDim / (2 * Math.tan((camera.fov * Math.PI) / 360)) * 1.08;
+      const groundY = box.min.y;
+      const heroW = size.x;
+      const heroD = size.z;
+      const heroH = size.y;
 
-      controls.target.copy(center);
-      camera.position.copy(center).add(new THREE.Vector3(dist * 0.55, dist * 0.42, dist * 0.82));
+      // Stop at the right-hand pool's outer corner — clear of the tower.
+      const poolOffsetX = heroW * 0.5 + 13.5;
+      const poolHalfD = 17.5 * 0.5;
+      const cornerX = poolOffsetX + 5.5;
+      const cornerZ = poolHalfD + 7.5;
+      const endAngle = Math.atan2(cornerX, cornerZ);
+      const radius = Math.max(
+        Math.hypot(cornerX, cornerZ),
+        Math.max(heroW, heroD) * 1.55
+      );
+      // End height: previous framing + 15%, then +5% more.
+      const camHeight = Math.max(heroH * 0.36, 16) * 1.15 * 1.15;
+      const target = new THREE.Vector3(center.x, groundY + heroH * 0.4, center.z);
+      const position = new THREE.Vector3(
+        center.x + Math.sin(endAngle) * radius,
+        groundY + camHeight,
+        center.z + Math.cos(endAngle) * radius
+      );
+
+      controls.target.copy(target);
+      camera.position.copy(position);
       controls.minDistance = maxDim * 0.08;
       controls.maxDistance = Math.max(maxDim * 6, (object.userData.cityExtent || maxDim) * 2.2);
       camera.near = maxDim / 200;
       camera.far = Math.max(maxDim * 20, (object.userData.cityExtent || maxDim) * 4);
       camera.updateProjectionMatrix();
       controls.update();
-      homeView.target.copy(controls.target);
-      homeView.position.copy(camera.position);
+
+      homeView.target.copy(target);
+      homeView.position.copy(position);
       homeView.saved = true;
+
+      introOrbit.center.copy(target);
+      introOrbit.radius = radius;
+      // Start well above the tower; descend to the raised stop height over the 360°.
+      introOrbit.endY = position.y;
+      introOrbit.startY = groundY + heroH * 1.55 * 1.1;
+      introOrbit.endAngle = endAngle;
+      introOrbit.homePos.copy(position);
+      introOrbit.homeTarget.copy(target);
     }
 
     function startIntroOrbit() {
       if (introOrbit.played) return;
       introOrbit.played = true;
 
-      const offset = new THREE.Vector3().subVectors(camera.position, controls.target);
-      introOrbit.radius = Math.hypot(offset.x, offset.z);
-      introOrbit.height = offset.y;
-      introOrbit.startAngle = Math.atan2(offset.x, offset.z);
-      introOrbit.center.copy(controls.target);
+      if (!homeView.saved) return;
+
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        controls.target.copy(homeView.target);
+        camera.position.copy(homeView.position);
+        controls.update();
+        return;
+      }
+
+      introOrbit.duration = quality.low ? 7000 : 9000;
       introOrbit.startTime = performance.now();
       introOrbit.active = true;
       controls.enabled = false;
+
+      // Same 360° path horizontally; camera starts high and descends as it spins.
+      const startAngle = introOrbit.endAngle - Math.PI * 2;
+      camera.position.set(
+        introOrbit.center.x + Math.sin(startAngle) * introOrbit.radius,
+        introOrbit.startY,
+        introOrbit.center.z + Math.cos(startAngle) * introOrbit.radius
+      );
+      controls.target.copy(introOrbit.homeTarget);
+      controls.update();
     }
 
     function finishIntroOrbit() {
       if (!introOrbit.active) return;
       introOrbit.active = false;
       controls.enabled = true;
-      homeView.target.copy(controls.target);
-      homeView.position.copy(camera.position);
+      controls.target.copy(introOrbit.homeTarget);
+      camera.position.copy(introOrbit.homePos);
+      homeView.target.copy(introOrbit.homeTarget);
+      homeView.position.copy(introOrbit.homePos);
+      homeView.saved = true;
+      controls.update();
     }
 
     function updateIntroOrbit(now) {
@@ -5343,13 +5617,15 @@
 
       const t = Math.min(1, (now - introOrbit.startTime) / introOrbit.duration);
       const e = easeInOutCubic(t);
-      const angle = introOrbit.startAngle + introOrbit.deltaAngle * e;
+      const angle = introOrbit.endAngle - Math.PI * 2 + Math.PI * 2 * e;
+      const camY = lerpNum(introOrbit.startY, introOrbit.endY, e);
 
       camera.position.set(
         introOrbit.center.x + Math.sin(angle) * introOrbit.radius,
-        introOrbit.center.y + introOrbit.height,
+        camY,
         introOrbit.center.z + Math.cos(angle) * introOrbit.radius
       );
+      controls.target.copy(introOrbit.homeTarget);
 
       if (t >= 1) finishIntroOrbit();
     }
@@ -5658,6 +5934,7 @@
 
     function adjustZoom(factor) {
       cameraAnim.active = false;
+      cameraAnim.onComplete = null;
       const offset = new THREE.Vector3().subVectors(camera.position, controls.target);
       const dist = offset.length();
       if (dist < 0.001) return;
@@ -5669,12 +5946,7 @@
 
     function frameBuildingView() {
       if (!homeView.saved) return;
-      cameraAnim.fromTarget.copy(controls.target);
-      cameraAnim.fromPos.copy(camera.position);
-      cameraAnim.toTarget.copy(homeView.target);
-      cameraAnim.toPos.copy(homeView.position);
-      cameraAnim.startTime = performance.now();
-      cameraAnim.active = true;
+      startCameraAnim(homeView.position, homeView.target, { duration: 1400 });
     }
 
     function resetView() {
@@ -5860,7 +6132,12 @@
         const e = easeInOutCubic(t);
         controls.target.lerpVectors(cameraAnim.fromTarget, cameraAnim.toTarget, e);
         camera.position.lerpVectors(cameraAnim.fromPos, cameraAnim.toPos, e);
-        if (t >= 1) cameraAnim.active = false;
+        if (t >= 1) {
+          cameraAnim.active = false;
+          const done = cameraAnim.onComplete;
+          cameraAnim.onComplete = null;
+          if (typeof done === 'function') done();
+        }
       } else {
         updateIntroOrbit(now);
       }
