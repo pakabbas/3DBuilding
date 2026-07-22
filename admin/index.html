@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Skyline Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <div id="login-screen" class="hidden">
+    <form class="login-card" id="login-form" autocomplete="on">
+      <div class="eyebrow">Skyline Tower</div>
+      <h1>Admin</h1>
+      <p>Manage floors, units, amenities, and images. Data is saved to <code>building-data.json</code>.</p>
+      <div class="field">
+        <label for="login-user">Username</label>
+        <input id="login-user" name="username" autocomplete="username" required />
+      </div>
+      <div class="field">
+        <label for="login-pass">Password</label>
+        <input id="login-pass" name="password" type="password" autocomplete="current-password" required />
+      </div>
+      <p class="form-error" id="login-error"></p>
+      <button class="btn btn-gold btn-block" type="submit">Sign in</button>
+    </form>
+  </div>
+
+  <div id="app-shell" class="hidden">
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="brand-mark">
+        <div class="eyebrow">Dashboard</div>
+        <h1 id="sidebar-building-name">Skyline</h1>
+      </div>
+      <nav class="nav" id="nav">
+        <button type="button" class="nav-btn active" data-view="overview">Overview</button>
+        <button type="button" class="nav-btn" data-view="building">Building</button>
+        <button type="button" class="nav-btn" data-view="floors">Floors &amp; Units</button>
+        <button type="button" class="nav-btn" data-view="amenities">Amenities</button>
+        <button type="button" class="nav-btn" data-view="images">Images</button>
+      </nav>
+      <div class="sidebar-foot">
+        <div>Signed in as <strong id="admin-user-label">admin</strong></div>
+        <button type="button" class="btn btn-ghost btn-sm" id="logout-btn" style="color:#f4ebe0;border-color:rgba(244,235,224,.25)">Log out</button>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div style="display:flex;align-items:center;gap:12px">
+          <button type="button" class="menu-toggle" id="menu-toggle" aria-label="Open menu">☰</button>
+          <h2 id="page-title">Overview</h2>
+        </div>
+        <div class="topbar-actions">
+          <a class="btn btn-ghost btn-sm" href="../index.html" target="_blank" rel="noopener">View site</a>
+        </div>
+      </header>
+      <main class="content" id="view-root"></main>
+    </div>
+  </div>
+
+  <div class="modal" id="modal" aria-hidden="true">
+    <div class="modal-backdrop" id="modal-backdrop"></div>
+    <div class="modal-dialog" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <h3 id="modal-title">Edit</h3>
+        <button type="button" class="modal-close" id="modal-close" aria-label="Close">×</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-footer" id="modal-footer"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="admin.js"></script>
+</body>
+</html>

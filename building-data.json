@@ -5,6 +5,15 @@
     "totalFloors": 10,
     "totalUnits": 40
   },
+  "amenityCatalog": [
+    "Central AC",
+    "City View",
+    "Gym Access",
+    "Parking",
+    "Pool Access",
+    "Smart Home",
+    "West Open"
+  ],
   "floors": [
     {
       "id": 1,

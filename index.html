@@ -3052,8 +3052,17 @@
       'West Open',
     ];
 
+    function getFilterAmenityList() {
+      const fromData = buildingData?.amenityCatalog;
+      if (Array.isArray(fromData) && fromData.length) {
+        return fromData.map(String).filter(Boolean);
+      }
+      return FILTER_AMENITIES;
+    }
+
     function collectFilterAmenities() {
-      const counts = new Map(FILTER_AMENITIES.map((name) => [name, 0]));
+      const list = getFilterAmenityList();
+      const counts = new Map(list.map((name) => [name, 0]));
       buildingData.floors.forEach((floor) => {
         floor.units.forEach((unit) => {
           unit.amenities.forEach((amenity) => {
@@ -3061,7 +3070,7 @@
           });
         });
       });
-      return FILTER_AMENITIES.map((name) => ({ name, count: counts.get(name) || 0 }));
+      return list.map((name) => ({ name, count: counts.get(name) || 0 }));
     }
 
     function getUnitsWithAmenity(amenity) {

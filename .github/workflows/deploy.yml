@@ -21,7 +21,7 @@ jobs:
           TARGET: ${{ secrets.REMOTE_TARGET }}
           SOURCE: "./"
           ARGS: "-rlgoDzvc -i --delete"
-          EXCLUDE: "/.git/, /.github/, /deploy_explore.py, /deploy_upload.py, /setup_key.py, /.gitignore, /deploy_key, /deploy_key.pub"
+          EXCLUDE: "/.git/, /.github/, /deploy_explore.py, /deploy_upload.py, /setup_key.py, /.gitignore, /deploy_key, /deploy_key.pub, /building-data.json, /model/UnitImages/"
 
       - name: Verify deployment
         run: |
