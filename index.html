@@ -1715,6 +1715,7 @@
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
     import { EXRLoader } from 'three/addons/loaders/EXRLoader.js';
     import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
     import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -1893,8 +1894,8 @@
         useBoostLights: !low,
         simpleSurrounds: low,
         amenityPools: true,
-        // bh3 is phone-only; laptops/desktops/tablets/webviews always use bh2.
-        modelUrl: isPhone ? 'model/bh3.glb' : 'model/bh2.glb',
+        // Desktop: meshopt-compressed bh (same mesh as bh2, much smaller). Phones keep bh3 LOD.
+        modelUrl: isPhone ? 'model/bh3.glb' : 'model/bh.glb',
         modelFallbackUrl: 'model/bh2.glb',
         gridN: low ? 1 : 4,
         cloudCount: low ? 6 : 22,
@@ -5377,7 +5378,7 @@
     }
 
     function stripEmbeddedGround(root) {
-      // bh2 includes a courtyard/ground slab that makes the building look sunk.
+      // bh includes a courtyard/ground slab that makes the building look sunk.
       const rootBox = new THREE.Box3().setFromObject(root);
       const rh = Math.max(rootBox.max.y - rootBox.min.y, 1e-6);
       const rf = Math.max(rootBox.max.x - rootBox.min.x, rootBox.max.z - rootBox.min.z, 1e-6);
@@ -5750,6 +5751,7 @@
     function loadGltf(url) {
       return new Promise((resolve, reject) => {
         const loader = new GLTFLoader();
+        loader.setMeshoptDecoder(MeshoptDecoder);
         loader.load(
           url,
           (gltf) => {
