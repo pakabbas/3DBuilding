@@ -4132,60 +4132,345 @@
       return group;
     }
 
-    // ── Surrounding buildings: Sample 2 (Industrial Loft) + Sample 3 (Art Deco) ──
-    // Flat color walls only — no canvas / PBR wall maps.
-    const SURROUND_STYLES = ['industrial-loft', 'art-deco'];
+    // ── Surrounding city: procedural PBR facades (brick / stone / concrete / curtain) ──
+    const SURROUND_STYLES = ['brick-residential', 'art-deco', 'industrial-loft', 'modern-office'];
     let surroundMats = null;
-    let surroundPrototypes = null;
+
+    function polishCanvasTex(tex, repeatU = 2, repeatV = 2) {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(repeatU, repeatV);
+      tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      tex.needsUpdate = true;
+      return tex;
+    }
+
+    function canvasToNormalMap(srcCanvas, strength = 2.4) {
+      const w = srcCanvas.width;
+      const h = srcCanvas.height;
+      const src = srcCanvas.getContext('2d').getImageData(0, 0, w, h).data;
+      const out = document.createElement('canvas');
+      out.width = w;
+      out.height = h;
+      const ctx = out.getContext('2d');
+      const img = ctx.createImageData(w, h);
+      const lum = (i) => (src[i] * 0.3 + src[i + 1] * 0.59 + src[i + 2] * 0.11) / 255;
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const i = (y * w + x) * 4;
+          const l = lum(((y * w + x) * 4));
+          const lR = lum(((y * w + ((x + 1) % w)) * 4));
+          const lU = lum(((((y + 1) % h) * w + x) * 4));
+          const dx = (l - lR) * strength;
+          const dy = (l - lU) * strength;
+          const invLen = 1 / Math.sqrt(dx * dx + dy * dy + 1);
+          img.data[i] = Math.floor((dx * invLen * 0.5 + 0.5) * 255);
+          img.data[i + 1] = Math.floor((dy * invLen * 0.5 + 0.5) * 255);
+          img.data[i + 2] = Math.floor((invLen * 0.5 + 0.5) * 255);
+          img.data[i + 3] = 255;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      const tex = new THREE.CanvasTexture(out);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.colorSpace = THREE.NoColorSpace;
+      return tex;
+    }
+
+    function makeBrickFacadeTexture(seed = 1) {
+      const c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 512;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#6e4a3c';
+      ctx.fillRect(0, 0, 512, 512);
+      // Mortar bed
+      ctx.fillStyle = '#9a9086';
+      ctx.fillRect(0, 0, 512, 512);
+      const rows = 22;
+      const cols = 10;
+      const bh = 512 / rows;
+      const bw = 512 / cols;
+      for (let r = 0; r < rows; r++) {
+        const offset = (r % 2) * (bw * 0.5);
+        for (let col = -1; col <= cols; col++) {
+          const n = ((r * 47 + col * 91 + seed * 13) % 1000) / 1000;
+          const shade = 98 + Math.floor(n * 55);
+          const warm = 18 + ((r * 3 + col) % 12);
+          ctx.fillStyle = `rgb(${shade + warm}, ${shade - 8}, ${shade - 22})`;
+          const x = col * bw - offset + 1.5;
+          const y = r * bh + 1.5;
+          ctx.fillRect(x, y, bw - 3, bh - 3);
+          // Edge wear
+          ctx.fillStyle = `rgba(40, 22, 16, ${0.08 + n * 0.12})`;
+          ctx.fillRect(x, y, bw - 3, 1.5);
+          ctx.fillRect(x, y + bh - 4.5, 2, bh - 3);
+        }
+      }
+      // Speckle dirt
+      for (let i = 0; i < 900; i++) {
+        const n = ((i * 73 + seed * 19) % 1000) / 1000;
+        ctx.fillStyle = `rgba(30, 18, 12, ${0.04 + n * 0.1})`;
+        ctx.fillRect((i * 47 + seed) % 512, (i * 89) % 512, 1 + (i % 3), 1 + (i % 2));
+      }
+      const map = polishCanvasTex(new THREE.CanvasTexture(c), 2.4, 3.6);
+      const normalMap = canvasToNormalMap(c, 3.2);
+      normalMap.repeat.copy(map.repeat);
+      normalMap.anisotropy = map.anisotropy;
+      return { map, normalMap };
+    }
+
+    function makeStoneFacadeTexture(baseRgb = [178, 170, 158], seed = 2) {
+      const c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 512;
+      const ctx = c.getContext('2d');
+      const [br, bg, bb] = baseRgb;
+      ctx.fillStyle = `rgb(${br - 18}, ${bg - 18}, ${bb - 16})`;
+      ctx.fillRect(0, 0, 512, 512);
+      const rows = 8;
+      const cols = 5;
+      const bh = 512 / rows;
+      const bw = 512 / cols;
+      for (let r = 0; r < rows; r++) {
+        for (let col = 0; col < cols; col++) {
+          const n = ((r * 31 + col * 17 + seed * 7) % 100) / 100;
+          const dr = Math.floor((n - 0.5) * 28);
+          ctx.fillStyle = `rgb(${br + dr}, ${bg + dr - 4}, ${bb + dr - 8})`;
+          ctx.fillRect(col * bw + 2, r * bh + 2, bw - 4, bh - 4);
+          // Bevel
+          ctx.strokeStyle = `rgba(255,255,255,${0.08 + n * 0.06})`;
+          ctx.strokeRect(col * bw + 3, r * bh + 3, bw - 6, bh - 6);
+          ctx.strokeStyle = `rgba(40,35,30,${0.12 + n * 0.1})`;
+          ctx.beginPath();
+          ctx.moveTo(col * bw + bw - 3, r * bh + 3);
+          ctx.lineTo(col * bw + bw - 3, r * bh + bh - 3);
+          ctx.lineTo(col * bw + 3, r * bh + bh - 3);
+          ctx.stroke();
+        }
+      }
+      for (let i = 0; i < 1200; i++) {
+        const g = 140 + ((i * 29 + seed) % 50);
+        ctx.fillStyle = `rgba(${g}, ${g - 6}, ${g - 14}, 0.18)`;
+        ctx.fillRect((i * 37) % 512, (i * 61) % 512, 2, 2);
+      }
+      const map = polishCanvasTex(new THREE.CanvasTexture(c), 1.8, 2.6);
+      const normalMap = canvasToNormalMap(c, 2.6);
+      normalMap.repeat.copy(map.repeat);
+      return { map, normalMap };
+    }
+
+    function makeConcreteFacadeTexture(seed = 3) {
+      const c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 512;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#9a9690';
+      ctx.fillRect(0, 0, 512, 512);
+      for (let i = 0; i < 8000; i++) {
+        const n = ((i * 41 + seed * 11) % 1000) / 1000;
+        const g = 130 + Math.floor(n * 60);
+        ctx.fillStyle = `rgba(${g}, ${g - 2}, ${g - 6}, ${0.08 + n * 0.15})`;
+        ctx.fillRect((i * 17) % 512, (i * 29) % 512, 1 + (i % 4), 1 + (i % 3));
+      }
+      // Formwork lines
+      for (let i = 0; i < 10; i++) {
+        const y = ((i * 53 + seed * 9) % 480) + 16;
+        ctx.strokeStyle = 'rgba(70,68,64,0.18)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(512, y + ((i % 3) - 1) * 2);
+        ctx.stroke();
+      }
+      for (let i = 0; i < 6; i++) {
+        const x = 40 + i * 80;
+        ctx.strokeStyle = 'rgba(60,58,54,0.12)';
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x + 4, 512);
+        ctx.stroke();
+      }
+      // Stains
+      for (let i = 0; i < 40; i++) {
+        const x = (i * 73 + seed) % 512;
+        const y = (i * 97) % 400;
+        const grd = ctx.createRadialGradient(x, y, 0, x, y, 18 + (i % 20));
+        grd.addColorStop(0, 'rgba(70,65,55,0.22)');
+        grd.addColorStop(1, 'rgba(70,65,55,0)');
+        ctx.fillStyle = grd;
+        ctx.fillRect(x - 30, y - 30, 60, 60);
+      }
+      const map = polishCanvasTex(new THREE.CanvasTexture(c), 2.0, 3.0);
+      const normalMap = canvasToNormalMap(c, 1.8);
+      normalMap.repeat.copy(map.repeat);
+      return { map, normalMap };
+    }
+
+    function makePlasterFacadeTexture(seed = 4) {
+      const c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 512;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#c4bbb0';
+      ctx.fillRect(0, 0, 512, 512);
+      for (let i = 0; i < 6000; i++) {
+        const n = ((i * 19 + seed * 23) % 1000) / 1000;
+        const g = 170 + Math.floor(n * 45);
+        ctx.fillStyle = `rgba(${g + 8}, ${g}, ${g - 10}, ${0.06 + n * 0.12})`;
+        ctx.fillRect((i * 23) % 512, (i * 41) % 512, 2, 2);
+      }
+      // Soft patches
+      for (let i = 0; i < 55; i++) {
+        const x = (i * 59 + seed) % 512;
+        const y = (i * 83) % 512;
+        const grd = ctx.createRadialGradient(x, y, 0, x, y, 25 + (i % 30));
+        grd.addColorStop(0, `rgba(${200 - (i % 40)}, ${190 - (i % 30)}, ${175 - (i % 25)}, 0.2)`);
+        grd.addColorStop(1, 'rgba(180,170,155,0)');
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.arc(x, y, 40, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      const map = polishCanvasTex(new THREE.CanvasTexture(c), 1.6, 2.4);
+      const normalMap = canvasToNormalMap(c, 1.4);
+      normalMap.repeat.copy(map.repeat);
+      return { map, normalMap };
+    }
+
+    function makeSidewalkTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 512;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#b7b1a6';
+      ctx.fillRect(0, 0, 512, 512);
+      const tiles = 4;
+      const tw = 512 / tiles;
+      for (let r = 0; r < tiles; r++) {
+        for (let col = 0; col < tiles; col++) {
+          const n = ((r * 13 + col * 29) % 100) / 100;
+          const g = 165 + Math.floor(n * 25);
+          ctx.fillStyle = `rgb(${g + 6}, ${g}, ${g - 8})`;
+          ctx.fillRect(col * tw + 3, r * tw + 3, tw - 6, tw - 6);
+          ctx.strokeStyle = 'rgba(90,85,78,0.35)';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(col * tw + 2, r * tw + 2, tw - 4, tw - 4);
+        }
+      }
+      for (let i = 0; i < 2500; i++) {
+        const g = 140 + (i % 40);
+        ctx.fillStyle = `rgba(${g}, ${g - 2}, ${g - 6}, 0.12)`;
+        ctx.fillRect((i * 31) % 512, (i * 47) % 512, 2, 2);
+      }
+      const map = polishCanvasTex(new THREE.CanvasTexture(c), 8, 8);
+      const normalMap = canvasToNormalMap(c, 2.0);
+      normalMap.repeat.copy(map.repeat);
+      return { map, normalMap };
+    }
+
+    function makePlazaStoneTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 512;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#7a7a7a';
+      ctx.fillRect(0, 0, 512, 512);
+      const cols = 6;
+      const rows = 6;
+      const bw = 512 / cols;
+      const bh = 512 / rows;
+      for (let r = 0; r < rows; r++) {
+        for (let col = 0; col < cols; col++) {
+          const n = ((r * 19 + col * 23) % 100) / 100;
+          const g = 110 + Math.floor(n * 40);
+          ctx.fillStyle = `rgb(${g}, ${g}, ${g + 2})`;
+          ctx.fillRect(col * bw + 2, r * bh + 2, bw - 4, bh - 4);
+        }
+      }
+      for (let i = 0; i < 1800; i++) {
+        const g = 90 + (i % 50);
+        ctx.fillStyle = `rgba(${g}, ${g}, ${g}, 0.15)`;
+        ctx.fillRect((i * 43) % 512, (i * 59) % 512, 2, 2);
+      }
+      const map = polishCanvasTex(new THREE.CanvasTexture(c), 6, 6);
+      const normalMap = canvasToNormalMap(c, 2.2);
+      normalMap.repeat.copy(map.repeat);
+      return { map, normalMap };
+    }
 
     function getSurroundMats() {
       if (surroundMats) return surroundMats;
 
-      // Keep surround IBL low — bright creams + high envMapIntensity read as LED panels.
-      const envI = 0.18;
-      const std = (color, roughness = 0.92, metalness = 0.02) => {
+      const envI = 0.32;
+      const brick = makeBrickFacadeTexture(1);
+      const brickAlt = makeBrickFacadeTexture(5);
+      const stone = makeStoneFacadeTexture([176, 168, 156], 2);
+      const stoneWarm = makeStoneFacadeTexture([186, 174, 158], 8);
+      const concrete = makeConcreteFacadeTexture(3);
+      const plaster = makePlasterFacadeTexture(4);
+
+      const pbr = (maps, color = 0xffffff, roughness = 0.88, metalness = 0.02, env = envI) => {
+        const mat = new THREE.MeshStandardMaterial({
+          map: maps.map,
+          normalMap: maps.normalMap,
+          normalScale: new THREE.Vector2(0.85, 0.85),
+          color,
+          roughness,
+          metalness,
+          envMapIntensity: env,
+        });
+        mat.userData.surfaceEnvIntensity = env;
+        return mat;
+      };
+      const std = (color, roughness = 0.9, metalness = 0.04, env = envI) => {
         const mat = new THREE.MeshStandardMaterial({
           color,
           roughness,
           metalness,
-          envMapIntensity: envI,
+          envMapIntensity: env,
         });
-        mat.userData.surfaceEnvIntensity = envI;
+        mat.userData.surfaceEnvIntensity = env;
         return mat;
       };
-      const glass = (color = 0x5a7088, opacity = 0.42) => {
+      const glass = (color = 0x6a8498, roughness = 0.55) => {
         const mat = new THREE.MeshStandardMaterial({
           color,
-          roughness: 0.35,
-          metalness: 0.12,
+          roughness: 0.12,
+          metalness: 0.55,
           transparent: true,
           opacity,
-          envMapIntensity: 0.28,
+          envMapIntensity: quality.useHdrIbl ? 1.15 : 0.45,
         });
-        mat.userData.surfaceEnvIntensity = 0.28;
+        mat.userData.surfaceEnvIntensity = quality.useHdrIbl ? 1.15 : 0.45;
         return mat;
       };
+      const glassTint = (color, opacity = 0.62) => glass(color, opacity);
 
       surroundMats = {
-        wall: std(0xa39c90, 0.94, 0.02),
-        brick: std(0x8a5040, 0.95, 0.02),
-        // Soft warm grey instead of near-white — stays matte in daylight.
-        painted: std(0xb0a89c, 0.96, 0.01),
-        stone: std(0x8a8580, 0.94),
-        bodyStone: std(0xb2aaa0, 0.95, 0.02),
-        parapet: std(0x6a6460, 0.92),
-        base: std(0x8a5040, 0.94, 0.02),
-        upper: std(0xb0a89c, 0.96, 0.01),
-        rail: std(0x2a2a2a, 0.7, 0.35),
-        glass: glass(0x5a7088, 0.42),
-        loftGlass: glass(0x4a6070, 0.38),
-        frame: std(0xc8c0b4, 0.9, 0.02),
-        metal: std(0x2a2e32, 0.55, 0.45),
-        rust: std(0x8a4a32, 0.82, 0.18),
-        darkFrame: std(0x1a1c1e, 0.65, 0.35),
-        gold: std(0xa08050, 0.62, 0.22),
-        dark: std(0x3a3530, 0.85, 0.1),
-        rib: std(0xa69e92, 0.94, 0.02),
+        brick: pbr(brick, 0xffffff, 0.92, 0.02),
+        brickDark: pbr(brickAlt, 0xe8ddd4, 0.93, 0.02),
+        stone: pbr(stone, 0xffffff, 0.9, 0.03),
+        stoneWarm: pbr(stoneWarm, 0xffffff, 0.9, 0.03),
+        concrete: pbr(concrete, 0xffffff, 0.94, 0.02),
+        plaster: pbr(plaster, 0xffffff, 0.95, 0.01),
+        painted: pbr(plaster, 0xd8d0c4, 0.95, 0.01),
+        parapet: std(0x5c5854, 0.9, 0.06),
+        base: pbr(stone, 0xcfc8be, 0.9, 0.03),
+        glass: glass(0x5f7a90, 0.52),
+        glassBlue: glassTint(0x4a6a82, 0.58),
+        glassDark: glassTint(0x2a3848, 0.72),
+        loftGlass: glass(0x4a6070, 0.48),
+        frame: std(0xe8e2d8, 0.78, 0.08),
+        darkFrame: std(0x1c1e22, 0.55, 0.4),
+        metal: std(0x3a4048, 0.38, 0.72, 0.55),
+        metalBright: std(0x8a9098, 0.32, 0.78, 0.7),
+        rust: std(0x8a4a32, 0.78, 0.22, 0.35),
+        gold: std(0xa08050, 0.48, 0.35, 0.55),
+        dark: std(0x2e2a26, 0.82, 0.12),
+        rib: pbr(stone, 0xd2cbc0, 0.88, 0.04),
+        roof: std(0x3a3a3e, 0.88, 0.15),
+        sill: std(0xd0c8bc, 0.85, 0.05),
       };
       return surroundMats;
     }
@@ -4200,118 +4485,222 @@
       return mesh;
     }
 
-    function surroundWindow(group, mats, x, y, z, rotY, w, h) {
-      const depth = 0.12;
-      surroundMesh(group, new THREE.BoxGeometry(w + 0.14, h + 0.14, depth), mats.frame, x, y, z, rotY, false);
-      const pane = surroundMesh(group, new THREE.BoxGeometry(w, h, depth * 0.35), mats.glass, x, y, z, rotY, false);
-      if (rotY === 0) pane.position.z += depth * 0.25;
-      if (rotY === Math.PI) pane.position.z -= depth * 0.25;
-      if (rotY === Math.PI / 2) pane.position.x += depth * 0.25;
-      if (rotY === -Math.PI / 2) pane.position.x -= depth * 0.25;
+    function surroundWindow(group, mats, x, y, z, rotY, w, h, opts = {}) {
+      const depth = opts.depth || 0.16;
+      const glassMat = opts.glass || mats.glass;
+      const frameMat = opts.frame || mats.darkFrame;
+      const recess = opts.recess || 0.04;
+      // Outer reveal
+      surroundMesh(group, new THREE.BoxGeometry(w + 0.2, h + 0.2, depth * 0.55), frameMat, x, y, z, rotY, false);
+      // Inner sill
+      surroundMesh(group, new THREE.BoxGeometry(w + 0.08, 0.07, depth * 0.7), mats.sill, x, y - h * 0.5 + 0.04, z, rotY, false);
+      const pane = surroundMesh(group, new THREE.BoxGeometry(w, h, depth * 0.22), glassMat, x, y, z, rotY, false);
+      const push = depth * 0.2 + recess;
+      if (rotY === 0) pane.position.z += push;
+      if (rotY === Math.PI) pane.position.z -= push;
+      if (rotY === Math.PI / 2) pane.position.x += push;
+      if (rotY === -Math.PI / 2) pane.position.x -= push;
+      // Mullion cross
+      if (opts.mullion !== false && w > 0.7 && h > 0.7) {
+        surroundMesh(group, new THREE.BoxGeometry(0.045, h * 0.92, depth * 0.3), frameMat, x, y, z, rotY, false);
+        surroundMesh(group, new THREE.BoxGeometry(w * 0.92, 0.045, depth * 0.3), frameMat, x, y, z, rotY, false);
+      }
     }
 
-    function surroundFaceGrid(group, mats, face, width, depth, height, rows, yBase, margin, winW, winH, cols) {
-      const inset = 0.06;
+    function surroundFaceGrid(group, mats, face, width, depth, height, rows, yBase, margin, winW, winH, cols, opts = {}) {
+      const inset = opts.inset || 0.07;
       const xSpan = width - margin * 2;
       const zSpan = depth - margin * 2;
       const xStep = cols > 1 ? xSpan / (cols - 1) : 0;
-      const yStep = rows > 1 ? Math.max(4, height - yBase - 1.2) / (rows - 1) : 0;
+      const yStep = rows > 1 ? Math.max(2.6, height - yBase - 1.0) / (rows - 1) : 0;
 
       for (let r = 0; r < rows; r++) {
         const y = yBase + r * yStep;
         for (let c = 0; c < cols; c++) {
-          if (face === 'front') surroundWindow(group, mats, -width / 2 + margin + c * xStep, y, depth / 2 + inset, 0, winW, winH);
-          if (face === 'back') surroundWindow(group, mats, -width / 2 + margin + c * xStep, y, -depth / 2 - inset, Math.PI, winW, winH);
-          if (face === 'right') surroundWindow(group, mats, width / 2 + inset, y, -depth / 2 + margin + c * (zSpan / Math.max(cols - 1, 1)), Math.PI / 2, winW, winH);
-          if (face === 'left') surroundWindow(group, mats, -width / 2 - inset, y, -depth / 2 + margin + c * (zSpan / Math.max(cols - 1, 1)), -Math.PI / 2, winW, winH);
+          if (face === 'front') surroundWindow(group, mats, -width / 2 + margin + c * xStep, y, depth / 2 + inset, 0, winW, winH, opts);
+          if (face === 'back') surroundWindow(group, mats, -width / 2 + margin + c * xStep, y, -depth / 2 - inset, Math.PI, winW, winH, opts);
+          if (face === 'right') surroundWindow(group, mats, width / 2 + inset, y, -depth / 2 + margin + c * (zSpan / Math.max(cols - 1, 1)), Math.PI / 2, winW, winH, opts);
+          if (face === 'left') surroundWindow(group, mats, -width / 2 - inset, y, -depth / 2 + margin + c * (zSpan / Math.max(cols - 1, 1)), -Math.PI / 2, winW, winH, opts);
         }
       }
     }
 
-    // Sample 2 — Industrial Loft (from sample.html), flat wall colors.
-    function buildSurroundIndustrial(mats, w = 11, d = 10, h = 15) {
-      const group = new THREE.Group();
-      surroundMesh(group, new THREE.BoxGeometry(w, h * 0.38, d), mats.brick, 0, (h * 0.38) / 2, 0);
-      surroundMesh(group, new THREE.BoxGeometry(w, h * 0.62, d), mats.painted, 0, h * 0.38 + (h * 0.62) / 2, 0);
-      surroundMesh(group, new THREE.BoxGeometry(w + 0.1, 0.35, d + 0.1), mats.rust, 0, h * 0.38, 0, 0, false);
-      surroundMesh(group, new THREE.BoxGeometry(w * 0.55, 0.16, 1.9), mats.metal, 0, h * 0.38, d / 2 + 0.9, 0, false);
+    function surroundFloorBands(group, mats, w, d, h, floors, matKey = 'sill') {
+      const mat = mats[matKey] || mats.sill;
+      for (let i = 1; i < floors; i++) {
+        const y = (h / floors) * i;
+        surroundMesh(group, new THREE.BoxGeometry(w + 0.06, 0.08, d + 0.06), mat, 0, y, 0, 0, false);
+      }
+    }
 
-      for (let r = 0; r < 3; r++) {
-        for (let c = 0; c < 3; c++) {
-          const x = -3.2 + c * 3.2;
-          const y = 5.4 + r * 2.9;
-          surroundMesh(group, new THREE.BoxGeometry(2.5, 2.55, 0.1), mats.darkFrame, x, y, d / 2 + 0.07, 0, false);
-          surroundMesh(group, new THREE.BoxGeometry(2.2, 2.25, 0.06), mats.glass, x, y, d / 2 + 0.12, 0, false);
-          surroundMesh(group, new THREE.BoxGeometry(0.06, 2.25, 0.06), mats.darkFrame, x, y, d / 2 + 0.14, 0, false);
-          surroundMesh(group, new THREE.BoxGeometry(2.2, 0.06, 0.06), mats.darkFrame, x, y, d / 2 + 0.14, 0, false);
+    // Style 0 — Brick residential mid-rise
+    function buildSurroundBrick(mats, w, d, h, simple = false) {
+      const group = new THREE.Group();
+      const floors = Math.max(3, Math.round(h / 3.1));
+      surroundMesh(group, new THREE.BoxGeometry(w, h, d), mats.brick, 0, h / 2, 0);
+      surroundMesh(group, new THREE.BoxGeometry(w + 0.12, 1.15, d + 0.12), mats.base, 0, 0.55, 0);
+      surroundMesh(group, new THREE.BoxGeometry(w + 0.16, 0.55, d + 0.16), mats.parapet, 0, h + 0.22, 0);
+      surroundMesh(group, new THREE.BoxGeometry(w * 0.92, 0.2, d * 0.92), mats.roof, 0, h + 0.45, 0, 0, false);
+      surroundFloorBands(group, mats, w, d, h, floors);
+
+      const rows = simple ? Math.min(4, floors - 1) : Math.min(7, floors - 1);
+      const colsW = simple ? 3 : 4;
+      const colsD = simple ? 2 : 3;
+      surroundFaceGrid(group, mats, 'front', w, d, h, rows, 2.1, 1.15, 1.05, 1.35, colsW, { frame: mats.frame, glass: mats.glass });
+      surroundFaceGrid(group, mats, 'back', w, d, h, rows, 2.1, 1.15, 1.05, 1.35, colsW, { frame: mats.frame, glass: mats.glass });
+      surroundFaceGrid(group, mats, 'left', w, d, h, rows, 2.1, 1.15, 0.95, 1.3, colsD, { frame: mats.frame, glass: mats.glass });
+      surroundFaceGrid(group, mats, 'right', w, d, h, rows, 2.1, 1.15, 0.95, 1.3, colsD, { frame: mats.frame, glass: mats.glass });
+
+      // Entry
+      surroundMesh(group, new THREE.BoxGeometry(2.2, 2.6, 0.35), mats.darkFrame, 0, 1.3, d / 2 + 0.1, 0, false);
+      surroundMesh(group, new THREE.BoxGeometry(1.8, 2.2, 0.12), mats.glassDark, 0, 1.3, d / 2 + 0.22, 0, false);
+
+      if (!simple) {
+        const rail = mats.metal;
+        for (let i = 0; i < Math.min(4, floors - 1); i++) {
+          const y = 3.2 + i * (h / floors);
+          surroundMesh(group, new THREE.BoxGeometry(1.35, 0.1, 2.5), rail, -w / 2 - 0.6, y, 0, 0, false);
+          surroundMesh(group, new THREE.BoxGeometry(0.07, h / floors * 0.85, 0.07), rail, -w / 2 - 0.6, y + 0.9, 1.1, 0, false);
+          surroundMesh(group, new THREE.BoxGeometry(0.07, h / floors * 0.85, 0.07), rail, -w / 2 - 0.6, y + 0.9, -1.1, 0, false);
         }
       }
 
-      for (let i = 0; i < 2; i++) {
-        surroundMesh(group, new THREE.BoxGeometry(0.1, 2.8, 2.2), mats.metal, w / 2 + 0.06, 1.5, -2.2 + i * 4.4, 0, false);
-        surroundMesh(group, new THREE.BoxGeometry(0.08, 2.4, 1.9), mats.loftGlass, w / 2 + 0.1, 1.5, -2.2 + i * 4.4, 0, false);
-      }
-
-      for (let i = 0; i < 4; i++) {
-        const y = 2.0 + i * 2.8;
-        surroundMesh(group, new THREE.BoxGeometry(1.2, 0.14, 2.4), mats.metal, -w / 2 - 0.55, y, 0, 0, false);
-        surroundMesh(group, new THREE.BoxGeometry(0.08, 2.6, 0.08), mats.metal, -w / 2 - 0.55, y + 1.3, 1.1, 0, false);
-        surroundMesh(group, new THREE.BoxGeometry(0.08, 2.6, 0.08), mats.metal, -w / 2 - 0.55, y + 1.3, -1.1, 0, false);
-      }
-
-      surroundMesh(group, new THREE.CylinderGeometry(1.1, 1.1, 1.8, 16), mats.rust, w * 0.25, h + 0.9, -d * 0.2, 0, false);
-      surroundMesh(group, new THREE.CylinderGeometry(1.15, 1.15, 0.12, 16), mats.metal, w * 0.25, h + 1.85, -d * 0.2, 0, false);
-      surroundMesh(group, new THREE.BoxGeometry(0.9, 2.4, 0.9), mats.brick, -w * 0.25, h + 1.2, d * 0.15, 0, false);
-
       group.userData.baseSize = { w, d, h };
-      group.userData.styleId = 'industrial-loft';
-      group.userData.styleName = 'Industrial Loft';
+      group.userData.styleId = 'brick-residential';
       return group;
     }
 
-    // Sample 3 — Art Deco Classic (from sample.html), flat wall colors.
-    function buildSurroundArtDeco(mats, w = 11, d = 10, h = 19) {
+    // Style 1 — Art Deco classic with carved stone + stepped crown
+    function buildSurroundArtDeco(mats, w, d, h, simple = false) {
       const group = new THREE.Group();
-      surroundMesh(group, new THREE.BoxGeometry(w, h * 0.72, d), mats.bodyStone, 0, (h * 0.72) / 2, 0);
-      surroundMesh(group, new THREE.BoxGeometry(w * 0.82, h * 0.14, d * 0.82), mats.bodyStone, 0, h * 0.72 + (h * 0.14) / 2, 0);
-      surroundMesh(group, new THREE.BoxGeometry(w * 0.62, h * 0.14, d * 0.62), mats.bodyStone, 0, h * 0.86 + (h * 0.14) / 2, 0);
+      const bodyH = h * 0.7;
+      surroundMesh(group, new THREE.BoxGeometry(w, bodyH, d), mats.stoneWarm, 0, bodyH / 2, 0);
+      surroundMesh(group, new THREE.BoxGeometry(w * 0.84, h * 0.14, d * 0.84), mats.stone, 0, bodyH + h * 0.07, 0);
+      surroundMesh(group, new THREE.BoxGeometry(w * 0.64, h * 0.14, d * 0.64), mats.stone, 0, bodyH + h * 0.21, 0);
+      surroundMesh(group, new THREE.BoxGeometry(w + 0.1, 0.9, d + 0.1), mats.base, 0, 0.45, 0);
 
       for (let i = -2; i <= 2; i++) {
-        surroundMesh(group, new THREE.BoxGeometry(0.22, h * 0.68, 0.18), mats.rib, i * 2.0, h * 0.34, d / 2 + 0.08, 0, false);
+        surroundMesh(group, new THREE.BoxGeometry(0.22, bodyH * 0.92, 0.2), mats.rib, i * (w * 0.18), bodyH * 0.48, d / 2 + 0.09, 0, false);
       }
+      surroundMesh(group, new THREE.BoxGeometry(w + 0.12, 0.26, d + 0.12), mats.gold, 0, bodyH, 0, 0, false);
+      surroundMesh(group, new THREE.BoxGeometry(w * 0.86, 0.2, d * 0.86), mats.gold, 0, bodyH + h * 0.14, 0, 0, false);
+      surroundMesh(group, new THREE.BoxGeometry(w * 0.66, 0.38, d * 0.66), mats.dark, 0, h + 0.1, 0, 0, false);
 
-      surroundMesh(group, new THREE.BoxGeometry(w + 0.1, 0.28, d + 0.1), mats.gold, 0, h * 0.72, 0, 0, false);
-      surroundMesh(group, new THREE.BoxGeometry(w * 0.84, 0.22, d * 0.84), mats.gold, 0, h * 0.86, 0, 0, false);
-      surroundMesh(group, new THREE.BoxGeometry(w * 0.64, 0.35, d * 0.64), mats.dark, 0, h + 0.18, 0, 0, false);
-
-      surroundFaceGrid(group, mats, 'front', w, d, h * 0.68, 5, 2.2, 1.2, 0.95, 1.15, 4);
-      surroundFaceGrid(group, mats, 'back', w, d, h * 0.68, 5, 2.2, 1.2, 0.95, 1.15, 4);
-      surroundFaceGrid(group, mats, 'left', w, d, h * 0.68, 4, 2.2, 1.2, 0.9, 1.1, 3);
-      surroundFaceGrid(group, mats, 'right', w, d, h * 0.68, 4, 2.2, 1.2, 0.9, 1.1, 3);
+      const rows = simple ? 4 : 6;
+      surroundFaceGrid(group, mats, 'front', w, d, bodyH, rows, 2.15, 1.2, 0.95, 1.2, simple ? 3 : 4, { frame: mats.frame, glass: mats.glassBlue });
+      surroundFaceGrid(group, mats, 'back', w, d, bodyH, rows, 2.15, 1.2, 0.95, 1.2, simple ? 3 : 4, { frame: mats.frame, glass: mats.glassBlue });
+      surroundFaceGrid(group, mats, 'left', w, d, bodyH, simple ? 3 : 5, 2.15, 1.2, 0.88, 1.12, 3, { frame: mats.frame, glass: mats.glassBlue });
+      surroundFaceGrid(group, mats, 'right', w, d, bodyH, simple ? 3 : 5, 2.15, 1.2, 0.88, 1.12, 3, { frame: mats.frame, glass: mats.glassBlue });
 
       group.userData.baseSize = { w, d, h };
       group.userData.styleId = 'art-deco';
-      group.userData.styleName = 'Art Deco Classic';
       return group;
     }
 
-    function initSurroundPrototypes() {
-      if (surroundPrototypes) return surroundPrototypes;
-      const mats = getSurroundMats();
-      surroundPrototypes = [
-        buildSurroundIndustrial(mats, 11, 10, 15),
-        buildSurroundArtDeco(mats, 11, 10, 19),
-      ];
-      return surroundPrototypes;
+    // Style 2 — Industrial loft (brick base + plaster upper)
+    function buildSurroundIndustrial(mats, w, d, h, simple = false) {
+      const group = new THREE.Group();
+      const baseH = h * 0.36;
+      const upperH = h * 0.64;
+      surroundMesh(group, new THREE.BoxGeometry(w, baseH, d), mats.brickDark, 0, baseH / 2, 0);
+      surroundMesh(group, new THREE.BoxGeometry(w, upperH, d), mats.painted, 0, baseH + upperH / 2, 0);
+      surroundMesh(group, new THREE.BoxGeometry(w + 0.12, 0.32, d + 0.12), mats.rust, 0, baseH, 0, 0, false);
+      surroundMesh(group, new THREE.BoxGeometry(w * 0.5, 0.14, 1.7), mats.metal, 0, baseH, d / 2 + 0.8, 0, false);
+      surroundMesh(group, new THREE.BoxGeometry(w + 0.1, 0.4, d + 0.1), mats.parapet, 0, h + 0.15, 0);
+
+      const rows = simple ? 2 : 3;
+      const cols = simple ? 2 : 3;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const x = -w * 0.28 + c * (w * 0.28);
+          const y = baseH + 1.6 + r * ((upperH - 2.2) / Math.max(rows - 1, 1));
+          surroundMesh(group, new THREE.BoxGeometry(w * 0.22, h * 0.14, 0.1), mats.darkFrame, x, y, d / 2 + 0.06, 0, false);
+          surroundMesh(group, new THREE.BoxGeometry(w * 0.19, h * 0.12, 0.06), mats.loftGlass, x, y, d / 2 + 0.11, 0, false);
+          surroundMesh(group, new THREE.BoxGeometry(0.05, h * 0.12, 0.05), mats.darkFrame, x, y, d / 2 + 0.13, 0, false);
+          surroundMesh(group, new THREE.BoxGeometry(w * 0.19, 0.05, 0.05), mats.darkFrame, x, y, d / 2 + 0.13, 0, false);
+        }
+      }
+
+      if (!simple) {
+        for (let i = 0; i < 2; i++) {
+          surroundMesh(group, new THREE.BoxGeometry(0.1, 2.6, 2.0), mats.metal, w / 2 + 0.05, 1.4, -d * 0.22 + i * d * 0.44, 0, false);
+          surroundMesh(group, new THREE.BoxGeometry(0.08, 2.2, 1.7), mats.loftGlass, w / 2 + 0.1, 1.4, -d * 0.22 + i * d * 0.44, 0, false);
+        }
+        surroundMesh(group, new THREE.CylinderGeometry(Math.min(w, d) * 0.08, Math.min(w, d) * 0.08, 1.6, 12), mats.rust, w * 0.22, h + 0.85, -d * 0.18, 0, false);
+        surroundMesh(group, new THREE.BoxGeometry(0.75, 2.1, 0.75), mats.brickDark, -w * 0.22, h + 1.0, d * 0.12, 0, false);
+      }
+
+      group.userData.baseSize = { w, d, h };
+      group.userData.styleId = 'industrial-loft';
+      return group;
     }
 
-    function cloneSurroundBuilding(styleIndex, width, depth, height) {
-      const prototypes = initSurroundPrototypes();
-      const proto = prototypes[styleIndex % prototypes.length];
-      const { w, d, h } = proto.userData.baseSize;
-      const building = proto.clone(true);
-      building.scale.set(width / w, height / h, depth / d);
-      return building;
+    // Style 3 — Modern glass office / curtain wall
+    function buildSurroundModernOffice(mats, w, d, h, simple = false) {
+      const group = new THREE.Group();
+      surroundMesh(group, new THREE.BoxGeometry(w * 0.98, h, d * 0.98), mats.concrete, 0, h / 2, 0);
+      surroundMesh(group, new THREE.BoxGeometry(w + 0.08, 0.7, d + 0.08), mats.metalBright, 0, 0.35, 0);
+      surroundMesh(group, new THREE.BoxGeometry(w + 0.1, 0.45, d + 0.1), mats.metal, 0, h + 0.15, 0);
+
+      // Vertical mullion fins
+      const fins = simple ? 4 : 7;
+      for (let i = 0; i < fins; i++) {
+        const x = -w * 0.42 + (i / Math.max(fins - 1, 1)) * w * 0.84;
+        surroundMesh(group, new THREE.BoxGeometry(0.12, h * 0.96, 0.16), mats.metalBright, x, h / 2, d / 2 + 0.05, 0, false);
+        surroundMesh(group, new THREE.BoxGeometry(0.12, h * 0.96, 0.16), mats.metalBright, x, h / 2, -d / 2 - 0.05, 0, false);
+      }
+
+      const floors = Math.max(4, Math.round(h / 3.4));
+      const rows = simple ? Math.min(4, floors) : Math.min(8, floors);
+      surroundFaceGrid(group, mats, 'front', w, d, h, rows, 1.9, 0.85, w / (simple ? 5 : 7) * 0.85, 1.55, simple ? 4 : 6, {
+        frame: mats.metal,
+        glass: mats.glassBlue,
+        mullion: true,
+        depth: 0.12,
+      });
+      surroundFaceGrid(group, mats, 'back', w, d, h, rows, 1.9, 0.85, w / (simple ? 5 : 7) * 0.85, 1.55, simple ? 4 : 6, {
+        frame: mats.metal,
+        glass: mats.glassDark,
+        mullion: true,
+        depth: 0.12,
+      });
+      surroundFaceGrid(group, mats, 'left', w, d, h, rows, 1.9, 0.9, 1.0, 1.5, simple ? 3 : 4, {
+        frame: mats.metal,
+        glass: mats.glassBlue,
+        mullion: true,
+      });
+      surroundFaceGrid(group, mats, 'right', w, d, h, rows, 1.9, 0.9, 1.0, 1.5, simple ? 3 : 4, {
+        frame: mats.metal,
+        glass: mats.glassBlue,
+        mullion: true,
+      });
+
+      // Rooftop plant / HVAC
+      if (!simple) {
+        surroundMesh(group, new THREE.BoxGeometry(w * 0.28, 1.2, d * 0.22), mats.metal, w * 0.2, h + 0.85, -d * 0.15, 0, false);
+        surroundMesh(group, new THREE.BoxGeometry(w * 0.18, 0.9, d * 0.18), mats.metalBright, -w * 0.22, h + 0.7, d * 0.12, 0, false);
+      }
+
+      group.userData.baseSize = { w, d, h };
+      group.userData.styleId = 'modern-office';
+      return group;
+    }
+
+    function buildSurroundBuilding(styleIndex, width, depth, height) {
+      const mats = getSurroundMats();
+      const simple = !!quality.simpleSurrounds;
+      const w = Math.max(8, width);
+      const d = Math.max(8, depth);
+      const h = Math.max(9, height);
+      const builders = [
+        buildSurroundBrick,
+        buildSurroundArtDeco,
+        buildSurroundIndustrial,
+        buildSurroundModernOffice,
+      ];
+      const styleCount = simple ? 2 : builders.length;
+      const builder = builders[styleIndex % styleCount];
+      return builder(mats, w, d, h, simple);
     }
 
     // Rotate so the building's front (+Z) faces the tower, snapped to the street grid.
@@ -4339,20 +4728,19 @@
       };
     }
 
-    // Sidewalk pad + grass collar + tower-facing Industrial / Art Deco building.
+    // Sidewalk pad + grass collar + realistic surround building.
     function dressBuildingLot(envGroup, x, z, groundY, blockW, blockD, lotW, lotD, height, style, sidewalkMat, grassMat, trees, towerCx, towerCz, propScale) {
       const elev = groundElevations(groundY);
       const courtW = Math.min(lotW * 1.28, blockW * 0.55);
       const courtD = Math.min(lotD * 1.28, blockD * 0.55);
       envGroup.add(addGroundPlane(courtW, courtD, sidewalkMat, x, elev.pavement, z));
-      // Narrow planting strip near the street-facing edge
       const bed = Math.min(lotW, lotD) * 0.18;
       envGroup.add(addGroundPlane(lotW + bed * 2, bed * 0.5, grassMat, x, elev.grassLawn, z + lotD * 0.42));
       envGroup.add(addGroundPlane(lotW + bed * 2, bed * 0.5, grassMat, x, elev.grassLawn, z - lotD * 0.42));
 
       addProp(
         envGroup,
-        cloneSurroundBuilding(style, lotW, lotD, height),
+        buildSurroundBuilding(style, lotW, lotD, height),
         x,
         z,
         groundY,
@@ -5239,7 +5627,8 @@
       const cityExtent = (gridN + 2) * Math.max(cellW, cellD);
       const towerH = Math.max(heroH, 20);
       const footMax = Math.max(heroW, heroD);
-      await initSurroundPrototypes();
+      getSurroundMats();
+      const styleCount = quality.simpleSurrounds ? 2 : SURROUND_STYLES.length;
       const carColors = [0x2a4a6a, 0x8a2a2a, 0xdddddd, 0x2a2a2a, 0x5a6a4a, 0x4a3a6a, 0x6a5a3a, 0x3a5a6a];
       const lamps = [];
       const cars = [];
@@ -5297,9 +5686,9 @@
             continue;
           }
 
-          // Realistic mid-rise heights (about 4–8 floors), always under the hero.
-          const neighH = THREE.MathUtils.clamp(12 + (h % 13), 12, Math.min(24, towerH * 0.82));
-          const lotScale = 0.92 + (h % 5) * 0.03;
+          // Mid-rise neighbors with more height variety (about 4–10 floors), under the hero.
+          const neighH = THREE.MathUtils.clamp(11 + (h % 17), 11, Math.min(28, towerH * 0.78));
+          const lotScale = 0.88 + (h % 7) * 0.035;
           const lotW = neighW * lotScale;
           const lotD = neighD * lotScale;
 
@@ -5329,7 +5718,7 @@
               const bz = blockCz + oz;
               addProp(
                 envGroup,
-                cloneSurroundBuilding(cityHash(i, j, idx) % 2, subW, subD, bh),
+                buildSurroundBuilding(cityHash(i, j, idx) % styleCount, subW, subD, bh),
                 bx,
                 bz,
                 groundY,
@@ -5341,7 +5730,7 @@
 
           dressBuildingLot(
             envGroup, blockCx, blockCz, groundY, blockW, blockD,
-            lotW, lotD, neighH, h % 2,
+            lotW, lotD, neighH, h % styleCount,
             sidewalkMat, plazaGrassMat, trees, cx, cz, propScale
           );
         }
@@ -5489,22 +5878,29 @@
 
       const envGroup = new THREE.Group();
 
+      const sidewalkMaps = makeSidewalkTexture();
       const sidewalkMat = new THREE.MeshStandardMaterial({
-        color: 0xd4cbb8,
+        map: sidewalkMaps.map,
+        normalMap: sidewalkMaps.normalMap,
+        normalScale: new THREE.Vector2(0.7, 0.7),
+        color: 0xffffff,
         roughness: 0.92,
-        metalness: 0.02,
-        envMapIntensity: 0.2,
+        metalness: 0.04,
+        envMapIntensity: 0.28,
       });
-      sidewalkMat.userData.surfaceEnvIntensity = 0.2;
+      sidewalkMat.userData.surfaceEnvIntensity = 0.28;
 
-      // Grey matte plinth around the tower — low IBL so it stays flat grey.
+      const plazaMaps = makePlazaStoneTexture();
       const plazaBaseMat = new THREE.MeshStandardMaterial({
-        color: 0x8a8a8a,
-        roughness: 0.97,
-        metalness: 0,
-        envMapIntensity: 0.05,
+        map: plazaMaps.map,
+        normalMap: plazaMaps.normalMap,
+        normalScale: new THREE.Vector2(0.75, 0.75),
+        color: 0xffffff,
+        roughness: 0.94,
+        metalness: 0.02,
+        envMapIntensity: 0.18,
       });
-      plazaBaseMat.userData.surfaceEnvIntensity = 0.05;
+      plazaBaseMat.userData.surfaceEnvIntensity = 0.18;
 
       const { cityExtent, groundHalf, cellW, cellD } = await buildCityGrid(
         envGroup, cx, cz, groundY, footW, footD, heroH, {
@@ -5518,7 +5914,7 @@
       // Collapse the entire static city into one mesh per material (draw-call optimization).
       scene.add(mergeStaticEnvironment(envGroup));
 
-      scene.fog = new THREE.Fog(0xb8d4e8, Math.max(heroH * 2.2, 55), groundHalf * 1.08);
+      scene.fog = new THREE.Fog(0xc4b8a8, Math.max(heroH * 2.0, 48), groundHalf * 1.05);
       fogBaseNear = scene.fog.near;
       fogBaseFar = scene.fog.far;
       applyEnvironment();
