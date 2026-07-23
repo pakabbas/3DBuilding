@@ -2134,7 +2134,7 @@
       return mat;
     }
 
-    /** Expand the sky-only upper band of DaySky so horizon views aren't washed gray. */
+    /** Expand the sky-only upper band so horizon views aren't washed gray. */
     function makeExpandedSkyTexture(image, skyBand = 0.58) {
       const w = image.width;
       const h = image.height;
@@ -2158,8 +2158,8 @@
         window.__hdrSkySkipped = 'quality.low';
         return false;
       }
-      const exrPath = 'model/PBR/DaySkyHDRI065B_2K/DaySkyHDRI065B_2K_HDR.exr';
-      const jpgPath = 'model/PBR/DaySkyHDRI065B_2K/DaySkyHDRI065B_2K_TONEMAPPED.jpg';
+      const exrPath = 'model/PBR/sky2/EveningSkyHDRI045B_2K_HDR.exr';
+      const jpgPath = 'model/PBR/sky2/EveningSkyHDRI045B_2K_TONEMAPPED.jpg';
       try {
         if (!pmremGenerator) {
           pmremGenerator = new THREE.PMREMGenerator(renderer);
@@ -2185,8 +2185,8 @@
         applySkyOrientation();
         iblSource.dispose();
 
-        // Visible sky: equirect background (not clipped by camera.far). DaySky keeps
-        // all cloud detail in the upper ~half, so expand that band for the backdrop.
+        // Visible sky: equirect background (not clipped by camera.far). Expand the
+        // upper sky band so the horizon isn't washed out.
         const skySrc = await loadTexture(jpgPath);
         const skyMap = skySrc.image
           ? makeExpandedSkyTexture(skySrc.image, 0.58)
@@ -2216,7 +2216,7 @@
         );
         return true;
       } catch (err) {
-        console.warn('DaySky HDRI failed to load, keeping gradient sky.', err);
+        console.warn('Evening sky HDRI failed to load, keeping gradient sky.', err);
         window.__hdrSkyReady = false;
         window.__hdrSkyError = String(err && err.message ? err.message : err);
         return false;
