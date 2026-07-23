@@ -1466,13 +1466,13 @@
       const loader = new GLTFLoader();
       loadingEl.textContent = 'Loading building…';
       try {
-        const buildingGltf = await loadGltf(loader, 'model/bh2.glb');
+        const buildingGltf = await loadGltf(loader, 'model/bh.glb');
         setupModel(buildingGltf);
 
         loadingEl.textContent = 'Loading surroundings…';
         try {
-          const worldGltf = await loadGltf(loader, 'model/world2.glb');
-          setupWorld(worldGltf);
+//          const worldGltf = await loadGltf(loader, 'model/world2.glb');
+  //        setupWorld(worldGltf);
         } catch (worldErr) {
           console.warn('World model failed to load:', worldErr);
           computeFloorSlices();

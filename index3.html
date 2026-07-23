@@ -5997,12 +5997,14 @@
       // Collapse the entire static city into one mesh per material (draw-call optimization).
       scene.add(mergeStaticEnvironment(envGroup));
 
-      // Soft exponential fog — only surrounding buildings (cityFog materials) receive it.
+      // Soft exponential fog — near tower stays clear; distant city dissolves into sky.
       fogCityExtent = Math.max(groundHalf, 120);
       const edgeFog0 = 0.08 + 0.34 * 0.62;
       fogBaseDensity = Math.sqrt(-Math.log(1 - edgeFog0)) / fogCityExtent;
       scene.fog = new THREE.FogExp2(0xe8e2d6, fogBaseDensity);
-      applyCityFogMask();
+      if (hdrSkyDomeMap || hdrEquirect || skyTex) {
+        ensureSkyDome(hdrSkyDomeMap || hdrEquirect || skyTex, skyDomeRadius());
+      }
       applyEnvironment();
       object.userData.cityExtent = cityExtent;
 
@@ -6020,12 +6022,12 @@
       const heroD = size.z;
       const heroH = size.y;
 
-      // Stop on the opposite side from the right-hand pool — sunlit face reads better.
+      // Stop at the right-hand pool's outer corner — clear of the tower.
       const poolOffsetX = heroW * 0.5 + 17.5;
       const poolHalfD = 17.5 * 0.5;
       const cornerX = poolOffsetX + 5.5;
       const cornerZ = poolHalfD + 7.5;
-      const endAngle = Math.atan2(cornerX, cornerZ) + Math.PI;
+      const endAngle = Math.atan2(cornerX, cornerZ);
       const radius = Math.max(
         Math.hypot(cornerX, cornerZ),
         Math.max(heroW, heroD) * 1.55
@@ -6051,6 +6053,9 @@
         2500
       );
       camera.updateProjectionMatrix();
+      if (skyDome?.visible && (hdrSkyDomeMap || hdrEquirect || skyTex)) {
+        ensureSkyDome(hdrSkyDomeMap || hdrEquirect || skyTex, skyDomeRadius());
+      }
       controls.update();
 
       homeView.target.copy(target);
@@ -6201,9 +6206,6 @@
         mat.roughness = Math.max(mat.roughness ?? 0.7, 0.72);
         mat.metalness = Math.min(mat.metalness ?? 0.2, 0.2);
       }
-      // Hero tower stays sharp — fog is for surrounding city only.
-      mat.fog = false;
-      mat.userData.cityFog = false;
       mat.needsUpdate = true;
     }
 
@@ -6327,7 +6329,6 @@
       const cloudExtent = model.userData.cityExtent || Math.max(cloudBox.getSize(new THREE.Vector3()).x, cloudBox.getSize(new THREE.Vector3()).z);
       cloudLayer = createCloudLayer(cloudCenter.x, cloudCenter.z, cloudBox.min.y, cloudExtent);
       scene.add(cloudLayer);
-      applyCityFogMask();
       applyEnvironment();
 
       window.__listMatNames = () => {
