@@ -4433,20 +4433,18 @@
         mat.userData.surfaceEnvIntensity = env;
         return mat;
       };
-      const glass = (color = 0x6a8498, roughness = 0.55) => {
+      const makeGlassMat = (color = 0x6a8498, opacityVal = 0.55) => {
         const mat = new THREE.MeshStandardMaterial({
           color,
           roughness: 0.12,
           metalness: 0.55,
           transparent: true,
-          opacity,
+          opacity: opacityVal,
           envMapIntensity: quality.useHdrIbl ? 1.15 : 0.45,
         });
         mat.userData.surfaceEnvIntensity = quality.useHdrIbl ? 1.15 : 0.45;
         return mat;
       };
-      const glassTint = (color, opacity = 0.62) => glass(color, opacity);
-
       surroundMats = {
         brick: pbr(brick, 0xffffff, 0.92, 0.02),
         brickDark: pbr(brickAlt, 0xe8ddd4, 0.93, 0.02),
@@ -4457,10 +4455,10 @@
         painted: pbr(plaster, 0xd8d0c4, 0.95, 0.01),
         parapet: std(0x5c5854, 0.9, 0.06),
         base: pbr(stone, 0xcfc8be, 0.9, 0.03),
-        glass: glass(0x5f7a90, 0.52),
-        glassBlue: glassTint(0x4a6a82, 0.58),
-        glassDark: glassTint(0x2a3848, 0.72),
-        loftGlass: glass(0x4a6070, 0.48),
+        glass: makeGlassMat(0x5f7a90, 0.52),
+        glassBlue: makeGlassMat(0x4a6a82, 0.58),
+        glassDark: makeGlassMat(0x2a3848, 0.72),
+        loftGlass: makeGlassMat(0x4a6070, 0.48),
         frame: std(0xe8e2d8, 0.78, 0.08),
         darkFrame: std(0x1c1e22, 0.55, 0.4),
         metal: std(0x3a4048, 0.38, 0.72, 0.55),
@@ -6498,10 +6496,11 @@
         await setupModel(gltf);
       } catch (err) {
         if (loadingStatusEl) loadingStatusEl.textContent = 'Failed to load model.';
-        if (loadingDetailEl) loadingDetailEl.textContent = 'Check the console for details.';
+        if (loadingDetailEl) loadingDetailEl.textContent = (err && err.message) ? String(err.message) : 'Check the console for details.';
         if (loadingFillEl) loadingFillEl.style.background = 'var(--danger)';
         loadingEl.setAttribute('aria-busy', 'false');
         console.error(err);
+        window.__lastInitError = err && (err.stack || err.message || String(err));
       }
     }
 
